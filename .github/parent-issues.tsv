@@ -1,7 +1,7 @@
-title    labels    body
-環境構築    env    環境構築＆セットアップドキュメント作成
-ドキュメント作成    docs    メンバー用にドキュメント整理
-要件定義    docs    要件定義
-技術選定    docs    技術選定
-CIを組む    chore    lint/format/testのCIを組む
-セットアップコマンド実装    chore    チームメンバー用にセットアップコマンド実装
+title	labels	body
+環境構築	env	環境構築＆セットアップドキュメント作成
+ドキュメント作成	docs	メンバー用にドキュメント整理
+要件定義	docs	要件定義
+技術選定	docs	技術選定
+CIを組む	chore	lint/format/testのCIを組む
+セットアップコマンド実装	chore	チームメンバー用にセットアップコマンド実装
