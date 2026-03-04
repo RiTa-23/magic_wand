@@ -43,9 +43,18 @@ curl -fsSL https://get.jetpack.io/devbox | bash
 
 _(※通常の PowerShell やコマンドプロンプトでは動作しません)_
 
-### 2. プロジェクトの起動
+### 2. リポジトリのクローン
 
-ターミナルでこのリポジトリのルートディレクトリに移動し、以下のコマンドを実行するだけです。
+ターミナルで適当な作業ディレクトリへ移動し、本リポジトリをクローンして中に入ります。
+
+```bash
+git clone https://github.com/RiTa-23/magic_wand.git
+cd magic_wand
+```
+
+### 3. プロジェクトの起動
+
+ディレクトリ内で以下のコマンドを実行するだけです。
 
 ```bash
 devbox shell
