@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["main"]
+
+jobs:
+  lint-format-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.14.0
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: devbox run -- bun install
+
+      - name: Run Linter (oxlint)
+        run: devbox run -- bun run lint
+
+      - name: Run Formatter Check (Prettier)
+        run: devbox run -- bun run format:check
+
+      - name: Run Tests (Vitest)
+        run: devbox run -- bun run test
