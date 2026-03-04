@@ -16,13 +16,13 @@ reviews:
 
   # レビューの除外設定
   ignore:
-    - "node_modules/**" # 依存関係
-    - ".next/**" # Next.js ビルド成果物
-    - ".devbox/**" # devbox キャッシュ/設定
-    - "bun.lock" # bun のロックファイル
-    - "devbox.lock" # devbox のロックファイル
-    - "types/**" # Next.js の自動生成型定義ファイル (cache-life.d.ts, validator.ts など)
-    - "public/**" # 静的ファイル群
+    - "node_modules/**"       # 依存関係
+    - ".next/**"              # Next.js ビルド成果物
+    - ".devbox/**"            # devbox キャッシュ/設定
+    - "bun.lock"              # bun のロックファイル
+    - "devbox.lock"           # devbox のロックファイル
+    - "types/**"              # Next.js の自動生成型定義ファイル (cache-life.d.ts, validator.ts など)
+    - "public/**"             # 静的ファイル群
 
 chat:
   auto_reply: true
