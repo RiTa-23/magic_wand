@@ -7,6 +7,7 @@
     ],
     "scripts": {
       "setup": ["bun install"],
+      "dev": ["bun run dev"],
       "lint": ["bun run lint"],
       "format:check": ["bun run format:check"],
       "format:fix": ["bun run format:fix"],
