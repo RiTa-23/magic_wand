@@ -25,7 +25,7 @@ jobs:
 
       - name: Create labels
         run: |
-          tail -n +2 .github/github-initial-setup/labels.tsv \
+          tail -n +2 .github/labels.tsv \
           | while IFS=$'\t' read -r name color desc; do
               echo "Creating label: ${name}"
               gh label create "${name}" --color "${color}" --description "${desc}"
@@ -33,7 +33,7 @@ jobs:
 
       - name: Create parent-issues
         run: |
-          tail -n +2 .github/github-initial-setup/parent-issues.tsv \
+          tail -n +2 .github/parent-issues.tsv \
           | while IFS=$'\t' read -r title labels body; do
               if gh issue list --state open --search "${title} in:title" --json title | grep -q "${title}"; then
                 echo "Issue already exists: ${title}"
@@ -45,7 +45,7 @@ jobs:
 
       - name: Create sub-issues
         run: |
-          tail -n +2 .github/github-initial-setup/sub-issues.tsv \
+          tail -n +2 .github/sub-issues.tsv \
           | while IFS=$'\t' read -r parent_title sub_title body labels; do
               if gh issue list --state open --search "${sub_title} in:title" --json title | grep -q "${sub_title}"; then
                 echo "Issue already exists: ${sub_title}"
@@ -66,7 +66,7 @@ jobs:
               --json id,title | jq -r '.[0].id'
           }
 
-          tail -n +2 .github/github-initial-setup/sub-issues.tsv \
+          tail -n +2 .github/sub-issues.tsv \
           | while IFS=$'\t' read -r parent_title sub_title body labels; do
               echo "Linking sub-issue \"${sub_title}\" to parent issue: \"${parent_title}\""
               PARENT_ID=$(get_issue_id_by_title "${parent_title}")
