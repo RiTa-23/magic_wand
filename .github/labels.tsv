@@ -1,0 +1,10 @@
+name    color   description
+feat	#1ead6e	新機能実装
+fix	#e8a735	修正
+docs	#0075ca	ドキュメント
+style	#e55b9a	デザイン
+bug	#d73a4a	バグ修正
+refactor	#a855f7	コードリファクタリング
+chore	#9e9e9e	その他
+invalic	#4a4a4a	誤って作成したissue
+env	#0d9488	環境構築

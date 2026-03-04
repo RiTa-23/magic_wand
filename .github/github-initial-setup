@@ -1,0 +1,81 @@
+name: GitHub Initial Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Create labels
+        run: |
+          tail -n +2 .github/github-initial-setup/labels.tsv \
+          | while IFS=$'\t' read -r name color desc; do
+              if gh label list | grep -q "^${name}"; then
+                echo "Label already exists: ${name}"
+              else
+                echo "Creating label: ${name}"
+                gh label create "${name}" --color "${color}" --description "${desc}"
+              fi
+            done
+
+      - name: Create parent-issues
+        run: |
+          tail -n +2 .github/github-initial-setup/parent-issues.tsv \
+          | while IFS=$'\t' read -r title labels body; do
+              if gh issue list --state open --search "${title} in:title" --json title | grep -q "${title}"; then
+                echo "Issue already exists: ${title}"
+              else
+                echo "Creating issue: ${title}"
+                gh issue create --title "${title}" --body "${body}" --label "${labels}"
+              fi
+            done
+
+      - name: Create sub-issues
+        run: |
+          tail -n +2 .github/github-initial-setup/sub-issues.tsv \
+          | while IFS=$'\t' read -r parent_title sub_title body labels; do
+              if gh issue list --state open --search "${sub_title} in:title" --json title | grep -q "${sub_title}"; then
+                echo "Issue already exists: ${sub_title}"
+              else
+                echo "Creating issue: ${sub_title}"
+                gh issue create --title "${sub_title}" --body "${body}" --label "${labels}"
+              fi
+            done
+
+      - name: Link to parent
+        run: |
+          # GitHub検索インデックスの更新を待つ
+          sleep 5
+
+          function get_issue_id_by_title() {
+            local title="$1"
+            gh issue list --state open --search "${title} in:title" \
+              --json id,title | jq -r '.[0].id'
+          }
+
+          tail -n +2 .github/github-initial-setup/sub-issues.tsv \
+          | while IFS=$'\t' read -r parent_title sub_title body labels; do
+              echo "Linking sub-issue \"${sub_title}\" to parent issue: \"${parent_title}\""
+              PARENT_ID=$(get_issue_id_by_title "${parent_title}")
+              SUB_ID=$(get_issue_id_by_title "${sub_title}")
+              gh api graphql -H "GraphQL-Features: sub_issues" -f query="
+                mutation {
+                  addSubIssue(input: {
+                    issueId: \"${PARENT_ID}\",
+                    subIssueId: \"${SUB_ID}\"
+                  }) {
+                    issue { title number }
+                    subIssue { title number }
+                  }
+                }"
+            done
