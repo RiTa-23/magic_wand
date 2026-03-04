@@ -2,9 +2,17 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
   "packages": ["bun@1.3.9", "oxlint@1.49.0", "prettier@3.6.2"],
   "shell": {
-    "init_hook": ["echo 'Welcome to devbox!' > /dev/null"],
+    "init_hook": [
+      "if [ ! -d node_modules ]; then echo '🚀 初回セットアップ（bun install）を開始します...'; devbox run setup; echo '✅ 開発環境の準備が完了しました！'; fi"
+    ],
     "scripts": {
-      "test": ["echo \"Error: no test specified\" && exit 1"]
+      "setup": ["bun install"],
+      "dev": ["bun run dev"],
+      "lint": ["bun run lint"],
+      "format:check": ["bun run format:check"],
+      "format:fix": ["bun run format:fix"],
+      "test": ["bun run test"],
+      "check": ["bun run lint && bun run format:check && bun run test"]
     }
   }
 }

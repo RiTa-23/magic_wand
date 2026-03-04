@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Magic Wand
 
-## Getting Started
+## 🛠 使用技術
 
-First, run the development server:
+このプロジェクトは以下のツールを使用してモダンで高速な開発環境を構築しています。
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Package Manager / Runtime**: [Bun](https://bun.sh/)
+- **Environment Management**: [Devbox](https://www.jetpack.io/devbox)
+- **Linter**: [oxlint](https://oxc.rs/docs/guide/usage/linter.html)
+- **Formatter**: [Prettier](https://prettier.io/)
+- **Test Runner**: [Vitest](https://vitest.dev/)
+- **AI Code Review**: [CodeRabbit](https://coderabbit.ai/)
+
+---
+
+## 🚀 初回セットアップ・環境構築手順
+
+このプロジェクトでは **Devbox** を用いてチーム全員が全く同じバージョンのツール（Bun, oxlint, Prettier など）を使えるようにしています。特別なインストール作業は不要です。
+
+### 1. Devbox の準備
+
+OSに合わせて Devbox をインストールしてください。
+
+#### 🍏 Mac / Linux の場合
+
+ターミナルを開き、以下のコマンドを実行します。
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+curl -fsSL https://get.jetpack.io/devbox | bash
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### 🪟 Windows の場合
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Windowsでは **WSL2 (Windows Subsystem for Linux 2)** 環境が必須になります。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. WSL2（Ubuntu など）をインストールして起動する
+2. **WSL2のターミナル上** で以下のコマンドを実行する
 
-## Learn More
+```bash
+curl -fsSL https://get.jetpack.io/devbox | bash
+```
 
-To learn more about Next.js, take a look at the following resources:
+_(※通常の PowerShell やコマンドプロンプトでは動作しません)_
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. プロジェクトの起動
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+ターミナルでこのリポジトリのルートディレクトリに移動し、以下のコマンドを実行するだけです。
 
-## Deploy on Vercel
+```bash
+devbox shell
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**✅ これだけで完了です！**
+初回起動時に自動で依存パッケージのインストール（`bun install`）が行われます。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 💻 開発で使う主要コマンド
+
+`devbox shell` で入った環境内（または `devbox run` を使って外側から）で以下のコマンドが使用できます。
+
+| コマンド                  | 説明                                                                  |
+| ------------------------- | --------------------------------------------------------------------- |
+| `devbox run dev`          | ローカル開発サーバーを起動する (`bun run dev`)                        |
+| `devbox run check`        | Lint, Format, Test の **全チェックを一括で実行する** (コミット前推奨) |
+| `devbox run lint`         | oxlint を使ってコードの静的解析を行う                                 |
+| `devbox run format:check` | Prettier でフォーマット違反がないかチェックする                       |
+| `devbox run format:fix`   | Prettier でコードを自動整形（修正）する                               |
+| `devbox run test`         | Vitest でテストを実行する                                             |
+| `devbox run setup`        | パッケージの再インストール (`bun install`) などを手動で行う           |
