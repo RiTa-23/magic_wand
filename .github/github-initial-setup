@@ -16,16 +16,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Delete existing labels
+        run: |
+          gh label list --json name --jq '.[].name' | while read -r name; do
+            echo "Deleting label: ${name}"
+            gh label delete "${name}" --yes
+          done
+
       - name: Create labels
         run: |
           tail -n +2 .github/github-initial-setup/labels.tsv \
           | while IFS=$'\t' read -r name color desc; do
-              if gh label list | grep -q "^${name}"; then
-                echo "Label already exists: ${name}"
-              else
-                echo "Creating label: ${name}"
-                gh label create "${name}" --color "${color}" --description "${desc}"
-              fi
+              echo "Creating label: ${name}"
+              gh label create "${name}" --color "${color}" --description "${desc}"
             done
 
       - name: Create parent-issues
