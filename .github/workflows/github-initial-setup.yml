@@ -31,12 +31,15 @@ jobs:
               gh label create "${name}" --color "${color}" --description "${desc}"
             done
 
-      - name: Create parent-issues
+      - name: Create or update parent-issues
         run: |
           tail -n +2 .github/parent-issues.tsv \
           | while IFS=$'\t' read -r title labels body; do
               if gh issue list --state open --search "${title} in:title" --json title | grep -q "${title}"; then
-                echo "Issue already exists: ${title}"
+                echo "Issue already exists: ${title}. Updating labels..."
+                # titleからIssue番号を取得してラベルを更新
+                ISSUE_NUM=$(gh issue list --state open --search "${title} in:title" --json number -q '.[0].number')
+                gh issue edit "${ISSUE_NUM}" --add-label "${labels}"
               else
                 echo "Creating issue: ${title}"
                 gh issue create --title "${title}" --body "${body}" --label "${labels}"
