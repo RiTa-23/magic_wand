@@ -1,17 +1,31 @@
 import { calculateCRC8CCITT } from "../lib/crc8";
-import { IrCameraRegisters } from "../lib/ir-registers";
-import { IRCluster, IRClusterFrame, JoyConState, JoyConStatus } from "../types/joycon";
+import { IRCameraMode, IRCluster, IRFrame, JoyConState, JoyConStatus } from "../types/joycon";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// モードID定数
+const IR_MODE_ID: Record<IRCameraMode, number> = {
+    MOMENT: 0x03,
+    CLUSTERING: 0x06,
+    IMAGE_TRANSFER: 0x07,
+};
+
+// Image Transfer の最大フラグメント数 (160x120)
+const IMAGE_MAX_FRAG_160x120 = 0x3f; // 63
 
 export class JoyConWebHID {
     private device: HIDDevice | null = null;
     public status: JoyConStatus = "DISCONNECTED";
 
-    public onIRFrame?: (frame: IRClusterFrame) => void;
+    public onIRFrame?: (frame: IRFrame) => void;
     public onStateChange?: (state: JoyConState) => void;
-    private irFrameBuffer: Uint8Array | null = null;
     private irPollingTimer: ReturnType<typeof setInterval> | null = null;
+    private currentIRMode: IRCameraMode = "CLUSTERING";
+
+    // Image Transfer 用のフラグメントバッファ
+    private imageBuffer: Uint8Array = new Uint8Array(160 * 120);
+    private imageFragsReceived: Set<number> = new Set();
+    private imageMaxFrag = IMAGE_MAX_FRAG_160x120;
 
     // パケット送信時のカウンター (0x00 - 0x0F でループ)
     private packetCounter = 0;
@@ -208,8 +222,9 @@ export class JoyConWebHID {
     }
 
     // IRカメラ（MCU）を有効化しデータ受信を開始するための関数
-    public async enableIRCamera() {
+    public async enableIRCamera(mode: IRCameraMode = "CLUSTERING") {
         if (!this.device) return;
+        this.currentIRMode = mode;
 
         try {
             // === Phase 1: IMU有効化 & レポートモード設定 ===
@@ -226,107 +241,113 @@ export class JoyConWebHID {
             await this.sendSubcommand(0x22, [0x01]);
             await sleep(200);
 
-            // MCU状態をポーリング: Standby (state=1) を待つ
-            console.log("Polling MCU for Standby state...");
             try {
                 await this.waitForMCUState((reportId, view) => {
-                    // MCU状態レポート (reportId 0x01): byte 56(full) -> 55(WebHID) にMCU state
-                    if (reportId === 0x01) {
-                        const mcuState = view[55];
-                        console.log(`  MCU state report: state=${mcuState}`);
-                        return mcuState === 0x01; // Standby
-                    }
+                    if (reportId === 0x01) return view[55] === 0x01;
                     return false;
                 }, 2000);
-                console.log("MCU is in Standby state.");
-            } catch {
-                console.warn("MCU Standby poll timeout, continuing anyway...");
-            }
+            } catch { /* continue */ }
 
             // === Phase 3: MCUをIRモードに移行 ===
-            console.log("Step 3: Set MCU Mode to IR (0x21 0x00 0x05)...");
+            console.log("Step 3: Set MCU Mode to IR...");
             await this.sendMCUCommand(0x21, 0x00, [0x05]);
             await sleep(200);
 
-            // MCUがIRモード (state=5) になるのを待つ
-            console.log("Polling MCU for IR state...");
             try {
                 await this.waitForMCUState((reportId, view) => {
-                    if (reportId === 0x01) {
-                        const mcuState = view[55];
-                        console.log(`  MCU state report: state=${mcuState}`);
-                        return mcuState === 0x05; // IR
-                    }
+                    if (reportId === 0x01) return view[55] === 0x05;
                     return false;
                 }, 3000);
-                console.log("MCU is in IR state.");
-            } catch {
-                console.warn("MCU IR state poll timeout, continuing anyway...");
-            }
+            } catch { /* continue */ }
 
-            // === Phase 4: IRセンサーリセット ===
-            console.log("Step 4: Send IRSensorReset...");
-            await this.sendMCUCommand(0x23, 0x01, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-            await sleep(200);
-
-            // IRセンサーがConfiguration Waitに入るまで待つ
-            console.log("Waiting for IR sensor configuration state...");
-            try {
-                await this.waitForMCUState((reportId) => {
-                    // IRステータスレポート (reportId 0x13) を待つ
-                    return reportId === 0x13;
-                }, 3000);
-                console.log("IR sensor is ready for configuration.");
-            } catch {
-                console.warn("IR config state poll timeout, continuing anyway...");
-            }
-
-            // === Phase 5: レジスタ書き込み ===
-            console.log("Step 5: Write IR Registers...");
-            const regData = [
-                9,
-                0x00, 0x2e, 0x50,  // Resolution 160x120
-                0x00, 0x0e, 0x03,  // External Light Filter x1
-                0x00, 0x10, 0x10,  // IR LEDs enabled
-                0x00, 0x11, 0x01,  // LED Intensity Far
-                0x00, 0x12, 0x01,  // LED Intensity Near
-                0x01, 0x30, 0x60,  // Exposure LSB (raw 6240 = 0x1860)
-                0x01, 0x31, 0x18,  // Exposure MSB
-                0x01, 0x32, 0x00,  // Exposure Mode = Manual
-                0x00, 0x07, 0x01,  // Finish (must be last)
-            ];
-            await this.sendMCUCommand(0x23, 0x04, regData);
-            await sleep(200);
-
-            // === Phase 6: クラスタリングモード設定 ===
-            console.log("Step 6: Set MCU IR Mode to Clustering (6)...");
-            await this.sendMCUCommand(0x23, 0x01, [
-                0x06,
-                0x00, // non-fragmented
-                0x00, 0x00, 0x00, 0x00
-            ]);
-            await sleep(200);
-
-            // IRセンサーがクラスタリングモードに入るのを確認
-            console.log("Waiting for Clustering mode confirmation...");
-            try {
-                await this.waitForMCUState((reportId) => {
-                    return reportId === 0x13;
-                }, 3000);
-                console.log("IR sensor is in Clustering mode.");
-            } catch {
-                console.warn("Clustering mode poll timeout, continuing anyway...");
-            }
-
-            console.log("IR Camera (Clustering Mode) started successfully!");
+            // Phase 4-6: レジスタ書き込みとモード設定
+            await this.configureIRMode(mode);
 
             // IRデータの定期リクエストを開始（Output Report 0x11）
             console.log("Starting IR data polling...");
-            this.irPollingTimer = setInterval(() => {
-                this.sendIRDataRequest();
-            }, 50); // 50ms間隔でリクエスト
+            this.startIRPolling();
+
+            console.log(`IR Camera (${mode}) started successfully!`);
         } catch (e) {
             console.error("Error setting up IR Camera:", e);
+        }
+    }
+
+    // IRモードを切り替える（既にenableIRCamera済みの場合に使用）
+    public async switchIRMode(mode: IRCameraMode) {
+        if (!this.device) return;
+        this.stopIRPolling();
+        this.currentIRMode = mode;
+
+        try {
+            await this.configureIRMode(mode);
+            this.startIRPolling();
+            console.log(`IR mode switched to ${mode}`);
+        } catch (e) {
+            console.error("Error switching IR mode:", e);
+        }
+    }
+
+    // IRモードの共通設定処理（リセット→レジスタ→モード設定）
+    private async configureIRMode(mode: IRCameraMode) {
+        // IRセンサーリセット
+        console.log("Resetting IR sensor...");
+        await this.sendMCUCommand(0x23, 0x01, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        await sleep(200);
+
+        try {
+            await this.waitForMCUState((reportId) => reportId === 0x13, 3000);
+        } catch { /* continue */ }
+
+        // レジスタ書き込み
+        console.log("Writing IR registers...");
+        const regData = [
+            9,
+            0x00, 0x2e, 0x50,  // Resolution 160x120
+            0x00, 0x0e, 0x03,  // External Light Filter x1
+            0x00, 0x10, 0x10,  // IR LEDs enabled
+            0x00, 0x11, 0x01,  // LED Intensity Far
+            0x00, 0x12, 0x01,  // LED Intensity Near
+            0x01, 0x30, 0x60,  // Exposure LSB (raw 6240 = 0x1860)
+            0x01, 0x31, 0x18,  // Exposure MSB
+            0x01, 0x32, 0x00,  // Exposure Mode = Manual
+            0x00, 0x07, 0x01,  // Finish
+        ];
+        await this.sendMCUCommand(0x23, 0x04, regData);
+        await sleep(200);
+
+        // モード設定
+        const modeId = IR_MODE_ID[mode];
+        const frags = mode === "IMAGE_TRANSFER" ? IMAGE_MAX_FRAG_160x120 : 0x00;
+        console.log(`Setting IR mode to ${mode} (0x${modeId.toString(16)}, frags=0x${frags.toString(16)})...`);
+        await this.sendMCUCommand(0x23, 0x01, [
+            modeId, frags,
+            0x00, 0x00, 0x00, 0x00
+        ]);
+        await sleep(200);
+
+        // Image Transferの場合はバッファをリセット
+        if (mode === "IMAGE_TRANSFER") {
+            this.imageBuffer = new Uint8Array(160 * 120);
+            this.imageFragsReceived = new Set();
+        }
+
+        try {
+            await this.waitForMCUState((reportId) => reportId === 0x13, 3000);
+        } catch { /* continue */ }
+    }
+
+    private startIRPolling() {
+        this.stopIRPolling();
+        this.irPollingTimer = setInterval(() => {
+            this.sendIRDataRequest();
+        }, 50);
+    }
+
+    private stopIRPolling() {
+        if (this.irPollingTimer) {
+            clearInterval(this.irPollingTimer);
+            this.irPollingTimer = null;
         }
     }
 
@@ -388,47 +409,106 @@ export class JoyConWebHID {
             }
 
             // --- 2. MCU(IR)データの抽出 ---
-            // JSのHIDEventでは data に reportId が含まないため、Rustでのoffsetより -1 される
-            // MCUReportId は offset 48
             const mcuReportId = view[48];
 
-            if (mcuReportId === 0x03) {
-                // 0x03 は IRData
-                // クラスタリングモードでは offset 60 からクラスタデータ開始、各16バイト
-                const clusters: IRCluster[] = [];
-                const clusterBaseOffset = 60;
-
-                // バッファ終端まで16バイトごとに走査 (最大16クラスタ)
-                for (let offset = clusterBaseOffset; offset + 15 < view.length; offset += 16) {
-                    const avgIntensity = view[offset] | (view[offset + 1] << 8);
-                    const pixelCount = view[offset + 2] | (view[offset + 3] << 8);
-                    const cx = view[offset + 4] | (view[offset + 5] << 8);
-                    const cy = view[offset + 6] | (view[offset + 7] << 8);
-
-                    // pixelCount が 0 のスロットは未検出なのでスキップ
-                    if (pixelCount > 0) {
-                        clusters.push({
-                            averageIntensity: avgIntensity,
-                            pixelCount,
-                            cx,
-                            cy,
-                            boundXLeft: view[offset + 8] | (view[offset + 9] << 8),
-                            boundXRight: view[offset + 10] | (view[offset + 11] << 8),
-                            boundYTop: view[offset + 12] | (view[offset + 13] << 8),
-                            boundYBottom: view[offset + 14] | (view[offset + 15] << 8),
-                        });
-                    }
-                }
-
-                if (this.onIRFrame) {
-                    this.onIRFrame({
-                        clusters,
-                        timestamp: performance.now(),
-                    });
-                }
+            if (mcuReportId === 0x03 && this.onIRFrame) {
+                // IRData レポート: モードに応じて異なるパース
+                this.parseIRData(view);
             }
-        } else if (reportId === 0x21) {
-            // 通常のボタンデータ等
         }
     };
+
+    // モードに応じたIRデータパース
+    private parseIRData(view: Uint8Array) {
+        switch (this.currentIRMode) {
+            case "CLUSTERING":
+                this.parseClusteringData(view);
+                break;
+            case "MOMENT":
+                this.parseMomentData(view);
+                break;
+            case "IMAGE_TRANSFER":
+                this.parseImageTransferData(view);
+                break;
+        }
+    }
+
+    private parseClusteringData(view: Uint8Array) {
+        const clusters: IRCluster[] = [];
+        const clusterBaseOffset = 60;
+
+        for (let offset = clusterBaseOffset; offset + 15 < view.length; offset += 16) {
+            const avgIntensity = view[offset] | (view[offset + 1] << 8);
+            const pixelCount = view[offset + 2] | (view[offset + 3] << 8);
+            const cx = view[offset + 4] | (view[offset + 5] << 8);
+            const cy = view[offset + 6] | (view[offset + 7] << 8);
+
+            if (pixelCount > 0) {
+                clusters.push({
+                    averageIntensity: avgIntensity,
+                    pixelCount,
+                    cx,
+                    cy,
+                    boundXLeft: view[offset + 8] | (view[offset + 9] << 8),
+                    boundXRight: view[offset + 10] | (view[offset + 11] << 8),
+                    boundYTop: view[offset + 12] | (view[offset + 13] << 8),
+                    boundYBottom: view[offset + 14] | (view[offset + 15] << 8),
+                });
+            }
+        }
+
+        this.onIRFrame?.({
+            type: "CLUSTERING",
+            clusters,
+            timestamp: performance.now(),
+        });
+    }
+
+    private parseMomentData(view: Uint8Array) {
+        // IRData ヘッダー: offset 48=reportId, 49-50=unknown, 51=frag, 52=avgIntensity,
+        //                  53=unknown, 54-55=whitePixelCount, 56-57=ambientNoise
+        const fragmentNumber = view[51];
+        const averageIntensity = view[52];
+        const whitePixelCount = view[54] | (view[55] << 8);
+        const ambientNoiseCount = view[56] | (view[57] << 8);
+
+        this.onIRFrame?.({
+            type: "MOMENT",
+            fragmentNumber,
+            averageIntensity,
+            whitePixelCount,
+            ambientNoiseCount,
+            timestamp: performance.now(),
+        });
+    }
+
+    private parseImageTransferData(view: Uint8Array) {
+        const fragNumber = view[51];
+        // 画像データは offset 58 から 300 バイト
+        const imgDataOffset = 58;
+        const fragSize = 300;
+        const destOffset = fragNumber * fragSize;
+
+        // フラグメントをバッファにコピー
+        for (let i = 0; i < fragSize && (imgDataOffset + i) < view.length; i++) {
+            if (destOffset + i < this.imageBuffer.length) {
+                this.imageBuffer[destOffset + i] = view[imgDataOffset + i];
+            }
+        }
+        this.imageFragsReceived.add(fragNumber);
+
+        // 全フラグメントが揃ったらフレームを完成
+        if (this.imageFragsReceived.size >= this.imageMaxFrag + 1) {
+            this.onIRFrame?.({
+                type: "IMAGE_TRANSFER",
+                imageData: new Uint8Array(this.imageBuffer),
+                width: 160,
+                height: 120,
+                timestamp: performance.now(),
+            });
+            // バッファをリセット
+            this.imageFragsReceived.clear();
+            this.imageBuffer = new Uint8Array(160 * 120);
+        }
+    }
 }

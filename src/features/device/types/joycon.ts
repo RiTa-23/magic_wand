@@ -9,13 +9,8 @@ export type JoyConStatus =
 
 /**
  * IRカメラの動作モード
- * (今回は画像取得を中心とするため、主に IMAGE_TRANSFER 等を想定)
  */
-export type IRCameraMode =
-    | "STANDBY"
-    | "MOMENT" // モーメントモード（光点検出等）
-    | "IMAGE_TRANSFER" // 画像転送モード
-    | "CLUSTERING"; // クラスタリングモード
+export type IRCameraMode = "CLUSTERING" | "MOMENT" | "IMAGE_TRANSFER";
 
 /**
  * クラスタリングモード(`0x06`) で得られる個別の光点(ブロブ)データ
@@ -43,11 +38,49 @@ export type IRCluster = {
  * Reactなどに渡されるクラスタ配列フレーム
  */
 export type IRClusterFrame = {
+    type: "CLUSTERING";
     /** 検出された光点の数の配列 (最大で数十個程度) */
     clusters: IRCluster[];
     /** ストリーム時のタイムスタンプ */
     timestamp: number;
 };
+
+/**
+ * モーメントモード(`0x03`) のフレーム
+ * フレーム全体の明るさ・ノイズ統計を取得
+ */
+export type IRMomentFrame = {
+    type: "MOMENT";
+    /** フラグメント番号 */
+    fragmentNumber: number;
+    /** 平均輝度 (0-255) */
+    averageIntensity: number;
+    /** 白ピクセル数 */
+    whitePixelCount: number;
+    /** 環境ノイズ数 */
+    ambientNoiseCount: number;
+    timestamp: number;
+};
+
+/**
+ * 画像転送モード(`0x07`) のフレーム
+ * 160x120 (or 320x240) の生IR画像データ
+ */
+export type IRImageFrame = {
+    type: "IMAGE_TRANSFER";
+    /** 完成した1フレーム分の画像データ (グレースケール) */
+    imageData: Uint8Array;
+    /** 画像の幅 */
+    width: number;
+    /** 画像の高さ */
+    height: number;
+    timestamp: number;
+};
+
+/**
+ * 3モードの出力を統一するユニオン型
+ */
+export type IRFrame = IRClusterFrame | IRMomentFrame | IRImageFrame;
 
 /**
  * Joy-Conから受け取る生パケットやフラグメントに関する一時的な型
