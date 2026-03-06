@@ -18,7 +18,7 @@ export function MagicMenuButton({
   return (
     <button
       onClick={onClick}
-      className="group relative w-full animate-[fadeSlideUp_0.5s_ease-out_both]"
+      className="group relative w-full animate-[fade-slide-up_0.5s_ease-out_both]"
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* Hover glow */}
