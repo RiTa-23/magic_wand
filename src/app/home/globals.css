@@ -50,9 +50,13 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-cinzel), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans:
+    var(--font-cinzel), ui-serif, Georgia, Cambria, "Times New Roman", Times,
+    serif;
   --font-serif: var(--font-medievalsharp), cursive;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
   --color-gold: var(--gold);
   --color-gold-dim: var(--gold-dim);
   --color-gold-bright: var(--gold-bright);
