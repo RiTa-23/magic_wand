@@ -13,8 +13,7 @@ export default function HomePage() {
     <main className="relative min-h-svh w-full overflow-hidden bg-background">
       {/* Background image layer */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-        style={{ backgroundImage: "url('/images/magic-bg.jpg')" }}
+        className="fixed inset-0 bg-background opacity-30"
         aria-hidden="true"
       />
       <div
