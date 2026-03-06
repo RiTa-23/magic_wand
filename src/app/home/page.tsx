@@ -1,6 +1,6 @@
 "use client";
 
-import { Wifi, BookOpen, Settings, Play } from "lucide-react";
+import { Wifi, BookOpen, Settings } from "lucide-react";
 import { MagicCircle } from "@/components/magic-circle";
 import { FloatingParticles } from "@/components/floating-particles";
 import { HeroMagicCircle } from "@/components/hero-magic-circle";

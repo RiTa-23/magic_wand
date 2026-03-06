@@ -7,8 +7,8 @@ const cinzel = Cinzel({
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-cinzel",
 });
-const medievalSharp = MedievalSharp({ 
-  subsets: ["latin"], 
+const medievalSharp = MedievalSharp({
+  subsets: ["latin"],
   weight: ["400"],
   variable: "--font-medievalsharp",
 });
@@ -49,7 +49,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className={`font-sans antialiased min-h-screen ${cinzel.variable} ${medievalSharp.variable}`}>
+    <div
+      className={`font-sans antialiased min-h-screen ${cinzel.variable} ${medievalSharp.variable}`}
+    >
       {children}
     </div>
   );
