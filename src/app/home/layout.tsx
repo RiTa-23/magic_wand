@@ -2,11 +2,16 @@ import type { Metadata, Viewport } from "next";
 import { Cinzel, MedievalSharp } from "next/font/google";
 import "./globals.css";
 
-const _cinzel = Cinzel({
+const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-cinzel",
 });
-const _medievalSharp = MedievalSharp({ subsets: ["latin"], weight: ["400"] });
+const medievalSharp = MedievalSharp({ 
+  subsets: ["latin"], 
+  weight: ["400"],
+  variable: "--font-medievalsharp",
+});
 
 export const metadata: Metadata = {
   title: "Magic Wind - 杖で風を操る魔法アプリ",
@@ -43,5 +48,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="font-sans antialiased min-h-screen">{children}</div>;
+  return (
+    <div className={`font-sans antialiased min-h-screen ${cinzel.variable} ${medievalSharp.variable}`}>
+      {children}
+    </div>
+  );
 }
