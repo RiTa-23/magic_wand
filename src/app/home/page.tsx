@@ -1,10 +1,11 @@
 "use client"
 
-import { Wifi, BookOpen, Settings } from "lucide-react"
+import { Wifi, BookOpen, Settings, Play } from "lucide-react"
 import { MagicCircle } from "@/components/magic-circle"
 import { FloatingParticles } from "@/components/floating-particles"
 import { HeroMagicCircle } from "@/components/hero-magic-circle"
 import { MagicMenuButton } from "@/components/magic-menu-button"
+import { PrimaryMagicButton } from "@/components/primary-magic-button"
 import { WandIcon } from "@/components/wand-icon"
 
 export default function HomePage() {
@@ -57,6 +58,7 @@ export default function HomePage() {
           <nav className="flex flex-col gap-5 w-64 shrink-0" aria-label="メインメニュー">
             <MagicMenuButton label="チュートリアル" icon={BookOpen} delay={100} />
             <MagicMenuButton label="接続確認" icon={Wifi} delay={200} />
+            <PrimaryMagicButton label="魔法を発動" icon={WandIcon} delay={300} />
           </nav>
 
           {/* Center - hero magic circle */}
