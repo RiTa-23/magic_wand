@@ -1,4 +1,5 @@
 import { calculateCRC8CCITT } from "../lib/crc8";
+import { IrCameraRegisters } from "../lib/ir-registers";
 import {
   IRCameraMode,
   IRCluster,
@@ -16,9 +17,6 @@ const IR_MODE_ID: Record<IRCameraMode, number> = {
   IMAGE_TRANSFER: 0x07,
 };
 
-// Image Transfer の最大フラグメント数 (160x120)
-const IMAGE_MAX_FRAG_160x120 = 0x3f; // 63
-
 export class JoyConWebHID {
   private device: HIDDevice | null = null;
   public status: JoyConStatus = "DISCONNECTED";
@@ -31,7 +29,7 @@ export class JoyConWebHID {
   // Image Transfer 用のフラグメントバッファ
   private imageBuffer: Uint8Array = new Uint8Array(160 * 120);
   private imageFragsReceived: Set<number> = new Set();
-  private imageMaxFrag = IMAGE_MAX_FRAG_160x120;
+  private imageMaxFrag = IrCameraRegisters.RESOLUTION_160x120.maxFragment;
 
   // パケット送信時のカウンター (0x00 - 0x0F でループ)
   private packetCounter = 0;
@@ -188,8 +186,8 @@ export class JoyConWebHID {
 
     try {
       await this.device.sendReport(0x11, reportData);
-    } catch (e) {
-      // ポーリング中のエラーは静かに無視
+    } catch (err) {
+      console.warn("IR data request polling error", err);
     }
   }
 
@@ -256,8 +254,8 @@ export class JoyConWebHID {
           if (reportId === 0x01) return view[55] === 0x01;
           return false;
         }, 2000);
-      } catch {
-        /* continue */
+      } catch (err) {
+        console.warn("MCU poll timeout while waiting for Standby state", err);
       }
 
       // === Phase 3: MCUをIRモードに移行 ===
@@ -270,8 +268,8 @@ export class JoyConWebHID {
           if (reportId === 0x01) return view[55] === 0x05;
           return false;
         }, 3000);
-      } catch {
-        /* continue */
+      } catch (err) {
+        console.warn("MCU poll timeout while waiting for IR mode", err);
       }
 
       // Phase 4-6: レジスタ書き込みとモード設定
@@ -311,17 +309,19 @@ export class JoyConWebHID {
 
     try {
       await this.waitForMCUState((reportId) => reportId === 0x13, 3000);
-    } catch {
-      /* continue */
+    } catch (err) {
+      console.warn("MCU poll timeout while waiting for IR sensor reset", err);
     }
 
     // レジスタ書き込み
     console.log("Writing IR registers...");
+    const resolution = IrCameraRegisters.RESOLUTION_160x120;
+    const finish = IrCameraRegisters.FINISH;
     const regData = [
       9,
-      0x00,
-      0x2e,
-      0x50, // Resolution 160x120
+      resolution.page,
+      resolution.offset,
+      resolution.value, // Resolution 160x120
       0x00,
       0x0e,
       0x03, // External Light Filter x1
@@ -343,16 +343,17 @@ export class JoyConWebHID {
       0x01,
       0x32,
       0x00, // Exposure Mode = Manual
-      0x00,
-      0x07,
-      0x01, // Finish
+      finish.page,
+      finish.offset,
+      finish.value, // Finish
     ];
     await this.sendMCUCommand(0x23, 0x04, regData);
     await sleep(200);
 
     // モード設定
     const modeId = IR_MODE_ID[mode];
-    const frags = mode === "IMAGE_TRANSFER" ? IMAGE_MAX_FRAG_160x120 : 0x00;
+    this.imageMaxFrag = resolution.maxFragment;
+    const frags = mode === "IMAGE_TRANSFER" ? this.imageMaxFrag : 0x00;
     console.log(
       `Setting IR mode to ${mode} (0x${modeId.toString(16)}, frags=0x${frags.toString(16)})...`,
     );
@@ -374,8 +375,11 @@ export class JoyConWebHID {
 
     try {
       await this.waitForMCUState((reportId) => reportId === 0x13, 3000);
-    } catch {
-      /* continue */
+    } catch (err) {
+      console.warn(
+        "MCU poll timeout while waiting for IR mode confirmation",
+        err,
+      );
     }
   }
 

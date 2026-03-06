@@ -19,7 +19,7 @@
 
 ## 1. 全体アーキテクチャ
 
-```
+```text
 ┌──────────────────────────────────────────────────────┐
 │  ブラウザ (Chrome)                                    │
 │                                                      │
@@ -95,7 +95,7 @@ await device.close();
 
 **Output Report `0x01` の構造:**
 
-```
+```text
 Byte 0     : パケットカウンター (0x0~0xF、送信ごとにインクリメント)
 Byte 1-8   : Rumble データ（振動制御、今回は使用しないのでダミー値）
 Byte 9     : サブコマンドID
@@ -119,7 +119,7 @@ Byte 10+   : サブコマンド引数
 
 **Input Report `0x31` の構造（WebHIDオフセット）:**
 
-```
+```text
 Byte 0     : タイマー
 Byte 1     : デバイス状態
 Byte 2     : ボタン（右）─ Y, X, B, A, SR, SL, R, ZR
@@ -140,7 +140,7 @@ Joy-Con (R) には **STM32系のMCU** が内蔵されており、IRカメラとN
 
 ### MCU状態マシン
 
-```
+```text
 [Off] ──(Resume 0x22)──► [Standby] ──(Set Mode 0x21)──► [IR Mode]
                               │                              │
                               │                    (Configure IR 0x23)
@@ -163,7 +163,7 @@ Joy-Con (R) には **STM32系のMCU** が内蔵されており、IRカメラとN
 
 MCUコマンドはサブコマンド `0x21` 経由で送信されます。
 
-```
+```text
 Byte 0     : MCU cmd ID    (例: 0x21=SetMode, 0x23=ConfigureIR)
 Byte 1     : MCU subcmd ID (例: 0x00=SetMCUMode, 0x01=SetIRMode, 0x04=WriteRegisters)
 Byte 2-36  : データ
@@ -324,7 +324,7 @@ const {
 
 以下の順序でMCUを初期化し、IRカメラを有効化します。
 
-```
+```text
 (1) IMU有効化              sendSubcommand(0x40, [0x01])
           ↓
 (2) 入力レポートモード設定   sendSubcommand(0x03, [0x31])

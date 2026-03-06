@@ -32,8 +32,15 @@ export default function JoyConSandboxPage() {
 
     canvas.width = irFrame.width;
     canvas.height = irFrame.height;
+    const expected = irFrame.width * irFrame.height;
+    if (irFrame.imageData.length !== expected) {
+      console.warn(
+        `IR image data length mismatch: expected ${expected}, got ${irFrame.imageData.length}`,
+      );
+    }
+    const pixelCount = Math.min(irFrame.imageData.length, expected);
     const imgData = ctx.createImageData(irFrame.width, irFrame.height);
-    for (let i = 0; i < irFrame.imageData.length; i++) {
+    for (let i = 0; i < pixelCount; i++) {
       const v = irFrame.imageData[i];
       imgData.data[i * 4] = v;
       imgData.data[i * 4 + 1] = v;
