@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 export function MagicCircle() {
   return (
@@ -27,9 +27,9 @@ export function MagicCircle() {
           />
           {/* Rune marks around outer ring */}
           {Array.from({ length: 12 }).map((_, i) => {
-            const angle = (i * 30 * Math.PI) / 180
-            const x = 170 + 160 * Math.cos(angle)
-            const y = 170 + 160 * Math.sin(angle)
+            const angle = (i * 30 * Math.PI) / 180;
+            const x = 170 + 160 * Math.cos(angle);
+            const y = 170 + 160 * Math.sin(angle);
             return (
               <circle
                 key={i}
@@ -39,7 +39,7 @@ export function MagicCircle() {
                 fill="currentColor"
                 className="text-gold/60"
               />
-            )
+            );
           })}
         </svg>
       </div>
@@ -77,7 +77,10 @@ export function MagicCircle() {
 
       {/* Center glow */}
       <div className="absolute w-[200px] h-[200px] rounded-full bg-magic-glow/5 blur-2xl animate-pulse" />
-      <div className="absolute w-[100px] h-[100px] rounded-full bg-gold/8 blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div
+        className="absolute w-[100px] h-[100px] rounded-full bg-gold/8 blur-xl animate-pulse"
+        style={{ animationDelay: "1s" }}
+      />
     </div>
-  )
+  );
 }

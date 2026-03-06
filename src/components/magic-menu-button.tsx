@@ -1,15 +1,20 @@
-"use client"
+"use client";
 
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react";
 
 interface MagicMenuButtonProps {
-  label: string
-  icon: LucideIcon
-  onClick?: () => void
-  delay?: number
+  label: string;
+  icon: LucideIcon;
+  onClick?: () => void;
+  delay?: number;
 }
 
-export function MagicMenuButton({ label, icon: Icon, onClick, delay = 0 }: MagicMenuButtonProps) {
+export function MagicMenuButton({
+  label,
+  icon: Icon,
+  onClick,
+  delay = 0,
+}: MagicMenuButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -43,5 +48,5 @@ export function MagicMenuButton({ label, icon: Icon, onClick, delay = 0 }: Magic
         <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
       </div>
     </button>
-  )
+  );
 }

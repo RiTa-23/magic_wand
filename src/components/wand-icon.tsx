@@ -41,7 +41,15 @@ export function WandIcon({ className }: { className?: string }) {
         opacity="0.3"
       />
       {/* Handle ornament */}
-      <circle cx="18" cy="46" r="2" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+      <circle
+        cx="18"
+        cy="46"
+        r="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1"
+        opacity="0.6"
+      />
     </svg>
-  )
+  );
 }
