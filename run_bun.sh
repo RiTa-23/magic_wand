@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /root/magic_wand
+cd "$(dirname "$0")" || exit
 bun install
