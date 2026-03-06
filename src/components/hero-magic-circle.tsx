@@ -1,28 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
 const RUNE_CHARS =
   "\u16A0\u16A2\u16A6\u16A8\u16B1\u16B7\u16B9\u16BA\u16BE\u16C1\u16C3\u16C7\u16C8\u16CB\u16CF\u16D2\u16D6\u16DA\u16DE\u16DF";
 
 export function HeroMagicCircle() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let frame: number;
-    let t = 0;
-    function animate() {
-      t += 0.003;
-      if (containerRef.current) {
-        const pulseGlow = 0.2 + Math.sin(t * 2) * 0.1;
-        containerRef.current.style.setProperty("--pulse", `${pulseGlow}`);
-      }
-      frame = requestAnimationFrame(animate);
-    }
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
   const outerRunes = Array.from({ length: 24 }, (_, i) => {
     const angle = (i * 15 * Math.PI) / 180;
     const r = 192;
@@ -42,10 +23,7 @@ export function HeroMagicCircle() {
   });
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-full flex items-center justify-center"
-    >
+    <div className="relative w-full h-full flex items-center justify-center">
       {/* Outermost glow - brighter */}
       <div
         className="absolute w-[440px] h-[440px] rounded-full blur-3xl"

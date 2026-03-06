@@ -43,7 +43,10 @@ export function DeviceStatusCard() {
         <div className="flex items-center gap-8">
           {/* Power orb */}
           <button
+            type="button"
             onClick={() => setIsPowerOn(!isPowerOn)}
+            aria-label={isPowerOn ? "電源をオフにする" : "電源をオンにする"}
+            aria-pressed={isPowerOn}
             className="group relative flex items-center justify-center w-24 h-24 shrink-0"
           >
             {/* Outer ring */}
