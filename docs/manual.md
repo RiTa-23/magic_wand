@@ -102,5 +102,5 @@ UI担当はそれと並行して、本番用のリッチな画面のモックを
 3.  **コミット前のチェック**（必ず通すこと！）
     これで Lint, Format, Test がすべてパスするか確認します。
     `bash
-    devbox run check
-    `
+devbox run check
+`

@@ -1,74 +1,82 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { JoyConWebHID } from "./joycon-webhid";
-import { IRCameraMode, IRFrame, JoyConState, JoyConStatus } from "../types/joycon";
+import {
+  IRCameraMode,
+  IRFrame,
+  JoyConState,
+  JoyConStatus,
+} from "../types/joycon";
 
 export function useJoyCon() {
-    const [status, setStatus] = useState<JoyConStatus>("DISCONNECTED");
-    const [irFrame, setIrFrame] = useState<IRFrame | null>(null);
-    const [joyconState, setJoyconState] = useState<JoyConState | null>(null);
-    const [irMode, setIrMode] = useState<IRCameraMode>("CLUSTERING");
+  const [status, setStatus] = useState<JoyConStatus>("DISCONNECTED");
+  const [irFrame, setIrFrame] = useState<IRFrame | null>(null);
+  const [joyconState, setJoyconState] = useState<JoyConState | null>(null);
+  const [irMode, setIrMode] = useState<IRCameraMode>("CLUSTERING");
 
-    // useRefを用いて同一インスタンスを保持する
-    const joyconRef = useRef<JoyConWebHID | null>(null);
+  // useRefを用いて同一インスタンスを保持する
+  const joyconRef = useRef<JoyConWebHID | null>(null);
 
-    // 初回マウント時にインスタンス化
-    useEffect(() => {
-        if (!joyconRef.current) {
-            joyconRef.current = new JoyConWebHID();
-            joyconRef.current.onIRFrame = (frame: IRFrame) => {
-                setIrFrame(frame);
-            };
-            joyconRef.current.onStateChange = (state: JoyConState) => {
-                setJoyconState(state);
-            };
-        }
-        return () => {
-            // アンマウント時に切断処理を行う
-            if (joyconRef.current) {
-                joyconRef.current.disconnect();
-                joyconRef.current = null;
-            }
-        };
-    }, []);
-
-    const connect = useCallback(async () => {
-        if (!joyconRef.current) return;
-        setStatus("CONNECTING");
-        try {
-            const success = await joyconRef.current.connect();
-            if (success) {
-                setStatus("CONNECTED");
-                // IRカメラの初期化（デフォルトモードで）
-                await joyconRef.current.enableIRCamera(irMode);
-            } else {
-                setStatus("DISCONNECTED");
-            }
-        } catch (e) {
-            console.error(e);
-            setStatus("ERROR");
-        }
-    }, [irMode]);
-
-    const disconnect = useCallback(async () => {
-        if (!joyconRef.current) return;
-        await joyconRef.current.disconnect();
-        setStatus("DISCONNECTED");
-    }, []);
-
-    const switchMode = useCallback(async (mode: IRCameraMode) => {
-        if (!joyconRef.current || status !== "CONNECTED") return;
-        setIrMode(mode);
-        setIrFrame(null); // 前のモードのデータをクリア
-        await joyconRef.current.switchIRMode(mode);
-    }, [status]);
-
-    return {
-        status,
-        irFrame,
-        irMode,
-        joyconState,
-        connect,
-        disconnect,
-        switchMode,
+  // 初回マウント時にインスタンス化
+  useEffect(() => {
+    if (!joyconRef.current) {
+      joyconRef.current = new JoyConWebHID();
+      joyconRef.current.onIRFrame = (frame: IRFrame) => {
+        setIrFrame(frame);
+      };
+      joyconRef.current.onStateChange = (state: JoyConState) => {
+        setJoyconState(state);
+      };
+    }
+    return () => {
+      // アンマウント時に切断処理を行う
+      if (joyconRef.current) {
+        joyconRef.current.disconnect();
+        joyconRef.current = null;
+      }
     };
+  }, []);
+
+  const connect = useCallback(async () => {
+    if (!joyconRef.current) return;
+    setStatus("CONNECTING");
+    try {
+      const success = await joyconRef.current.connect();
+      if (success) {
+        setStatus("CONNECTED");
+        // IRカメラの初期化（デフォルトモードで）
+        await joyconRef.current.enableIRCamera(irMode);
+      } else {
+        setStatus("DISCONNECTED");
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus("ERROR");
+    }
+  }, [irMode]);
+
+  const disconnect = useCallback(async () => {
+    if (!joyconRef.current) return;
+    await joyconRef.current.disconnect();
+    setStatus("DISCONNECTED");
+  }, []);
+
+  const switchMode = useCallback(
+    async (mode: IRCameraMode) => {
+      if (!joyconRef.current || status !== "CONNECTED") return;
+      setIrMode(mode);
+      setIrFrame(null); // 前のモードのデータをクリア
+      await joyconRef.current.switchIRMode(mode);
+    },
+    [status],
+  );
+
+  return {
+    status,
+    irFrame,
+    irMode,
+    joyconState,
+    connect,
+    disconnect,
+    switchMode,
+  };
 }
