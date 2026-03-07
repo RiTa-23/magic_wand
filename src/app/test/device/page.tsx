@@ -265,7 +265,7 @@ export default function JoyConSandboxPage() {
                                   X: {cluster.cx}, Y: {cluster.cy}
                                 </div>
                                 <div className="text-gray-400 text-xs">
-                                  Area: {cluster.pixelCount} | Int:{" "}
+                                  面積: {cluster.pixelCount} | 輝度:{" "}
                                   {cluster.averageIntensity}
                                 </div>
                               </div>
