@@ -3,17 +3,10 @@
 import { useEffect, useRef } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
 
-// クラスタリングモードの座標範囲（16bit: 0〜65535）
-const IR_MAX_X = 65535;
-const IR_MAX_Y = 65535;
-
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
 const CANVAS_HEIGHT = 480;
-
-// スケール係数
-const SCALE_X = CANVAS_WIDTH / IR_MAX_X;
-const SCALE_Y = CANVAS_HEIGHT / IR_MAX_Y;
+const PADDING = 40; // 描画領域のパディング
 
 export default function WandTrackingPage() {
     const {
@@ -26,9 +19,27 @@ export default function WandTrackingPage() {
     } = useJoyCon();
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    // 軌跡を保存するバッファ（最大200点）
-    const trailRef = useRef<{ x: number; y: number; t: number }[]>([]);
+    // 軌跡を保存するバッファ（最大200点、生の座標を保持）
+    const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
     const animFrameRef = useRef<number>(0);
+
+    // 生の座標をキャンバス上の座標に変換
+    const toCanvasCoords = (
+        rawX: number,
+        rawY: number,
+        minX: number,
+        maxX: number,
+        minY: number,
+        maxY: number,
+    ) => {
+        const spanX = Math.max(maxX - minX, 1);
+        const spanY = Math.max(maxY - minY, 1);
+        const drawW = CANVAS_WIDTH - PADDING * 2;
+        const drawH = CANVAS_HEIGHT - PADDING * 2;
+        const cx = PADDING + ((rawX - minX) / spanX) * drawW;
+        const cy = PADDING + ((rawY - minY) / spanY) * drawH;
+        return { cx, cy };
+    };
 
     // クラスタリングデータからcanvasに描画
     useEffect(() => {
@@ -56,37 +67,97 @@ export default function WandTrackingPage() {
                 ctx.stroke();
             }
 
+            // ── 描画領域の枠 ──
+            ctx.strokeStyle = "rgba(255,255,255,0.1)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(
+                PADDING,
+                PADDING,
+                CANVAS_WIDTH - PADDING * 2,
+                CANVAS_HEIGHT - PADDING * 2,
+            );
+
             // ── 十字線（中央） ──
-            ctx.strokeStyle = "rgba(255,255,255,0.15)";
+            ctx.strokeStyle = "rgba(255,255,255,0.12)";
             ctx.setLineDash([4, 4]);
             ctx.beginPath();
-            ctx.moveTo(CANVAS_WIDTH / 2, 0);
-            ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
+            ctx.moveTo(CANVAS_WIDTH / 2, PADDING);
+            ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT - PADDING);
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(0, CANVAS_HEIGHT / 2);
-            ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT / 2);
+            ctx.moveTo(PADDING, CANVAS_HEIGHT / 2);
+            ctx.lineTo(CANVAS_WIDTH - PADDING, CANVAS_HEIGHT / 2);
             ctx.stroke();
             ctx.setLineDash([]);
 
             const now = performance.now();
             const trail = trailRef.current;
 
-            // 古い軌跡を削除（2秒以上前）
-            while (trail.length > 0 && now - trail[0].t > 2000) {
+            // 古い軌跡を削除（3秒以上前）
+            while (trail.length > 0 && now - trail[0].t > 3000) {
                 trail.shift();
+            }
+
+            // ── 現在の全データポイントからmin/maxを毎フレーム計算 ──
+            let minX = Infinity,
+                maxX = -Infinity,
+                minY = Infinity,
+                maxY = -Infinity;
+
+            // 軌跡からレンジを計算
+            for (const pt of trail) {
+                if (pt.rawX < minX) minX = pt.rawX;
+                if (pt.rawX > maxX) maxX = pt.rawX;
+                if (pt.rawY < minY) minY = pt.rawY;
+                if (pt.rawY > maxY) maxY = pt.rawY;
+            }
+
+            // 現在のクラスタからレンジを計算
+            if (irFrame && irFrame.type === "CLUSTERING") {
+                for (const cluster of irFrame.clusters) {
+                    if (cluster.cx < minX) minX = cluster.cx;
+                    if (cluster.cx > maxX) maxX = cluster.cx;
+                    if (cluster.cy < minY) minY = cluster.cy;
+                    if (cluster.cy > maxY) maxY = cluster.cy;
+                }
+            }
+
+            // レンジが狭すぎる場合は最低幅を確保（小さい動きも見えるように）
+            const MIN_SPAN = 200;
+            if (isFinite(minX)) {
+                const spanX = maxX - minX;
+                const spanY = maxY - minY;
+                if (spanX < MIN_SPAN) {
+                    const centerX = (minX + maxX) / 2;
+                    minX = centerX - MIN_SPAN / 2;
+                    maxX = centerX + MIN_SPAN / 2;
+                }
+                if (spanY < MIN_SPAN) {
+                    const centerY = (minY + maxY) / 2;
+                    minY = centerY - MIN_SPAN / 2;
+                    maxY = centerY + MIN_SPAN / 2;
+                }
+                // 10%マージンを追加（レンダリング時のみ、累積しない）
+                const mx = (maxX - minX) * 0.1;
+                const my = (maxY - minY) * 0.1;
+                minX -= mx;
+                maxX += mx;
+                minY -= my;
+                maxY += my;
             }
 
             // ── 軌跡を描画 ──
             if (trail.length > 1) {
                 for (let i = 1; i < trail.length; i++) {
-                    const age = (now - trail[i].t) / 2000; // 0〜1 (新しい→古い)
+                    const age = (now - trail[i].t) / 3000;
                     const alpha = Math.max(0, 1 - age);
+                    const p0 = toCanvasCoords(trail[i - 1].rawX, trail[i - 1].rawY, minX, maxX, minY, maxY);
+                    const p1 = toCanvasCoords(trail[i].rawX, trail[i].rawY, minX, maxX, minY, maxY);
                     ctx.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.7})`;
                     ctx.lineWidth = Math.max(1, (1 - age) * 3);
                     ctx.beginPath();
-                    ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
-                    ctx.lineTo(trail[i].x, trail[i].y);
+                    ctx.moveTo(p0.cx, p0.cy);
+                    ctx.lineTo(p1.cx, p1.cy);
                     ctx.stroke();
                 }
             }
@@ -94,8 +165,7 @@ export default function WandTrackingPage() {
             // ── 現在のクラスタを描画 ──
             if (irFrame && irFrame.type === "CLUSTERING") {
                 for (const cluster of irFrame.clusters) {
-                    const cx = cluster.cx * SCALE_X;
-                    const cy = cluster.cy * SCALE_Y;
+                    const { cx, cy } = toCanvasCoords(cluster.cx, cluster.cy, minX, maxX, minY, maxY);
 
                     // 外側のグロー
                     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 24);
@@ -137,13 +207,23 @@ export default function WandTrackingPage() {
                         a.pixelCount > b.pixelCount ? a : b,
                     );
                     trail.push({
-                        x: primary.cx * SCALE_X,
-                        y: primary.cy * SCALE_Y,
+                        rawX: primary.cx,
+                        rawY: primary.cy,
                         t: now,
                     });
-                    // 最大200点に制限
                     if (trail.length > 200) trail.shift();
                 }
+            }
+
+            // ── 範囲情報をキャンバスに表示 ──
+            if (isFinite(minX)) {
+                ctx.fillStyle = "rgba(255,255,255,0.3)";
+                ctx.font = "10px monospace";
+                ctx.fillText(
+                    `X: ${Math.round(minX)}〜${Math.round(maxX)}  Y: ${Math.round(minY)}〜${Math.round(maxY)}`,
+                    PADDING,
+                    CANVAS_HEIGHT - 10,
+                );
             }
 
             animFrameRef.current = requestAnimationFrame(draw);
@@ -228,10 +308,6 @@ export default function WandTrackingPage() {
                                     </p>
                                 </div>
                             )}
-                        <div className="absolute bottom-2 left-2 text-[10px] text-gray-600 font-mono">
-                            座標範囲: 0〜{IR_MAX_X} | 表示: {CANVAS_WIDTH}×
-                            {CANVAS_HEIGHT}
-                        </div>
                     </div>
 
                     {/* サイドパネル */}
