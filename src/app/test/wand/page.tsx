@@ -14,6 +14,8 @@ type TrackingMode = "IR" | "IMU";
 const GYRO_SENSITIVITY = 0.15;
 // キャリブレーション時間（ミリ秒）
 const CALIBRATION_DURATION = 3000;
+// デッドゾーン（これ以下の角速度変化は無視する）
+const GYRO_DEADZONE = 10;
 
 export default function WandTrackingPage() {
     const { status, irFrame, isSwitching, joyconState, connect, disconnect } =
@@ -92,8 +94,12 @@ export default function WandTrackingPage() {
 
         // ── トラッキング: バイアスを差し引いて移動 ──
         const bias = gyroBiasRef.current;
-        const correctedY = gyro.y - bias.y; // 左右 (yaw)
-        const correctedX = gyro.x - bias.x; // 上下 (pitch)
+        let correctedY = gyro.y - bias.y; // 左右 (yaw)
+        let correctedX = gyro.x - bias.x; // 上下 (pitch)
+
+        // デッドゾーン処理: 10以下の微小な変化は無視する
+        if (Math.abs(correctedY) <= GYRO_DEADZONE) correctedY = 0;
+        if (Math.abs(correctedX) <= GYRO_DEADZONE) correctedX = 0;
 
         const pos = imuPosRef.current;
         pos.x += correctedY * GYRO_SENSITIVITY;
@@ -453,12 +459,12 @@ export default function WandTrackingPage() {
                     )}
                     <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${status === "CONNECTED"
-                                ? "bg-green-900/50 text-green-400"
-                                : status === "CONNECTING"
-                                    ? "bg-yellow-900/50 text-yellow-400"
-                                    : status === "ERROR"
-                                        ? "bg-red-900/50 text-red-400"
-                                        : "bg-gray-800 text-gray-400"
+                            ? "bg-green-900/50 text-green-400"
+                            : status === "CONNECTING"
+                                ? "bg-yellow-900/50 text-yellow-400"
+                                : status === "ERROR"
+                                    ? "bg-red-900/50 text-red-400"
+                                    : "bg-gray-800 text-gray-400"
                             }`}
                     >
                         {status}
@@ -469,8 +475,8 @@ export default function WandTrackingPage() {
                         <button
                             onClick={() => handleModeChange("IR")}
                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${trackingMode === "IR"
-                                    ? "bg-blue-600 text-white"
-                                    : "text-gray-400 hover:text-white"
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-400 hover:text-white"
                                 }`}
                         >
                             IR（赤外線）
@@ -478,8 +484,8 @@ export default function WandTrackingPage() {
                         <button
                             onClick={() => handleModeChange("IMU")}
                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${trackingMode === "IMU"
-                                    ? "bg-purple-600 text-white"
-                                    : "text-gray-400 hover:text-white"
+                                ? "bg-purple-600 text-white"
+                                : "text-gray-400 hover:text-white"
                                 }`}
                         >
                             IMU（慣性）
