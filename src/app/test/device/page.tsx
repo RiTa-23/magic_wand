@@ -22,13 +22,22 @@ export default function JoyConSandboxPage() {
   } = useJoyCon();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Image Transfer用: canvasへの描画
+  // Image Transfer用: canvasへの描画（モード切替時にクリア）
   useEffect(() => {
-    if (!irFrame || irFrame.type !== "IMAGE_TRANSFER" || !canvasRef.current)
-      return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // IMAGE_TRANSFER以外のモードや無効なフレームの場合はcanvasをクリア
+    if (
+      irMode !== "IMAGE_TRANSFER" ||
+      !irFrame ||
+      irFrame.type !== "IMAGE_TRANSFER"
+    ) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
 
     canvas.width = irFrame.width;
     canvas.height = irFrame.height;
@@ -48,7 +57,7 @@ export default function JoyConSandboxPage() {
       imgData.data[i * 4 + 3] = 255;
     }
     ctx.putImageData(imgData, 0, 0);
-  }, [irFrame]);
+  }, [irFrame, irMode]);
 
   return (
     <div className="p-8 font-sans max-w-4xl mx-auto">
@@ -177,41 +186,43 @@ export default function JoyConSandboxPage() {
               {/* Clustering モード表示 */}
               {irMode === "CLUSTERING" && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    検出された光点の数:{" "}
-                    <span className="font-bold">
-                      {irFrame?.type === "CLUSTERING"
-                        ? irFrame.clusters.length
-                        : 0}
-                    </span>
-                  </p>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {irFrame?.type === "CLUSTERING" &&
-                      irFrame.clusters.map((cluster, idx) => (
-                        <div
-                          key={idx}
-                          className="text-sm font-mono bg-white p-2 rounded border border-gray-100 flex justify-between items-center"
-                        >
-                          <div>
-                            <span className="text-red-500 font-bold mr-2">
-                              #{idx + 1}
-                            </span>
-                            X: {cluster.cx}, Y: {cluster.cy}
+                  {!irFrame || irFrame.type !== "CLUSTERING" ? (
+                    <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
+                      データ受信待ち...
+                    </div>
+                  ) : irFrame.clusters.length > 0 ? (
+                    <>
+                      <p className="text-sm text-gray-600 mb-2">
+                        検出された光点の数:{" "}
+                        <span className="font-bold">
+                          {irFrame.clusters.length}
+                        </span>
+                      </p>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {irFrame.clusters.map((cluster, idx) => (
+                          <div
+                            key={idx}
+                            className="text-sm font-mono bg-white p-2 rounded border border-gray-100 flex justify-between items-center"
+                          >
+                            <div>
+                              <span className="text-red-500 font-bold mr-2">
+                                #{idx + 1}
+                              </span>
+                              X: {cluster.cx}, Y: {cluster.cy}
+                            </div>
+                            <div className="text-gray-400 text-xs">
+                              Area: {cluster.pixelCount} | Int:{" "}
+                              {cluster.averageIntensity}
+                            </div>
                           </div>
-                          <div className="text-gray-400 text-xs">
-                            Area: {cluster.pixelCount} | Int:{" "}
-                            {cluster.averageIntensity}
-                          </div>
-                        </div>
-                      ))}
-                    {(!irFrame ||
-                      irFrame.type !== "CLUSTERING" ||
-                      irFrame.clusters.length === 0) && (
-                      <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
-                        光源が見つかりません
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
+                      光源が見つかりません
+                    </div>
+                  )}
                 </div>
               )}
 

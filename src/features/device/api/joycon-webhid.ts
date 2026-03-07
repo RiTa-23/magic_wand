@@ -42,7 +42,6 @@ export class JoyConWebHID {
         filters: [
           {
             vendorId: 0x057e, // Nintendo
-            // productId: 0x2006, // Joy-Con (R) (※今回はRight決め打ちだが、指定しなくても一旦OK)
           },
         ],
       });
@@ -53,7 +52,19 @@ export class JoyConWebHID {
       }
 
       this.device = devices[0];
-      await this.device.open();
+
+      // Joy-Con (R) の productId チェック（警告のみ、接続は許可）
+      if (this.device.productId !== 0x2006) {
+        console.warn(
+          `Selected device may not be Joy-Con (R): productId=0x${this.device.productId.toString(16)}`,
+        );
+      }
+
+      // device.open() にタイムアウトを設定（5秒）
+      const openTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("device.open() timed out")), 5000),
+      );
+      await Promise.race([this.device.open(), openTimeout]);
 
       // 受信イベントの登録
       this.device.addEventListener("inputreport", this.handleInputReport);
@@ -62,6 +73,14 @@ export class JoyConWebHID {
       return true;
     } catch (e) {
       console.error("Joy-Con Connection Error", e);
+      if (this.device) {
+        try {
+          await this.device.close();
+        } catch {
+          // close失敗は無視
+        }
+        this.device = null;
+      }
       this.status = "ERROR";
       return false;
     }
@@ -105,8 +124,9 @@ export class JoyConWebHID {
     // Subcommand ID
     reportData[9] = subcmdId;
 
-    // Subcommand Arguments
-    for (let i = 0; i < data.length; i++) {
+    // Subcommand Arguments（バッファオーバーフロー防止）
+    const maxCopy = Math.min(data.length, reportData.length - 10);
+    for (let i = 0; i < maxCopy; i++) {
       reportData[10 + i] = data[i];
     }
 
@@ -404,6 +424,9 @@ export class JoyConWebHID {
 
     // reportId === 0x31 が 標準入力 + IMU + MCUデータのイベント
     if (reportId === 0x31) {
+      // 最小長チェック: ボタン(index 2-3) + IMU(index 12-23) + MCU(index 48) が必要
+      if (view.length < 49) return;
+
       // --- 1. ボタン・IMUの状態抽出 ---
       // HIDEventの data プロパティは reportId を含まないため、全データのoffsetは-1されます。
       // 右Joy-Conのボタン状態(Byte 2)
@@ -413,6 +436,7 @@ export class JoyConWebHID {
 
       // 16bit signed little-endianの読み取り補助
       const getInt16LE = (offset: number) => {
+        if (offset + 1 >= view.length) return 0;
         let val = view[offset] | (view[offset + 1] << 8);
         if (val >= 32768) val -= 65536;
         return val;
@@ -533,10 +557,22 @@ export class JoyConWebHID {
 
   private parseImageTransferData(view: Uint8Array) {
     const fragNumber = view[51];
+
+    // fragNumber のバリデーション
+    if (
+      !Number.isFinite(fragNumber) ||
+      fragNumber < 0 ||
+      fragNumber > this.imageMaxFrag
+    ) {
+      return;
+    }
+
     // 画像データは offset 58 から 300 バイト
     const imgDataOffset = 58;
     const fragSize = 300;
     const destOffset = fragNumber * fragSize;
+
+    if (destOffset >= this.imageBuffer.length) return;
 
     // フラグメントをバッファにコピー
     for (let i = 0; i < fragSize && imgDataOffset + i < view.length; i++) {
