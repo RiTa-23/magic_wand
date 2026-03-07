@@ -14,6 +14,7 @@ export default function JoyConSandboxPage() {
     status,
     irFrame,
     irMode,
+    isSwitching,
     joyconState,
     connect,
     disconnect,
@@ -170,10 +171,13 @@ export default function JoyConSandboxPage() {
                   <button
                     key={mode}
                     onClick={() => setSelectedMode(mode)}
+                    disabled={isSwitching}
                     className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
                       selectedMode === mode
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                        : isSwitching
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-gray-200 text-gray-600 hover:bg-gray-300"
                     }`}
                   >
                     {MODE_LABELS[mode]}
@@ -182,79 +186,111 @@ export default function JoyConSandboxPage() {
               </div>
               <button
                 onClick={() => switchMode(selectedMode)}
-                disabled={selectedMode === irMode}
+                disabled={selectedMode === irMode || isSwitching}
                 className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                  selectedMode !== irMode
-                    ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  isSwitching
+                    ? "bg-yellow-500 text-white cursor-wait"
+                    : selectedMode !== irMode
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
-                切り替え
+                {isSwitching ? "切り替え中..." : "切り替え"}
               </button>
             </div>
           )}
 
           {status === "CONNECTED" ? (
             <div>
-              {/* Clustering モード表示 */}
-              {irMode === "CLUSTERING" && (
-                <div>
-                  {!irFrame || irFrame.type !== "CLUSTERING" ? (
-                    <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
-                      データ受信待ち...
-                    </div>
-                  ) : irFrame.clusters.length > 0 ? (
-                    <>
-                      <p className="text-sm text-gray-600 mb-2">
-                        検出された光点の数:{" "}
-                        <span className="font-bold">
-                          {irFrame.clusters.length}
-                        </span>
-                      </p>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {irFrame.clusters.map((cluster, idx) => (
-                          <div
-                            key={idx}
-                            className="text-sm font-mono bg-white p-2 rounded border border-gray-100 flex justify-between items-center"
-                          >
-                            <div>
-                              <span className="text-red-500 font-bold mr-2">
-                                #{idx + 1}
-                              </span>
-                              X: {cluster.cx}, Y: {cluster.cy}
-                            </div>
-                            <div className="text-gray-400 text-xs">
-                              Area: {cluster.pixelCount} | Int:{" "}
-                              {cluster.averageIntensity}
-                            </div>
+              {/* モード切り替え中のローディング表示 */}
+              {isSwitching ? (
+                <div className="flex items-center justify-center gap-2 p-8 text-blue-500 border-dashed border-2 border-blue-300 rounded bg-blue-50">
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium">
+                    モード切り替え中...
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {/* Clustering モード表示 */}
+                  {irMode === "CLUSTERING" && (
+                    <div>
+                      {!irFrame || irFrame.type !== "CLUSTERING" ? (
+                        <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
+                          データ受信待ち...
+                        </div>
+                      ) : irFrame.clusters.length > 0 ? (
+                        <>
+                          <p className="text-sm text-gray-600 mb-2">
+                            検出された光点の数:{" "}
+                            <span className="font-bold">
+                              {irFrame.clusters.length}
+                            </span>
+                          </p>
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {irFrame.clusters.map((cluster, idx) => (
+                              <div
+                                key={idx}
+                                className="text-sm font-mono bg-white p-2 rounded border border-gray-100 flex justify-between items-center"
+                              >
+                                <div>
+                                  <span className="text-red-500 font-bold mr-2">
+                                    #{idx + 1}
+                                  </span>
+                                  X: {cluster.cx}, Y: {cluster.cy}
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  Area: {cluster.pixelCount} | Int:{" "}
+                                  {cluster.averageIntensity}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
-                      光源が見つかりません
+                        </>
+                      ) : (
+                        <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
+                          光源が見つかりません
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Image Transfer モード表示 */}
-              {irMode === "IMAGE_TRANSFER" && (
-                <div>
-                  <canvas
-                    ref={canvasRef}
-                    width={160}
-                    height={120}
-                    className="w-full max-w-[320px] border border-gray-300 rounded bg-black"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                  {(!irFrame || irFrame.type !== "IMAGE_TRANSFER") && (
-                    <p className="text-gray-400 text-sm italic mt-2 text-center">
-                      フラグメント受信中...
-                    </p>
+                  {/* Image Transfer モード表示 */}
+                  {irMode === "IMAGE_TRANSFER" && (
+                    <div>
+                      <canvas
+                        ref={canvasRef}
+                        width={160}
+                        height={120}
+                        className="w-full max-w-[320px] border border-gray-300 rounded bg-black"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      {(!irFrame || irFrame.type !== "IMAGE_TRANSFER") && (
+                        <p className="text-gray-400 text-sm italic mt-2 text-center">
+                          フラグメント受信中...
+                        </p>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           ) : (

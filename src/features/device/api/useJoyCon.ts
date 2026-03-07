@@ -12,6 +12,7 @@ export function useJoyCon() {
   const [irFrame, setIrFrame] = useState<IRFrame | null>(null);
   const [joyconState, setJoyconState] = useState<JoyConState | null>(null);
   const [irMode, setIrMode] = useState<IRCameraMode>("CLUSTERING");
+  const [isSwitching, setIsSwitching] = useState(false);
 
   // useRefを用いて同一インスタンスを保持する
   const joyconRef = useRef<JoyConWebHID | null>(null);
@@ -62,18 +63,24 @@ export function useJoyCon() {
 
   const switchMode = useCallback(
     async (mode: IRCameraMode) => {
-      if (!joyconRef.current || status !== "CONNECTED") return;
+      if (!joyconRef.current || status !== "CONNECTED" || isSwitching) return;
+      setIsSwitching(true);
       setIrMode(mode);
       setIrFrame(null); // 前のモードのデータをクリア
-      await joyconRef.current.switchIRMode(mode);
+      try {
+        await joyconRef.current.switchIRMode(mode);
+      } finally {
+        setIsSwitching(false);
+      }
     },
-    [status],
+    [status, isSwitching],
   );
 
   return {
     status,
     irFrame,
     irMode,
+    isSwitching,
     joyconState,
     connect,
     disconnect,
