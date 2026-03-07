@@ -41,6 +41,16 @@ function MagicParticles() {
 
     const getDpr = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
+    const makeParticle = (w: number, h: number): Particle => ({
+      x: Math.random() * w,
+      y: h + 20 + Math.random() * Math.min(120, h * 0.18),
+      radius: 0.8 + Math.random() * 2.2,
+      riseSpeed: 0.25 + Math.random() * 0.85,
+      driftSpeed: (Math.random() - 0.5) * 0.18,
+      phase: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.012 + Math.random() * 0.028,
+    });
+
     const resize = () => {
       const dpr = getDpr();
       canvas.width = Math.floor(window.innerWidth * dpr);
@@ -50,7 +60,7 @@ function MagicParticles() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const area = window.innerWidth * window.innerHeight;
-      const targetCount = Math.max(60, Math.min(140, Math.floor(area / 18000)));
+      const targetCount = Math.max(70, Math.min(170, Math.floor(area / 16000)));
 
       const particles = particlesRef.current;
       while (particles.length < targetCount) {
@@ -61,16 +71,6 @@ function MagicParticles() {
       }
     };
 
-    const makeParticle = (w: number, h: number): Particle => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      radius: 0.6 + Math.random() * 1.9,
-      riseSpeed: 0.15 + Math.random() * 0.45,
-      driftSpeed: (Math.random() - 0.5) * 0.25,
-      phase: Math.random() * Math.PI * 2,
-      twinkleSpeed: 0.008 + Math.random() * 0.02,
-    });
-
     const tick = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -79,25 +79,36 @@ function MagicParticles() {
       const now = performance.now();
       const particles = particlesRef.current;
 
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = "rgba(255, 140, 60, 0.85)";
+
       for (const p of particles) {
         p.y -= p.riseSpeed;
-        p.x += p.driftSpeed;
         p.phase += p.twinkleSpeed * (now / 16);
+        p.x += p.driftSpeed + Math.sin(p.phase * 0.9) * 0.08;
 
-        if (p.y < -10) {
-          p.y = h + 10;
+        if (p.y < -24) {
+          p.y = h + 24 + Math.random() * 120;
           p.x = Math.random() * w;
+          p.radius = 0.8 + Math.random() * 2.2;
+          p.riseSpeed = 0.25 + Math.random() * 0.85;
+          p.driftSpeed = (Math.random() - 0.5) * 0.18;
+          p.phase = Math.random() * Math.PI * 2;
+          p.twinkleSpeed = 0.012 + Math.random() * 0.028;
         }
-        if (p.x < -10) p.x = w + 10;
-        if (p.x > w + 10) p.x = -10;
+        if (p.x < -16) p.x = w + 16;
+        if (p.x > w + 16) p.x = -16;
+
+        const heightT = Math.max(0, Math.min(1, (h - p.y) / h));
+        const fadeIn = Math.min(1, heightT / 0.18);
+        const fadeOut = Math.min(1, (1 - heightT) / 0.12);
+        const heightFade = Math.min(fadeIn, fadeOut);
 
         const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(p.phase));
-        const alpha = 0.1 + 0.55 * twinkle;
+        const alpha = (0.08 + 0.62 * twinkle) * heightFade;
 
         ctx.beginPath();
-        ctx.fillStyle = `rgba(245, 215, 110, ${alpha.toFixed(3)})`;
-        ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
-        ctx.shadowBlur = 10;
+        ctx.fillStyle = `rgba(255, 170, 85, ${alpha.toFixed(3)})`;
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
       }
@@ -155,21 +166,21 @@ function StartScreen() {
       <main className="relative z-40 flex min-h-screen items-center justify-center px-6">
         <section className="w-full max-w-3xl text-center">
           <p
-            className="mag-subtitle mb-4 font-[var(--font-cormorant)] text-base tracking-[0.35em] text-amber-200/80"
+            className="mag-subtitle mb-4 font-[var(--font-cormorant)] text-lg tracking-[0.35em] text-amber-200/80"
             style={{ fontFamily: "var(--font-cormorant)" }}
           >
             WELCOME TO THE
           </p>
 
           <h1
-            className="mag-title font-[var(--font-cinzel)] text-5xl tracking-[0.22em] text-amber-300 sm:text-6xl md:text-7xl"
+            className="mag-title font-[var(--font-cinzel)] text-5xl font-bold tracking-[0.22em] text-orange-400 sm:text-6xl md:text-7xl"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             MAGIC WAND
           </h1>
 
           <p
-            className="mag-subtitle mt-6 font-[var(--font-cormorant)] text-lg text-amber-100/80 sm:text-xl"
+            className="mag-subtitle mt-6 font-[var(--font-cormorant)] text-xl text-amber-100/80 sm:text-2xl"
             style={{ fontFamily: "var(--font-cormorant)" }}
           >
             Wind & Wave
@@ -178,7 +189,7 @@ function StartScreen() {
           <div className="mag-enter-wrap mt-12 flex items-center justify-center">
             <button
               type="button"
-              className="mag-enter relative overflow-hidden rounded-md border border-amber-700/70 bg-slate-950/40 px-10 py-4 font-[var(--font-cinzel)] text-sm tracking-[0.35em] text-amber-100 backdrop-blur-sm transition-colors hover:bg-slate-950/55 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
+              className="mag-enter relative overflow-hidden rounded-md border border-amber-700/70 bg-slate-950/40 px-10 py-4 font-[var(--font-cinzel)] text-base tracking-[0.35em] text-amber-100 backdrop-blur-sm transition-colors hover:bg-slate-950/55 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               <span className="relative z-10">ENTER</span>
@@ -187,7 +198,7 @@ function StartScreen() {
           </div>
 
           <p
-            className="mag-subtitle mt-10 font-[var(--font-cormorant)] text-sm italic text-amber-200/60"
+            className="mag-subtitle mt-10 font-[var(--font-cormorant)] text-base italic text-amber-200/60"
             style={{ fontFamily: "var(--font-cormorant)" }}
           >
             MADE Hiro Yuchi Rita Lisu
