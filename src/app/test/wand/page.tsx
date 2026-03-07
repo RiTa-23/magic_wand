@@ -125,16 +125,18 @@ export default function WandTrackingPage() {
 
     // ── トラッキング: バイアスを差し引いて移動 ──
     const bias = gyroBiasRef.current;
-    let correctedY = gyro.y - bias.y; // 左右 (yaw)
-    let correctedX = gyro.x - bias.x; // 上下 (pitch)
+
+    // Rボタンを前に向けた持ち方
+    let yaw = gyro.y - bias.y; // 左右 (Y軸)
+    let pitch = gyro.z - bias.z; // 上下 (Z軸)
 
     // デッドゾーン処理: 10以下の微小な変化は無視する
-    if (Math.abs(correctedY) <= GYRO_DEADZONE) correctedY = 0;
-    if (Math.abs(correctedX) <= GYRO_DEADZONE) correctedX = 0;
+    if (Math.abs(yaw) <= GYRO_DEADZONE) yaw = 0;
+    if (Math.abs(pitch) <= GYRO_DEADZONE) pitch = 0;
 
     const pos = imuPosRef.current;
-    pos.x += correctedY * GYRO_SENSITIVITY;
-    pos.y += correctedX * GYRO_SENSITIVITY;
+    pos.x -= yaw * GYRO_SENSITIVITY;
+    pos.y -= pitch * GYRO_SENSITIVITY;
 
     // 軌跡に追加
     const now = performance.now();
@@ -570,7 +572,9 @@ export default function WandTrackingPage() {
                     キャリブレーション中...
                   </p>
                   <p className="text-gray-300 text-sm text-center">
-                    SL/SRボタン（レール側）を下に向けて
+                    <span className="text-blue-400 font-bold">
+                      SL/SRボタン（レール側）を下に向けて
+                    </span>
                     <br />
                     平らな場所に静止させてください。
                   </p>
