@@ -20,7 +20,9 @@ async function togglePort(
   emoji: string,
 ) {
   try {
-    console.log(`${emoji} ${spellName}発動！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にします`);
+    console.log(
+      `${emoji} ${spellName}発動！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にします`,
+    );
     const p300 = await getTapoClient();
 
     // P300の子デバイス（各ポート）を取得
