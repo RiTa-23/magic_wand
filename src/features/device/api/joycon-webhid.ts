@@ -12,7 +12,6 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // モードID定数
 const IR_MODE_ID: Record<IRCameraMode, number> = {
-  MOMENT: 0x03,
   CLUSTERING: 0x06,
   IMAGE_TRANSFER: 0x07,
 };
@@ -493,9 +492,6 @@ export class JoyConWebHID {
       case "CLUSTERING":
         this.parseClusteringData(view);
         break;
-      case "MOMENT":
-        this.parseMomentData(view);
-        break;
       case "IMAGE_TRANSFER":
         this.parseImageTransferData(view);
         break;
@@ -533,24 +529,6 @@ export class JoyConWebHID {
     this.onIRFrame?.({
       type: "CLUSTERING",
       clusters,
-      timestamp: performance.now(),
-    });
-  }
-
-  private parseMomentData(view: Uint8Array) {
-    // IRData ヘッダー: offset 48=reportId, 49-50=unknown, 51=frag, 52=avgIntensity,
-    //                  53=unknown, 54-55=whitePixelCount, 56-57=ambientNoise
-    const fragmentNumber = view[51];
-    const averageIntensity = view[52];
-    const whitePixelCount = view[54] | (view[55] << 8);
-    const ambientNoiseCount = view[56] | (view[57] << 8);
-
-    this.onIRFrame?.({
-      type: "MOMENT",
-      fragmentNumber,
-      averageIntensity,
-      whitePixelCount,
-      ambientNoiseCount,
       timestamp: performance.now(),
     });
   }

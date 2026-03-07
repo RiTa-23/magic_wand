@@ -10,7 +10,7 @@ export type JoyConStatus =
 /**
  * IRカメラの動作モード
  */
-export type IRCameraMode = "CLUSTERING" | "MOMENT" | "IMAGE_TRANSFER";
+export type IRCameraMode = "CLUSTERING" | "IMAGE_TRANSFER";
 
 /**
  * クラスタリングモード(`0x06`) で得られる個別の光点(ブロブ)データ
@@ -46,23 +46,6 @@ export type IRClusterFrame = {
 };
 
 /**
- * モーメントモード(`0x03`) のフレーム
- * フレーム全体の明るさ・ノイズ統計を取得
- */
-export type IRMomentFrame = {
-  type: "MOMENT";
-  /** フラグメント番号 */
-  fragmentNumber: number;
-  /** 平均輝度 (0-255) */
-  averageIntensity: number;
-  /** 白ピクセル数 */
-  whitePixelCount: number;
-  /** 環境ノイズ数 */
-  ambientNoiseCount: number;
-  timestamp: number;
-};
-
-/**
  * 画像転送モード(`0x07`) のフレーム
  * 160x120 (or 320x240) の生IR画像データ
  */
@@ -78,9 +61,9 @@ export type IRImageFrame = {
 };
 
 /**
- * 3モードの出力を統一するユニオン型
+ * 2モードの出力を統一するユニオン型
  */
-export type IRFrame = IRClusterFrame | IRMomentFrame | IRImageFrame;
+export type IRFrame = IRClusterFrame | IRImageFrame;
 
 /**
  * Joy-Conから受け取る生パケットやフラグメントに関する一時的な型

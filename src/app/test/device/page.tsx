@@ -4,9 +4,8 @@ import { useRef, useEffect, useState } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
 import { IRCameraMode } from "@/features/device/types/joycon";
 
-const MODE_LABELS: Record<IRCameraMode, string> = {
+const MODE_LABELS: Record<string, string> = {
   CLUSTERING: "クラスタリング",
-  MOMENT: "モーメント",
   IMAGE_TRANSFER: "画像転送",
 };
 
@@ -235,42 +234,6 @@ export default function JoyConSandboxPage() {
                   ) : (
                     <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
                       光源が見つかりません
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Moment モード表示 */}
-              {irMode === "MOMENT" && (
-                <div className="space-y-3">
-                  {irFrame?.type === "MOMENT" ? (
-                    <div className="font-mono text-sm bg-white p-4 rounded border space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">平均輝度:</span>
-                        <span className="font-bold">
-                          {irFrame.averageIntensity}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">白ピクセル数:</span>
-                        <span className="font-bold">
-                          {irFrame.whitePixelCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">環境ノイズ:</span>
-                        <span className="font-bold">
-                          {irFrame.ambientNoiseCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">フラグメント#:</span>
-                        <span>{irFrame.fragmentNumber}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
-                      データ受信待ち...
                     </div>
                   )}
                 </div>
