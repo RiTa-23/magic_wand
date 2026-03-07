@@ -2,10 +2,142 @@
 
 import { getTapoClient } from "../api/tapoClient";
 
-// 魔法: ヴェンタス(ON) - すべてのポートをON
-export async function castVentus() {
+// ========================================
+// 内部ヘルパー関数
+// ========================================
+
+/**
+ * 指定したポート番号（インデックス）のポートをON/OFFする
+ * @param portIndex - ポート番号（0-3）
+ * @param turnOn - trueでON、falseでOFF
+ * @param spellName - 魔法の名前（ログ用）
+ * @param emoji - 絵文字（ログ用）
+ */
+async function togglePort(
+  portIndex: number,
+  turnOn: boolean,
+  spellName: string,
+  emoji: string,
+) {
   try {
-    console.log("🌪️ ヴェンタス発動！");
+    console.log(
+      `${emoji} ${spellName}発動！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にします`,
+    );
+    const p300 = await getTapoClient();
+
+    // P300の子デバイス（各ポート）を取得
+    const childDevices = await p300.getChildDevicesInfo();
+    console.log(`📡 子デバイス数: ${childDevices.length}`);
+
+    if (childDevices.length === 0) {
+      console.warn("⚠️ 子デバイスが見つかりません");
+      return { success: false, message: "子デバイスが見つかりません" };
+    }
+
+    // 指定されたポートが存在するか確認
+    if (portIndex < 0 || portIndex >= childDevices.length) {
+      console.error(
+        `❌ ポート${portIndex}は存在しません（利用可能: 0-${childDevices.length - 1}）`,
+      );
+      return {
+        success: false,
+        message: `ポート${portIndex}が見つかりません`,
+      };
+    }
+
+    const targetPort = childDevices[portIndex];
+    console.log(
+      `🔌 ポート${portIndex} (${targetPort.nickname || targetPort.device_id}) を${turnOn ? "ON" : "OFF"}`,
+    );
+
+    // ポートをON/OFF
+    if (turnOn) {
+      await p300.turnOn(targetPort.device_id);
+    } else {
+      await p300.turnOff(targetPort.device_id);
+    }
+
+    return {
+      success: true,
+      message: `${spellName}成功！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にしました${emoji}`,
+    };
+  } catch (error) {
+    console.error(`❌ ${spellName}失敗:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: `${spellName}失敗: ${errorMessage}` };
+  }
+}
+
+// ========================================
+// 個別ポート制御の魔法
+// ========================================
+
+/**
+ * 魔法: ヴェンタス - ポート0（風）をON
+ */
+export async function castVentus() {
+  return togglePort(0, true, "ヴェンタス", "🌪️");
+}
+
+/**
+ * 魔法: ルーモス - ポート1（光）をON
+ */
+export async function castLumos() {
+  return togglePort(1, true, "ルーモス", "💡");
+}
+
+/**
+ * 魔法: インセンディオ - ポート2（炎）をON
+ */
+export async function castIncendio() {
+  return togglePort(2, true, "インセンディオ", "🔥");
+}
+
+/**
+ * 魔法: アグアメンティ - ポート3（水）をON
+ */
+export async function castAguamenti() {
+  return togglePort(3, true, "アグアメンティ", "💧");
+}
+
+/**
+ * 魔法: ヴェンタスOFF - ポート0（風）をOFF
+ */
+export async function castVentusOff() {
+  return togglePort(0, false, "ヴェンタス解除", "🌫️");
+}
+
+/**
+ * 魔法: ルーモスOFF - ポート1（光）をOFF
+ */
+export async function castLumosOff() {
+  return togglePort(1, false, "ルーモス解除", "🌑");
+}
+
+/**
+ * 魔法: インセンディオOFF - ポート2（炎）をOFF
+ */
+export async function castIncendioOff() {
+  return togglePort(2, false, "インセンディオ解除", "❄️");
+}
+
+/**
+ * 魔法: アグアメンティOFF - ポート3（水）をOFF
+ */
+export async function castAguamentiOff() {
+  return togglePort(3, false, "アグアメンティ解除", "🔥");
+}
+
+// ========================================
+// 全ポート制御の魔法
+// ========================================
+
+/**
+ * 魔法: マキシマ - すべてのポートをON
+ */
+export async function castMaxima() {
+  try {
+    console.log("✨ マキシマ発動！すべてのポートをONにします");
     const p300 = await getTapoClient();
 
     console.log("✅ デバイス接続成功");
@@ -28,16 +160,21 @@ export async function castVentus() {
 
     return {
       success: true,
-      message: `魔法成功！${childDevices.length}個のポートをONにしました🌪️`,
+      message: `マキシマ成功！${childDevices.length}個のポートをONにしました✨`,
     };
   } catch (error) {
-    console.error("❌ 魔法失敗...", error);
+    console.error("❌ マキシマ失敗:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return { success: false, message: `残念、不発だよ: ${errorMessage}` };
+    return { success: false, message: `マキシマ失敗: ${errorMessage}` };
   }
 }
 
-// 魔法: ノックス(OFF) - すべてのポートをOFF
+/**
+ * 魔法: ノックス - すべてのポートをOFF
+ */
+/**
+ * 魔法: ノックス - すべてのポートをOFF
+ */
 export async function castNox() {
   try {
     console.log("🌑 ノックス発動！すべてOFFにします");
@@ -62,16 +199,23 @@ export async function castNox() {
 
     return {
       success: true,
-      message: `魔法を解除しました！${childDevices.length}個のポートをOFFにしました🌑`,
+      message: `ノックス成功！${childDevices.length}個のポートをOFFにしました🌑`,
     };
   } catch (error) {
-    console.error("❌ 魔法失敗しました:", error);
+    console.error("❌ ノックス失敗:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return { success: false, message: `解除に失敗: ${errorMessage}` };
+    return { success: false, message: `ノックス失敗: ${errorMessage}` };
   }
 }
 
-// デバイス情報を取得する関数（デバッグ用）
+// ========================================
+// デバッグ・情報取得
+// ========================================
+
+/**
+ * デバイス情報を取得する関数（デバッグ・初期設定用）
+ * ポートの順序とdevice_idを確認するために使用
+ */
 export async function getDeviceStatus() {
   try {
     console.log("🔍 デバイス情報を取得中...");
