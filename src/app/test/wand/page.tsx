@@ -28,6 +28,7 @@ export default function WandTrackingPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
   const animFrameRef = useRef<number>(0);
+  const lastIrTimestampRef = useRef<number>(0);
 
   // カメラ・キャンバスのビューポートを滑らかに動かすための参照
   const viewBoundsRef = useRef<{
@@ -383,8 +384,12 @@ export default function WandTrackingPage() {
           ctx.font = "11px monospace";
           ctx.fillText(`(${primary.cx}, ${primary.cy})`, cx + 14, cy - 8);
 
-          trail.push({ rawX: primary.cx, rawY: primary.cy, t: now });
-          if (trail.length > 200) trail.shift();
+          // 最新フレームのときだけ軌跡に追加
+          if (irFrame.timestamp !== lastIrTimestampRef.current) {
+            trail.push({ rawX: primary.cx, rawY: primary.cy, t: now });
+            lastIrTimestampRef.current = irFrame.timestamp;
+            if (trail.length > 200) trail.shift();
+          }
         }
 
         // 範囲情報
