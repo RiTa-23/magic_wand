@@ -83,10 +83,29 @@ export async function getDeviceStatus() {
     console.log("📱 デバイス情報:", JSON.stringify(deviceInfo, null, 2));
     console.log("🔌 子デバイス:", JSON.stringify(childDevices, null, 2));
 
+    // Server Actionで安全にシリアライズできるプレーンオブジェクトに変換
+    const sanitizedDeviceInfo = {
+      device_id: deviceInfo.device_id,
+      nickname: deviceInfo.nickname,
+      model: deviceInfo.model,
+      device_on: deviceInfo.device_on,
+      ip: deviceInfo.ip,
+      mac: deviceInfo.mac,
+      fw_ver: deviceInfo.fw_ver,
+      signal_level: deviceInfo.signal_level,
+    };
+
+    const sanitizedChildDevices = childDevices.map((child) => ({
+      device_id: child.device_id,
+      nickname: child.nickname,
+      device_on: child.device_on,
+      on_time: child.on_time,
+    }));
+
     return {
       success: true,
-      deviceInfo,
-      childDevices,
+      deviceInfo: sanitizedDeviceInfo,
+      childDevices: sanitizedChildDevices,
       message: `デバイス: ${deviceInfo.nickname}, ポート数: ${childDevices.length}`,
     };
   } catch (error) {
