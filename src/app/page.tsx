@@ -25,6 +25,7 @@ type Particle = {
   driftSpeed: number;
   phase: number;
   twinkleSpeed: number;
+  resetAt: number;
 };
 
 function MagicParticles() {
@@ -41,15 +42,22 @@ function MagicParticles() {
 
     const getDpr = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
-    const makeParticle = (w: number, h: number): Particle => ({
-      x: Math.random() * w,
-      y: h + 20 + Math.random() * Math.min(120, h * 0.18),
-      radius: 0.8 + Math.random() * 2.2,
-      riseSpeed: 0.25 + Math.random() * 0.85,
-      driftSpeed: (Math.random() - 0.5) * 0.18,
-      phase: Math.random() * Math.PI * 2,
-      twinkleSpeed: 0.012 + Math.random() * 0.028,
-    });
+    const makeParticle = (w: number, h: number): Particle => {
+      const spawnBand = Math.min(240, h * 0.32);
+      const y = h - Math.pow(Math.random(), 2) * spawnBand;
+      const mostlyBottom = Math.random() < 0.78;
+
+      return {
+        x: Math.random() * w,
+        y,
+        radius: 0.8 + Math.random() * 2.2,
+        riseSpeed: 0.22 + Math.random() * 0.9,
+        driftSpeed: (Math.random() - 0.5) * 0.18,
+        phase: Math.random() * Math.PI * 2,
+        twinkleSpeed: 0.012 + Math.random() * 0.028,
+        resetAt: mostlyBottom ? 0.42 + Math.random() * 0.22 : 1.2,
+      };
+    };
 
     const resize = () => {
       const dpr = getDpr();
@@ -87,25 +95,32 @@ function MagicParticles() {
         p.phase += p.twinkleSpeed * (now / 16);
         p.x += p.driftSpeed + Math.sin(p.phase * 0.9) * 0.08;
 
-        if (p.y < -24) {
-          p.y = h + 24 + Math.random() * 120;
+        const heightT = Math.max(0, Math.min(1, (h - p.y) / h));
+
+        if (p.y < -24 || (p.resetAt <= 1 && heightT >= p.resetAt)) {
+          const spawnBand = Math.min(240, h * 0.32);
+          p.y = h - Math.pow(Math.random(), 2) * spawnBand;
           p.x = Math.random() * w;
           p.radius = 0.8 + Math.random() * 2.2;
-          p.riseSpeed = 0.25 + Math.random() * 0.85;
+          p.riseSpeed = 0.22 + Math.random() * 0.9;
           p.driftSpeed = (Math.random() - 0.5) * 0.18;
           p.phase = Math.random() * Math.PI * 2;
           p.twinkleSpeed = 0.012 + Math.random() * 0.028;
+          p.resetAt = Math.random() < 1.08 ? 0.42 + Math.random() * 0.22 : 1.2;
         }
         if (p.x < -16) p.x = w + 16;
         if (p.x > w + 16) p.x = -16;
 
-        const heightT = Math.max(0, Math.min(1, (h - p.y) / h));
-        const fadeIn = Math.min(1, heightT / 0.18);
-        const fadeOut = Math.min(1, (1 - heightT) / 0.12);
-        const heightFade = Math.min(fadeIn, fadeOut);
+        const fadeIn = Math.min(1, heightT / 0.22);
+        const fadeOut = Math.min(1, (1 - heightT) / 0.14);
+        const resetFade =
+          p.resetAt > 1
+            ? 1
+            : Math.max(0, Math.min(1, (p.resetAt - heightT) / 0.1));
+        const heightFade = Math.min(fadeIn, fadeOut, resetFade);
 
         const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(p.phase));
-        const alpha = (0.08 + 0.62 * twinkle) * heightFade;
+        const alpha = (0.1 + 0.62 * twinkle) * heightFade;
 
         ctx.beginPath();
         ctx.fillStyle = `rgba(255, 170, 85, ${alpha.toFixed(3)})`;
@@ -154,6 +169,7 @@ function StartScreen() {
       />
 
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-slate-950/30 via-slate-950/70 to-slate-950/95" />
+      <div className="absolute inset-x-0 bottom-0 z-10 h-72 bg-gradient-to-t from-orange-500/20 via-orange-400/10 to-transparent blur-2xl" />
       <MagicParticles />
 
       <div className="absolute inset-0 z-30">
