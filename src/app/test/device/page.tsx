@@ -239,24 +239,26 @@ export default function JoyConSandboxPage() {
                 <>
                   {/* Clustering モード表示 */}
                   {irMode === "CLUSTERING" && (
-                    <div>
-                      {!irFrame || irFrame.type !== "CLUSTERING" ? (
-                        <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
-                          データ受信待ち...
-                        </div>
-                      ) : irFrame.clusters.length > 0 ? (
-                        <>
-                          <p className="text-sm text-gray-600 mb-2">
-                            検出された光点の数:{" "}
-                            <span className="font-bold">
-                              {irFrame.clusters.length}
-                            </span>
-                          </p>
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="min-h-[200px] flex flex-col">
+                      <p className="text-sm text-gray-600 mb-2">
+                        検出された光点の数:{" "}
+                        <span className="font-bold">
+                          {irFrame && irFrame.type === "CLUSTERING"
+                            ? irFrame.clusters.length
+                            : "—"}
+                        </span>
+                      </p>
+                      <div className="flex-1 overflow-y-auto max-h-48 border rounded p-2 bg-white">
+                        {!irFrame || irFrame.type !== "CLUSTERING" ? (
+                          <div className="text-gray-400 text-sm italic text-center py-8">
+                            データ受信待ち...
+                          </div>
+                        ) : irFrame.clusters.length > 0 ? (
+                          <div className="space-y-2">
                             {irFrame.clusters.map((cluster, idx) => (
                               <div
                                 key={idx}
-                                className="text-sm font-mono bg-white p-2 rounded border border-gray-100 flex justify-between items-center"
+                                className="text-sm font-mono bg-gray-50 p-2 rounded border border-gray-100 flex justify-between items-center"
                               >
                                 <div>
                                   <span className="text-red-500 font-bold mr-2">
@@ -271,12 +273,12 @@ export default function JoyConSandboxPage() {
                               </div>
                             ))}
                           </div>
-                        </>
-                      ) : (
-                        <div className="text-gray-400 text-sm italic p-4 text-center border-dashed border-2 rounded">
-                          光源が見つかりません
-                        </div>
-                      )}
+                        ) : (
+                          <div className="text-gray-400 text-sm italic text-center py-8">
+                            光源が見つかりません
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
