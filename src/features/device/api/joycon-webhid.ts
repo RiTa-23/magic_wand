@@ -93,7 +93,11 @@ export class JoyConWebHID {
     }
     if (this.device) {
       this.device.removeEventListener("inputreport", this.handleInputReport);
-      await this.device.close();
+      try {
+        await this.device.close();
+      } catch (e) {
+        console.warn("Error closing device:", e);
+      }
       this.device = null;
     }
     this.status = "DISCONNECTED";

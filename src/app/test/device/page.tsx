@@ -25,6 +25,11 @@ export default function JoyConSandboxPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedMode, setSelectedMode] = useState<IRCameraMode>(irMode);
 
+  // irModeが外部から変わった場合にselectedModeを同期
+  useEffect(() => {
+    setSelectedMode(irMode);
+  }, [irMode]);
+
   // Image Transfer用: canvasへの描画（モード切替時にクリア）
   useEffect(() => {
     const canvas = canvasRef.current;
