@@ -123,6 +123,17 @@ export default function WandTrackingPage() {
 
     if (calibrationState !== "done") return;
 
+    // ── ジャイロリセット機能（プラスボタン） ──
+    if (joyconState.buttons.plus) {
+      imuPosRef.current = { x: 0, y: 0 };
+      setCalibrationState("calibrating");
+      setCalibrationProgress(0);
+      calibrationStartRef.current = Date.now();
+      calibrationSamplesRef.current = [];
+      calibrationPrevAccelRef.current = null;
+      return;
+    }
+
     // ── トラッキング: バイアスを差し引いて移動 ──
     const bias = gyroBiasRef.current;
 
@@ -736,7 +747,7 @@ export default function WandTrackingPage() {
               className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
             >
               {trackingMode === "IMU"
-                ? "軌跡クリア & 再キャリブレーション"
+                ? "軌跡クリア & 再キャリブレーション（+ボタン）"
                 : "軌跡をクリア"}
             </button>
           </div>
