@@ -3,14 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Mic, MicOff, Play, Square, CheckCircle2, AlertCircle, History } from "lucide-react";
 import { speechRecognitionAPI } from "@/features/voice/api/speech-recognition";
-import { SpeechStatus, SpeechResult, SpellEntry, SpellMatchResult } from "@/features/voice/types/speech";
-
-// テスト用の呪文データ
-const SAMPLE_SPELLS: SpellEntry[] = [
-  { id: "1", name: "ルーモス", keywords: ["ルーモス", "るーもす", "lumos", "光よ"], action: "light_on" },
-  { id: "2", name: "ノックス", keywords: ["ノックス", "のっくす", "nox", "消えて"], action: "light_off" },
-  { id: "3", name: "アグアメンティ", keywords: ["アグアメンティ", "あぐあめんてぃ", "水よ"], action: "fan_on" },
-];
+import { SpeechStatus, SpeechResult, SpellMatchResult } from "@/features/voice/types/speech";
+import { matchSpell, SPELL_DICTIONARY } from "@/features/voice/lib/spell-matcher";
 
 export default function VoiceTestPage() {
   const [status, setStatus] = useState<SpeechStatus>("IDLE");
@@ -24,19 +18,6 @@ export default function VoiceTestPage() {
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, currentResult]);
-
-  // 呪文のマッチングロジック
-  const checkSpell = useCallback((transcript: string, confidence: number): SpellMatchResult => {
-    const normalized = transcript.toLowerCase().trim();
-    
-    for (const spell of SAMPLE_SPELLS) {
-      if (spell.keywords.some(keyword => normalized.includes(keyword.toLowerCase()))) {
-        return { matched: true, spell, confidence, rawTranscript: transcript };
-      }
-    }
-    
-    return { matched: false, spell: null, confidence: 0, rawTranscript: transcript };
-  }, []);
 
   // 音声認識の開始
   const handleStart = () => {
@@ -56,8 +37,8 @@ export default function VoiceTestPage() {
         if (result.isFinal) {
           // 履歴に追加
           setHistory(prev => [...prev, result]);
-          // 呪文チェック
-          const match = checkSpell(result.transcript, result.confidence);
+          // ライブラリの判定ロジックを使用
+          const match = matchSpell(result.transcript, SPELL_DICTIONARY);
           setMatchResult(match);
           // 確定したので現在の表示をクリア
           setCurrentResult(null);

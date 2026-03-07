@@ -49,18 +49,27 @@ export class SpeechRecognitionAPI {
     };
 
     this.recognition.onerror = (event: any) => {
-      this.onErrorCallback(event);
+      // エラーオブジェクトそのものではなく、エラーコードを渡す
+      this.onErrorCallback({
+        error: event.error,
+        message: event.message
+      });
     };
 
     this.recognition.onend = () => {
-      // 意図的に止めた場合以外は、自動再開を試みる（ブラウザによる自動停止対策）
+      // 意図的に止めた場合以外は、自動再開を試みる
       if (this.isStarted) {
-        try {
-          this.recognition.start();
-        } catch (e) {
-          // すでに開始されている場合は無視
-          console.debug("Silent restart ignored:", e);
-        }
+        // 少し時間を置いてから再開（連続呼び出しによるエラー防止）
+        setTimeout(() => {
+          if (this.isStarted) {
+            try {
+              this.recognition.start();
+            } catch (e) {
+              // 「既に開始されている」エラーは無視して良い
+              console.debug("Auto-restart skipped:", e);
+            }
+          }
+        }, 100);
       }
       this.onEndCallback();
     };
@@ -80,10 +89,17 @@ export class SpeechRecognitionAPI {
     if (callbacks.onError) this.onErrorCallback = callbacks.onError;
     if (callbacks.onEnd) this.onEndCallback = callbacks.onEnd;
 
+    if (this.isStarted) {
+      console.warn("Speech recognition is already running.");
+      return;
+    }
+
     try {
       this.isStarted = true;
       this.recognition.start();
     } catch (e) {
+      // 万が一エラーが出ても、内部状態はリセットしておく
+      this.isStarted = false;
       console.error("Failed to start speech recognition:", e);
     }
   }
