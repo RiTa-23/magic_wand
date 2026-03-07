@@ -520,6 +520,10 @@ export class JoyConWebHID {
     const clusters: IRCluster[] = [];
     const clusterBaseOffset = 60;
 
+    // ノイズ除去用の最小閾値
+    const MIN_PIXEL_COUNT = 5;
+    const MIN_INTENSITY = 10;
+
     for (
       let offset = clusterBaseOffset;
       offset + 15 < view.length;
@@ -530,7 +534,7 @@ export class JoyConWebHID {
       const cx = view[offset + 4] | (view[offset + 5] << 8);
       const cy = view[offset + 6] | (view[offset + 7] << 8);
 
-      if (pixelCount > 0) {
+      if (pixelCount >= MIN_PIXEL_COUNT && avgIntensity >= MIN_INTENSITY) {
         clusters.push({
           averageIntensity: avgIntensity,
           pixelCount,
