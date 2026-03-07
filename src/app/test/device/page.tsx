@@ -15,10 +15,12 @@ export default function JoyConSandboxPage() {
     irFrame,
     irMode,
     isSwitching,
+    isCapturing,
     joyconState,
     connect,
     disconnect,
     switchMode,
+    captureImage,
   } = useJoyCon();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedMode, setSelectedMode] = useState<IRCameraMode>(irMode);
@@ -276,6 +278,17 @@ export default function JoyConSandboxPage() {
                   {/* Image Transfer モード表示 */}
                   {irMode === "IMAGE_TRANSFER" && (
                     <div>
+                      <button
+                        onClick={captureImage}
+                        disabled={isCapturing}
+                        className={`mb-3 px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                          isCapturing
+                            ? "bg-yellow-500 text-white cursor-wait"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        }`}
+                      >
+                        {isCapturing ? "転送中..." : "画像を転送"}
+                      </button>
                       <canvas
                         ref={canvasRef}
                         width={160}
@@ -283,9 +296,33 @@ export default function JoyConSandboxPage() {
                         className="w-full max-w-[320px] border border-gray-300 rounded bg-black"
                         style={{ imageRendering: "pixelated" }}
                       />
-                      {(!irFrame || irFrame.type !== "IMAGE_TRANSFER") && (
+                      {isCapturing && (
+                        <div className="flex items-center justify-center gap-2 mt-2 text-blue-500">
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                          </svg>
+                          <span className="text-sm">フラグメント受信中...</span>
+                        </div>
+                      )}
+                      {!isCapturing && !irFrame && (
                         <p className="text-gray-400 text-sm italic mt-2 text-center">
-                          フラグメント受信中...
+                          「画像を転送」ボタンを押してキャプチャ
                         </p>
                       )}
                     </div>

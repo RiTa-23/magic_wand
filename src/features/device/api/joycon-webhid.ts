@@ -294,9 +294,11 @@ export class JoyConWebHID {
       // Phase 4-6: レジスタ書き込みとモード設定
       await this.configureIRMode(mode);
 
-      // IRデータの定期リクエストを開始（Output Report 0x11）
-      console.log("Starting IR data polling...");
-      this.startIRPolling();
+      // IMAGE_TRANSFERはオンデマンドキャプチャのためポーリングを自動開始しない
+      if (mode !== "IMAGE_TRANSFER") {
+        console.log("Starting IR data polling...");
+        this.startIRPolling();
+      }
 
       console.log(`IR Camera (${mode}) started successfully!`);
     } catch (e) {
@@ -312,11 +314,23 @@ export class JoyConWebHID {
 
     try {
       await this.configureIRMode(mode);
-      this.startIRPolling();
+      // IMAGE_TRANSFERはオンデマンドキャプチャのためポーリングを自動開始しない
+      if (mode !== "IMAGE_TRANSFER") {
+        this.startIRPolling();
+      }
       console.log(`IR mode switched to ${mode}`);
     } catch (e) {
       console.error("Error switching IR mode:", e);
     }
+  }
+
+  // 画像転送モード: 1フレームだけキャプチャする
+  public async captureImage() {
+    if (!this.device || this.currentIRMode !== "IMAGE_TRANSFER") return;
+    // IRセンサーのフルリセット+再設定でMCUを再初期化
+    await this.configureIRMode("IMAGE_TRANSFER");
+    // ポーリング開始（1フレーム完成後にparseImageTransferData内で自動停止）
+    this.startIRPolling();
   }
 
   // IRモードの共通設定処理（リセット→レジスタ→モード設定）
@@ -562,6 +576,8 @@ export class JoyConWebHID {
 
     // 全フラグメントが揃ったらフレームを完成
     if (this.imageFragsReceived.size >= this.imageMaxFrag + 1) {
+      // ポーリング停止（1フレームキャプチャ完了）
+      this.stopIRPolling();
       this.onIRFrame?.({
         type: "IMAGE_TRANSFER",
         imageData: new Uint8Array(this.imageBuffer),
