@@ -12,6 +12,8 @@ type TrackingMode = "IR" | "IMU";
 
 // ジャイロ感度（値が大きいほど少しの動きで大きく動く）
 const GYRO_SENSITIVITY = 0.15;
+// キャリブレーション時間（ミリ秒）
+const CALIBRATION_DURATION = 3000;
 
 export default function WandTrackingPage() {
     const { status, irFrame, isSwitching, joyconState, connect, disconnect } =
@@ -25,41 +27,83 @@ export default function WandTrackingPage() {
 
     // IMUモード用: カーソル位置（生の累積座標、無制限）
     const imuPosRef = useRef({ x: 0, y: 0 });
-    const prevGyroRef = useRef<{ x: number; y: number; z: number } | null>(null);
+
+    // キャリブレーション用
+    const [calibrationState, setCalibrationState] = useState<
+        "idle" | "calibrating" | "done"
+    >("idle");
+    const [calibrationProgress, setCalibrationProgress] = useState(0);
+    const calibrationStartRef = useRef<number>(0);
+    const calibrationSamplesRef = useRef<{ x: number; y: number; z: number }[]>(
+        [],
+    );
+    const gyroBiasRef = useRef({ x: 0, y: 0, z: 0 });
 
     // モード変更時に軌跡をリセット
     const handleModeChange = (mode: TrackingMode) => {
         setTrackingMode(mode);
         trailRef.current = [];
         imuPosRef.current = { x: 0, y: 0 };
-        prevGyroRef.current = null;
+        gyroBiasRef.current = { x: 0, y: 0, z: 0 };
+        if (mode === "IMU") {
+            // IMUモードに入ったらキャリブレーション開始
+            setCalibrationState("calibrating");
+            setCalibrationProgress(0);
+            calibrationStartRef.current = Date.now();
+            calibrationSamplesRef.current = [];
+        } else {
+            setCalibrationState("idle");
+        }
     };
 
-    // ── IMUモード: ジャイロデータからカーソル位置を更新 ──
+    // ── キャリブレーション & トラッキング ──
     useEffect(() => {
         if (trackingMode !== "IMU" || !joyconState) return;
 
         const gyro = joyconState.imu.gyro;
 
-        // 初回は前回値を記録するだけ
-        if (!prevGyroRef.current) {
-            prevGyroRef.current = { ...gyro };
+        if (calibrationState === "calibrating") {
+            // キャリブレーション中: サンプルを収集
+            calibrationSamplesRef.current.push({ ...gyro });
+
+            const elapsed = Date.now() - calibrationStartRef.current;
+            const progress = Math.min(1, elapsed / CALIBRATION_DURATION);
+            setCalibrationProgress(progress);
+
+            if (elapsed >= CALIBRATION_DURATION) {
+                // キャリブレーション完了: 平均値をバイアスとして記録
+                const samples = calibrationSamplesRef.current;
+                const sum = samples.reduce(
+                    (acc, s) => ({ x: acc.x + s.x, y: acc.y + s.y, z: acc.z + s.z }),
+                    { x: 0, y: 0, z: 0 },
+                );
+                gyroBiasRef.current = {
+                    x: sum.x / samples.length,
+                    y: sum.y / samples.length,
+                    z: sum.z / samples.length,
+                };
+                setCalibrationState("done");
+                calibrationSamplesRef.current = [];
+            }
             return;
         }
 
-        // ジャイロの角速度をカーソル移動に変換（クランプなし）
-        // gyro.y → 左右 (yaw), gyro.x → 上下 (pitch)
-        const pos = imuPosRef.current;
-        pos.x += gyro.y * GYRO_SENSITIVITY;
-        pos.y += gyro.x * GYRO_SENSITIVITY;
+        if (calibrationState !== "done") return;
 
-        // 軌跡に追加（生の累積座標、制限なし）
+        // ── トラッキング: バイアスを差し引いて移動 ──
+        const bias = gyroBiasRef.current;
+        const correctedY = gyro.y - bias.y; // 左右 (yaw)
+        const correctedX = gyro.x - bias.x; // 上下 (pitch)
+
+        const pos = imuPosRef.current;
+        pos.x += correctedY * GYRO_SENSITIVITY;
+        pos.y += correctedX * GYRO_SENSITIVITY;
+
+        // 軌跡に追加
         const now = performance.now();
         trailRef.current.push({ rawX: pos.x, rawY: pos.y, t: now });
         if (trailRef.current.length > 300) trailRef.current.shift();
-
-        prevGyroRef.current = { ...gyro };
-    }, [trackingMode, joyconState]);
+    }, [trackingMode, joyconState, calibrationState]);
 
     // ── IRモード用: 自動スケーリング座標変換 ──
     const toCanvasCoords = (
@@ -250,7 +294,10 @@ export default function WandTrackingPage() {
                 }
             } else {
                 // ── IMU モード（自動スケーリング）──
-                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                let minX = Infinity,
+                    maxX = -Infinity,
+                    minY = Infinity,
+                    maxY = -Infinity;
                 for (const pt of trail) {
                     if (pt.rawX < minX) minX = pt.rawX;
                     if (pt.rawX > maxX) maxX = pt.rawX;
@@ -265,10 +312,22 @@ export default function WandTrackingPage() {
 
                 const MIN_SPAN = 50;
                 if (isFinite(minX)) {
-                    if (maxX - minX < MIN_SPAN) { const c = (minX + maxX) / 2; minX = c - MIN_SPAN / 2; maxX = c + MIN_SPAN / 2; }
-                    if (maxY - minY < MIN_SPAN) { const c = (minY + maxY) / 2; minY = c - MIN_SPAN / 2; maxY = c + MIN_SPAN / 2; }
-                    const mx = (maxX - minX) * 0.1, my = (maxY - minY) * 0.1;
-                    minX -= mx; maxX += mx; minY -= my; maxY += my;
+                    if (maxX - minX < MIN_SPAN) {
+                        const c = (minX + maxX) / 2;
+                        minX = c - MIN_SPAN / 2;
+                        maxX = c + MIN_SPAN / 2;
+                    }
+                    if (maxY - minY < MIN_SPAN) {
+                        const c = (minY + maxY) / 2;
+                        minY = c - MIN_SPAN / 2;
+                        maxY = c + MIN_SPAN / 2;
+                    }
+                    const mx = (maxX - minX) * 0.1,
+                        my = (maxY - minY) * 0.1;
+                    minX -= mx;
+                    maxX += mx;
+                    minY -= my;
+                    maxY += my;
                 }
 
                 // 軌跡描画
@@ -276,8 +335,22 @@ export default function WandTrackingPage() {
                     for (let i = 1; i < trail.length; i++) {
                         const age = (now - trail[i].t) / TRAIL_DURATION;
                         const alpha = Math.max(0, 1 - age);
-                        const p0 = toCanvasCoords(trail[i - 1].rawX, trail[i - 1].rawY, minX, maxX, minY, maxY);
-                        const p1 = toCanvasCoords(trail[i].rawX, trail[i].rawY, minX, maxX, minY, maxY);
+                        const p0 = toCanvasCoords(
+                            trail[i - 1].rawX,
+                            trail[i - 1].rawY,
+                            minX,
+                            maxX,
+                            minY,
+                            maxY,
+                        );
+                        const p1 = toCanvasCoords(
+                            trail[i].rawX,
+                            trail[i].rawY,
+                            minX,
+                            maxX,
+                            minY,
+                            maxY,
+                        );
                         ctx.strokeStyle = `rgba(${color}, ${alpha * 0.7})`;
                         ctx.lineWidth = Math.max(1, (1 - age) * 3);
                         ctx.beginPath();
@@ -288,7 +361,14 @@ export default function WandTrackingPage() {
                 }
 
                 // カーソル描画
-                const { cx: curX, cy: curY } = toCanvasCoords(imuPos.x, imuPos.y, minX, maxX, minY, maxY);
+                const { cx: curX, cy: curY } = toCanvasCoords(
+                    imuPos.x,
+                    imuPos.y,
+                    minX,
+                    maxX,
+                    minY,
+                    maxY,
+                );
                 drawDot(ctx, curX, curY, color);
 
                 // ジャイロ値表示
@@ -373,12 +453,12 @@ export default function WandTrackingPage() {
                     )}
                     <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${status === "CONNECTED"
-                            ? "bg-green-900/50 text-green-400"
-                            : status === "CONNECTING"
-                                ? "bg-yellow-900/50 text-yellow-400"
-                                : status === "ERROR"
-                                    ? "bg-red-900/50 text-red-400"
-                                    : "bg-gray-800 text-gray-400"
+                                ? "bg-green-900/50 text-green-400"
+                                : status === "CONNECTING"
+                                    ? "bg-yellow-900/50 text-yellow-400"
+                                    : status === "ERROR"
+                                        ? "bg-red-900/50 text-red-400"
+                                        : "bg-gray-800 text-gray-400"
                             }`}
                     >
                         {status}
@@ -389,8 +469,8 @@ export default function WandTrackingPage() {
                         <button
                             onClick={() => handleModeChange("IR")}
                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${trackingMode === "IR"
-                                ? "bg-blue-600 text-white"
-                                : "text-gray-400 hover:text-white"
+                                    ? "bg-blue-600 text-white"
+                                    : "text-gray-400 hover:text-white"
                                 }`}
                         >
                             IR（赤外線）
@@ -398,8 +478,8 @@ export default function WandTrackingPage() {
                         <button
                             onClick={() => handleModeChange("IMU")}
                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${trackingMode === "IMU"
-                                ? "bg-purple-600 text-white"
-                                : "text-gray-400 hover:text-white"
+                                    ? "bg-purple-600 text-white"
+                                    : "text-gray-400 hover:text-white"
                                 }`}
                         >
                             IMU（慣性）
@@ -425,7 +505,7 @@ export default function WandTrackingPage() {
                         />
                         {/* オーバーレイ */}
                         {!isConnected && (
-                            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80">
+                            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
                                 <p className="text-gray-500 text-sm">
                                     Joy-Con (R) を接続してください
                                 </p>
@@ -434,12 +514,31 @@ export default function WandTrackingPage() {
                         {isConnected &&
                             trackingMode === "IR" &&
                             (!irFrame || irFrame.type !== "CLUSTERING") && (
-                                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80">
+                                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
                                     <p className="text-gray-500 text-sm">
                                         {isSwitching
                                             ? "IRカメラ初期化中..."
                                             : "クラスタリングデータ受信待ち..."}
                                     </p>
+                                </div>
+                            )}
+                        {isConnected &&
+                            trackingMode === "IMU" &&
+                            calibrationState === "calibrating" && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gray-900/90 z-10 space-y-4">
+                                    <p className="text-purple-400 font-bold text-lg animate-pulse">
+                                        キャリブレーション中...
+                                    </p>
+                                    <p className="text-gray-300 text-sm text-center">
+                                        SL/SRボタン（レール側）を下に向けて<br />
+                                        平らな場所に静止させてください。
+                                    </p>
+                                    <div className="w-48 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-purple-500 transition-all duration-100 ease-linear"
+                                            style={{ width: `${calibrationProgress * 100}%` }}
+                                        />
+                                    </div>
                                 </div>
                             )}
                     </div>
@@ -582,13 +681,16 @@ export default function WandTrackingPage() {
                                 trailRef.current = [];
                                 if (trackingMode === "IMU") {
                                     imuPosRef.current = { x: 0, y: 0 };
-                                    prevGyroRef.current = null;
+                                    setCalibrationState("calibrating");
+                                    setCalibrationProgress(0);
+                                    calibrationStartRef.current = Date.now();
+                                    calibrationSamplesRef.current = [];
                                 }
                             }}
                             className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
                         >
                             {trackingMode === "IMU"
-                                ? "軌跡クリア & 中央にリセット"
+                                ? "軌跡クリア & 再キャリブレーション"
                                 : "軌跡をクリア"}
                         </button>
                     </div>
