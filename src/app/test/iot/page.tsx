@@ -26,17 +26,34 @@ export default function IotTestPage() {
     emoji: string,
     name: string,
   ) => {
-    setStatus(`${emoji} ${name}詠唱中っす...`);
-    const result = await spellFn();
-    setStatus(result.message);
+    try {
+      setStatus(`${emoji} ${name}詠唱中っす...`);
+      const result = await spellFn();
+      setStatus(result.message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "不明なエラー";
+      setStatus(`❌ ${name}が失敗しました: ${errorMessage}`);
+      console.error(`Error in ${name}:`, error);
+    }
   };
 
   const handleGetStatus = async () => {
-    setStatus("🔍 デバイス情報を取得中...");
-    const result = await getDeviceStatus();
-    setStatus(result.message);
-    if (result.success) {
-      setDeviceInfo(result);
+    try {
+      setStatus("🔍 デバイス情報を取得中...");
+      const result = await getDeviceStatus();
+      setStatus(result.message);
+      if (result.success) {
+        setDeviceInfo(result);
+      } else {
+        setDeviceInfo(null);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "不明なエラー";
+      setStatus(`❌ デバイス情報の取得に失敗しました: ${errorMessage}`);
+      setDeviceInfo(null);
+      console.error("Error fetching device status:", error);
     }
   };
 
