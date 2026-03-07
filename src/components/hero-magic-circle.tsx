@@ -7,8 +7,8 @@ export function HeroMagicCircle() {
   const outerRunes = Array.from({ length: 24 }, (_, i) => {
     const angle = (i * 15 * Math.PI) / 180;
     const r = 192;
-    const x = 200 + r * Math.cos(angle);
-    const y = 200 + r * Math.sin(angle);
+    const x = Number((200 + r * Math.cos(angle)).toFixed(4));
+    const y = Number((200 + r * Math.sin(angle)).toFixed(4));
     const char = RUNE_CHARS[i % RUNE_CHARS.length];
     return { x, y, angle: i * 15 + 90, char };
   });
@@ -16,8 +16,8 @@ export function HeroMagicCircle() {
   const innerRunes = Array.from({ length: 12 }, (_, i) => {
     const angle = (i * 30 * Math.PI) / 180;
     const r = 132;
-    const x = 200 + r * Math.cos(angle);
-    const y = 200 + r * Math.sin(angle);
+    const x = Number((200 + r * Math.cos(angle)).toFixed(4));
+    const y = Number((200 + r * Math.sin(angle)).toFixed(4));
     const char = RUNE_CHARS[(i + 5) % RUNE_CHARS.length];
     return { x, y, angle: i * 30 + 90, char };
   });
@@ -77,8 +77,8 @@ export function HeroMagicCircle() {
             return (
               <circle
                 key={`dot-outer-${i}`}
-                cx={200 + 195 * Math.cos(angle)}
-                cy={200 + 195 * Math.sin(angle)}
+                cx={Number((200 + 195 * Math.cos(angle)).toFixed(4))}
+                cy={Number((200 + 195 * Math.sin(angle)).toFixed(4))}
                 r="3"
                 fill="oklch(0.85 0.13 85 / 0.9)"
               />
@@ -129,8 +129,8 @@ export function HeroMagicCircle() {
             return (
               <circle
                 key={`dot-mid-${i}`}
-                cx={200 + 190 * Math.cos(angle)}
-                cy={200 + 190 * Math.sin(angle)}
+                cx={Number((200 + 190 * Math.cos(angle)).toFixed(4))}
+                cy={Number((200 + 190 * Math.sin(angle)).toFixed(4))}
                 r="2.5"
                 fill="oklch(0.60 0.15 180 / 0.8)"
               />

@@ -28,8 +28,8 @@ export function MagicCircle() {
           {/* Rune marks around outer ring */}
           {Array.from({ length: 12 }).map((_, i) => {
             const angle = (i * 30 * Math.PI) / 180;
-            const x = 170 + 160 * Math.cos(angle);
-            const y = 170 + 160 * Math.sin(angle);
+            const x = Number((170 + 160 * Math.cos(angle)).toFixed(4));
+            const y = Number((170 + 160 * Math.sin(angle)).toFixed(4));
             return (
               <circle
                 key={i}
