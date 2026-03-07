@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
 import { IRCameraMode } from "@/features/device/types/joycon";
 
@@ -21,6 +21,7 @@ export default function JoyConSandboxPage() {
     switchMode,
   } = useJoyCon();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedMode, setSelectedMode] = useState<IRCameraMode>(irMode);
 
   // Image Transfer用: canvasへの描画（モード切替時にクリア）
   useEffect(() => {
@@ -162,22 +163,35 @@ export default function JoyConSandboxPage() {
         <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl shadow-sm">
           <h2 className="text-xl font-semibold mb-4">3. IR カメラ</h2>
 
-          {/* モード切り替えタブ */}
+          {/* モード選択 + 切り替えボタン */}
           {status === "CONNECTED" && (
-            <div className="flex gap-1 mb-4">
-              {(Object.keys(MODE_LABELS) as IRCameraMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => switchMode(mode)}
-                  className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                    irMode === mode
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                  }`}
-                >
-                  {MODE_LABELS[mode]}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex gap-1">
+                {(Object.keys(MODE_LABELS) as IRCameraMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setSelectedMode(mode)}
+                    className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                      selectedMode === mode
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                    }`}
+                  >
+                    {MODE_LABELS[mode]}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => switchMode(selectedMode)}
+                disabled={selectedMode === irMode}
+                className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                  selectedMode !== irMode
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                切り替え
+              </button>
             </div>
           )}
 
