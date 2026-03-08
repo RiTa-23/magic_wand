@@ -165,7 +165,7 @@ function StartScreen() {
     >
       <Image
         src="/yuchimage/yuchisiro.jpg"
-        alt="yuchisiro background"
+        alt=""
         fill
         priority
         sizes="100vw"
