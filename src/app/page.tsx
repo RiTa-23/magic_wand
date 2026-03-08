@@ -31,6 +31,7 @@ type Particle = {
 function MagicParticles() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const lastTsRef = useRef<number | null>(null);
   const particlesRef = useRef<Particle[]>([]);
 
   useEffect(() => {
@@ -79,21 +80,24 @@ function MagicParticles() {
       }
     };
 
-    const tick = () => {
+    const tick = (ts: number) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       ctx.clearRect(0, 0, w, h);
 
-      const now = performance.now();
+      if (lastTsRef.current === null) lastTsRef.current = ts;
+      const dtMs = Math.min(50, Math.max(0, ts - lastTsRef.current));
+      lastTsRef.current = ts;
+      const dt = dtMs / (1000 / 60);
       const particles = particlesRef.current;
 
       ctx.shadowBlur = 12;
       ctx.shadowColor = "rgba(255, 140, 60, 0.85)";
 
       for (const p of particles) {
-        p.y -= p.riseSpeed;
-        p.phase += p.twinkleSpeed * (now / 16);
-        p.x += p.driftSpeed + Math.sin(p.phase * 0.9) * 0.08;
+        p.y -= p.riseSpeed * dt;
+        p.phase += p.twinkleSpeed * dt;
+        p.x += (p.driftSpeed + Math.sin(p.phase * 0.9) * 0.08) * dt;
 
         const heightT = Math.max(0, Math.min(1, (h - p.y) / h));
 
@@ -106,7 +110,7 @@ function MagicParticles() {
           p.driftSpeed = (Math.random() - 0.5) * 0.18;
           p.phase = Math.random() * Math.PI * 2;
           p.twinkleSpeed = 0.012 + Math.random() * 0.028;
-          p.resetAt = Math.random() < 1.08 ? 0.42 + Math.random() * 0.22 : 1.2;
+          p.resetAt = Math.random() < 0.78 ? 0.42 + Math.random() * 0.22 : 1.2;
         }
         if (p.x < -16) p.x = w + 16;
         if (p.x > w + 16) p.x = -16;
