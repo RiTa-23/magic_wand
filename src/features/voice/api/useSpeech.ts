@@ -39,9 +39,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
 
         if (res.isFinal) {
           const match = matchSpell(res.transcript, spells);
-          if (match.matched) {
-            setSpellMatch(match);
-          }
+          setSpellMatch(match);
         }
       },
       onError: (err) => {
