@@ -50,6 +50,17 @@ export class SpeechRecognitionAPI {
     };
 
     this.recognition.onerror = (event: any) => {
+      // 致命的なエラー（権限拒否、マイク未検出など）の場合は自動再起動を停止する
+      const fatalErrors = [
+        "not-allowed",
+        "service-not-allowed",
+        "audio-capture",
+        "language-not-supported",
+      ];
+      if (fatalErrors.includes(event.error)) {
+        this.isStarted = false;
+      }
+
       // エラーオブジェクトそのものではなく、エラーコードを渡す
       this.onErrorCallback({
         error: event.error,
