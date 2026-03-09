@@ -1,10 +1,25 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Mic, MicOff, Play, Square, CheckCircle2, AlertCircle, History } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Play,
+  Square,
+  CheckCircle2,
+  AlertCircle,
+  History,
+} from "lucide-react";
 import { speechRecognitionAPI } from "@/features/voice/api/speech-recognition";
-import { SpeechStatus, SpeechResult, SpellMatchResult } from "@/features/voice/types/speech";
-import { matchSpell, SPELL_DICTIONARY } from "@/features/voice/lib/spell-matcher";
+import {
+  SpeechStatus,
+  SpeechResult,
+  SpellMatchResult,
+} from "@/features/voice/types/speech";
+import {
+  matchSpell,
+  SPELL_DICTIONARY,
+} from "@/features/voice/lib/spell-matcher";
 
 export default function VoiceTestPage() {
   const [status, setStatus] = useState<SpeechStatus>("IDLE");
@@ -22,7 +37,9 @@ export default function VoiceTestPage() {
   // 音声認識の開始
   const handleStart = () => {
     if (!speechRecognitionAPI.isSupported()) {
-      setErrorMessage("お使いのブラウザは音声認識をサポートしていません。Chromeなどの主要なブラウザをお試しください。");
+      setErrorMessage(
+        "お使いのブラウザは音声認識をサポートしていません。Chromeなどの主要なブラウザをお試しください。",
+      );
       setStatus("ERROR");
       return;
     }
@@ -33,10 +50,10 @@ export default function VoiceTestPage() {
     speechRecognitionAPI.start({
       onResult: (result) => {
         setCurrentResult(result);
-        
+
         if (result.isFinal) {
           // 履歴に追加
-          setHistory(prev => [...prev, result]);
+          setHistory((prev) => [...prev, result]);
           // ライブラリの判定ロジックを使用
           const match = matchSpell(result.transcript, SPELL_DICTIONARY);
           setMatchResult(match);
@@ -47,7 +64,9 @@ export default function VoiceTestPage() {
       onError: (error) => {
         console.error("Speech Error:", error);
         if (error.error === "not-allowed") {
-          setErrorMessage("マイクの使用が許可されていません。設定を確認してください。");
+          setErrorMessage(
+            "マイクの使用が許可されていません。設定を確認してください。",
+          );
         } else {
           setErrorMessage(`エラーが発生しました: ${error.error}`);
         }
@@ -56,7 +75,7 @@ export default function VoiceTestPage() {
       onEnd: () => {
         // API側で自動再開するが、ステータス同期のため
         console.log("Speech recognition ended session");
-      }
+      },
     });
   };
 
@@ -98,10 +117,15 @@ export default function VoiceTestPage() {
 
         {/* Status Display */}
         <div className="flex items-center gap-2 p-3 rounded-lg bg-stone/40 border border-gold-dim/10">
-          <div className={`w-3 h-3 rounded-full animate-pulse ${
-            status === "LISTENING" ? "bg-magic-glow shadow-[0_0_8px_var(--magic-glow)]" : 
-            status === "ERROR" ? "bg-destructive" : "bg-stone-light"
-          }`} />
+          <div
+            className={`w-3 h-3 rounded-full animate-pulse ${
+              status === "LISTENING"
+                ? "bg-magic-glow shadow-[0_0_8px_var(--magic-glow)]"
+                : status === "ERROR"
+                  ? "bg-destructive"
+                  : "bg-stone-light"
+            }`}
+          />
           <span className="text-sm font-semibold tracking-wider font-mono uppercase">
             状態: {status}
           </span>
@@ -130,11 +154,13 @@ export default function VoiceTestPage() {
         </div>
 
         {/* Match Result */}
-        <div className={`p-6 rounded-xl border transition-all duration-500 ${
-          matchResult?.matched 
-            ? "border-magic-glow/50 bg-magic-glow/10 shadow-[inner_0_0_20px_rgba(96,180,160,0.1)]" 
-            : "border-gold-dim/10 bg-stone/10"
-        }`}>
+        <div
+          className={`p-6 rounded-xl border transition-all duration-500 ${
+            matchResult?.matched
+              ? "border-magic-glow/50 bg-magic-glow/10 shadow-[inner_0_0_20px_rgba(96,180,160,0.1)]"
+              : "border-gold-dim/10 bg-stone/10"
+          }`}
+        >
           <h2 className="text-xs uppercase tracking-[0.2em] text-gold-dim mb-4">
             ── 呪文マッチング結果 ──
           </h2>
@@ -146,12 +172,20 @@ export default function VoiceTestPage() {
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                 <div className="bg-background/40 p-2 rounded">
-                  <span className="text-gold-dim/60 block text-[10px] uppercase">アクション</span>
-                  <span className="font-mono text-gold-bright">{matchResult.spell?.action}</span>
+                  <span className="text-gold-dim/60 block text-[10px] uppercase">
+                    アクション
+                  </span>
+                  <span className="font-mono text-gold-bright">
+                    {matchResult.spell?.action}
+                  </span>
                 </div>
                 <div className="bg-background/40 p-2 rounded">
-                  <span className="text-gold-dim/60 block text-[10px] uppercase">信頼度</span>
-                  <span className="font-mono text-gold-bright">{matchResult.confidence.toFixed(2)}</span>
+                  <span className="text-gold-dim/60 block text-[10px] uppercase">
+                    信頼度
+                  </span>
+                  <span className="font-mono text-gold-bright">
+                    {matchResult.confidence.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -177,14 +211,17 @@ export default function VoiceTestPage() {
               </div>
             )}
             {history.map((item, i) => (
-              <div key={i} className="flex gap-3 text-foreground/60 border-b border-white/5 pb-1 hover:bg-white/5 transition-colors">
+              <div
+                key={i}
+                className="flex gap-3 text-foreground/60 border-b border-white/5 pb-1 hover:bg-white/5 transition-colors"
+              >
                 <span className="text-gold-dim/40 shrink-0">
-                  {new Date(item.timestamp).toLocaleTimeString("ja-JP", { hour12: false })}
+                  {new Date(item.timestamp).toLocaleTimeString("ja-JP", {
+                    hour12: false,
+                  })}
                 </span>
                 <span className="text-magic-glow/70 shrink-0">[確定]</span>
-                <span className="flex-1 truncate">
-                  {item.transcript}
-                </span>
+                <span className="flex-1 truncate">{item.transcript}</span>
                 <span className="text-gold-dim/50 font-mono text-[11px]">
                   ({item.confidence.toFixed(2)})
                 </span>

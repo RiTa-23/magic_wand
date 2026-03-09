@@ -21,7 +21,8 @@ export class SpeechRecognitionAPI {
     if (typeof window === "undefined") return;
 
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       console.warn("Speech Recognition API is not supported in this browser.");
@@ -52,7 +53,7 @@ export class SpeechRecognitionAPI {
       // エラーオブジェクトそのものではなく、エラーコードを渡す
       this.onErrorCallback({
         error: event.error,
-        message: event.message
+        message: event.message,
       });
     };
 

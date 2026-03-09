@@ -25,7 +25,15 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
   {
     id: "ventus",
     name: "ヴェンタス",
-    keywords: ["ヴェンタス", "べんたす", "ベントス","ベンタス", "ペンタス", "ventus", "風よ"],
+    keywords: [
+      "ヴェンタス",
+      "べんたす",
+      "ベントス",
+      "ベンタス",
+      "ペンタス",
+      "ventus",
+      "風よ",
+    ],
     action: "fan_on",
   },
   {
@@ -39,7 +47,7 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
       "arresto momentum",
       "arrest momentum",
       "止まれ",
-      "減速"
+      "減速",
     ],
     action: "fan_stop",
   },
@@ -50,13 +58,13 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
  */
 export function matchSpell(
   transcript: string,
-  dictionary: SpellEntry[] = SPELL_DICTIONARY
+  dictionary: SpellEntry[] = SPELL_DICTIONARY,
 ): SpellMatchResult {
   // 1. Unicode正規化 (NFKC): 見た目が同じでコードが異なる文字（濁点など）を統一
   // 2. 句読点、記号、スペースをすべて削除
   const normalized = transcript
     .normalize("NFKC") // 濁点などの文字コードを統一
-    .replace(/[.,。、！？！？\s\n\r]/g, "") 
+    .replace(/[.,。、！？！？\s\n\r]/g, "")
     .trim()
     .toLowerCase();
 
@@ -69,13 +77,15 @@ export function matchSpell(
         .normalize("NFKC")
         .replace(/[.,。、！？！？\s\n\r]/g, "")
         .toLowerCase();
-      
+
       if (normalized.includes(normalizedKeyword)) {
-        console.log(`✅ マッチ成功: ${spell.name} (正規化一致: ${normalizedKeyword})`);
+        console.log(
+          `✅ マッチ成功: ${spell.name} (正規化一致: ${normalizedKeyword})`,
+        );
         return {
           matched: true,
           spell,
-          confidence: 1.0, 
+          confidence: 1.0,
           rawTranscript: transcript,
         };
       }
