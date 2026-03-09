@@ -1,13 +1,19 @@
+"use client";
+
 import { SpeechResult } from "../types/speech";
+
+export interface SpeechListeners {
+  onResult: (result: SpeechResult) => void;
+  onError?: (error: any) => void;
+  onEnd?: () => void;
+}
 
 /**
  * Web Speech API (SpeechRecognition) のラッパークラス
  */
 export class SpeechRecognitionAPI {
   private recognition: any | null = null;
-  private onResultCallback: (result: SpeechResult) => void = () => {};
-  private onErrorCallback: (error: any) => void = () => {};
-  private onEndCallback: () => void = () => {};
+  private listeners = new Set<SpeechListeners>();
   private isStarted = false;
 
   constructor() {
@@ -37,20 +43,17 @@ export class SpeechRecognitionAPI {
     this.recognition.onresult = (event: any) => {
       const lastIndex = event.results.length - 1;
       const result = event.results[lastIndex];
-      const transcript = result[0].transcript;
-      const confidence = result[0].confidence;
-      const isFinal = result.isFinal;
-
-      this.onResultCallback({
-        transcript,
-        confidence,
-        isFinal,
+      const speechResult: SpeechResult = {
+        transcript: result[0].transcript,
+        confidence: result[0].confidence,
+        isFinal: result.isFinal,
         timestamp: Date.now(),
-      });
+      };
+
+      this.listeners.forEach((l) => l.onResult(speechResult));
     };
 
     this.recognition.onerror = (event: any) => {
-      // 致命的なエラー（権限拒否、マイク未検出など）の場合は自動再起動を停止する
       const fatalErrors = [
         "not-allowed",
         "service-not-allowed",
@@ -61,45 +64,44 @@ export class SpeechRecognitionAPI {
         this.isStarted = false;
       }
 
-      // エラーオブジェクトそのものではなく、エラーコードを渡す
-      this.onErrorCallback({
+      const errorData = {
         error: event.error,
         message: event.message,
-      });
+      };
+
+      this.listeners.forEach((l) => l.onError?.(errorData));
     };
 
     this.recognition.onend = () => {
-      // 意図的に止めた場合以外は、自動再開を試みる
       if (this.isStarted) {
-        // 少し時間を置いてから再開（連続呼び出しによるエラー防止）
         setTimeout(() => {
           if (this.isStarted) {
             try {
               this.recognition.start();
             } catch (e) {
-              // 「既に開始されている」エラーは無視して良い
               console.debug("Auto-restart skipped:", e);
             }
           }
         }, 100);
       }
-      this.onEndCallback();
+      this.listeners.forEach((l) => l.onEnd?.());
     };
+  }
+
+  /**
+   * イベントリスナーを追加する
+   * @returns リスナーを削除する関数
+   */
+  public addListener(listener: SpeechListeners): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   /**
    * 音声認識を開始する
    */
-  public start(callbacks: {
-    onResult: (result: SpeechResult) => void;
-    onError?: (error: any) => void;
-    onEnd?: () => void;
-  }) {
+  public start() {
     if (!this.recognition) return;
-
-    this.onResultCallback = callbacks.onResult;
-    if (callbacks.onError) this.onErrorCallback = callbacks.onError;
-    if (callbacks.onEnd) this.onEndCallback = callbacks.onEnd;
 
     if (this.isStarted) {
       console.warn("Speech recognition is already running.");
@@ -110,7 +112,6 @@ export class SpeechRecognitionAPI {
       this.isStarted = true;
       this.recognition.start();
     } catch (e) {
-      // 万が一エラーが出ても、内部状態はリセットしておく
       this.isStarted = false;
       console.error("Failed to start speech recognition:", e);
     }
@@ -130,6 +131,13 @@ export class SpeechRecognitionAPI {
    */
   public isSupported(): boolean {
     return !!this.recognition;
+  }
+
+  /**
+   * 現在稼働中か
+   */
+  public isActive(): boolean {
+    return this.isStarted;
   }
 }
 

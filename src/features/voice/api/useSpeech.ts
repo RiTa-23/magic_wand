@@ -32,7 +32,8 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     setTranscript("");
     setStatus("LISTENING");
 
-    speechRecognitionAPI.start({
+    // リスナー登録
+    const removeListener = speechRecognitionAPI.addListener({
       onResult: (res) => {
         setResult(res);
         setTranscript(res.transcript);
@@ -50,6 +51,11 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
         // 必要に応じてステータス更新
       },
     });
+
+    // エンジン開始
+    speechRecognitionAPI.start();
+
+    return removeListener;
   }, [spells]);
 
   /**

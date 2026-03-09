@@ -34,10 +34,13 @@ export default function VoiceTestPage() {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, currentResult]);
 
+  const removeListenerRef = useRef<(() => void) | null>(null);
+
   // ページ離脱時に音声認識を確実に停止（クリーンアップ）
   useEffect(() => {
     return () => {
       speechRecognitionAPI.stop();
+      removeListenerRef.current?.();
     };
   }, []);
 
@@ -54,8 +57,12 @@ export default function VoiceTestPage() {
     setErrorMessage(null);
     setStatus("LISTENING");
 
-    speechRecognitionAPI.start({
-      onResult: (result) => {
+    // 既存のリスナーがあれば解除
+    removeListenerRef.current?.();
+
+    // リスナー登録
+    removeListenerRef.current = speechRecognitionAPI.addListener({
+      onResult: (result: SpeechResult) => {
         setCurrentResult(result);
 
         if (result.isFinal) {
@@ -80,15 +87,19 @@ export default function VoiceTestPage() {
         setStatus("ERROR");
       },
       onEnd: () => {
-        // API側で自動再開するが、ステータス同期のため
         console.log("Speech recognition ended session");
       },
     });
+
+    // エンジン開始
+    speechRecognitionAPI.start();
   };
 
   // 音声認識の停止
   const handleStop = () => {
     speechRecognitionAPI.stop();
+    removeListenerRef.current?.();
+    removeListenerRef.current = null;
     setStatus("IDLE");
     setCurrentResult(null);
   };

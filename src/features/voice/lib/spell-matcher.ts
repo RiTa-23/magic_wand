@@ -68,7 +68,12 @@ export function matchSpell(
     .toLowerCase();
 
   if (!normalized) {
-    return { matched: false, spell: null, confidence: 0, rawTranscript: transcript };
+    return {
+      matched: false,
+      spell: null,
+      confidence: 0,
+      rawTranscript: transcript,
+    };
   }
 
   // --- 第一パス: 完全一致を優先 ---
@@ -117,4 +122,3 @@ export function matchSpell(
     rawTranscript: transcript,
   };
 }
-
