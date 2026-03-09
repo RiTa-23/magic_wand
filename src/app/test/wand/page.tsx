@@ -19,6 +19,94 @@ const GYRO_DEADZONE = 10;
 // キャリブレーション時の静止判定しきい値（加速度の差分）
 const CALIBRATION_ACCEL_THRESHOLD = 500;
 
+// ── ビューポートの計算とスムージングヘルパー ──
+function adjustViewBounds(
+  trail: { rawX: number; rawY: number }[],
+  extraPoints: { rawX: number; rawY: number }[],
+  viewBoundsRef: React.MutableRefObject<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } | null>,
+  minSpan: number,
+  lerp: number,
+) {
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+
+  for (const pt of trail) {
+    if (pt.rawX < minX) minX = pt.rawX;
+    if (pt.rawX > maxX) maxX = pt.rawX;
+    if (pt.rawY < minY) minY = pt.rawY;
+    if (pt.rawY > maxY) maxY = pt.rawY;
+  }
+  for (const pt of extraPoints) {
+    if (pt.rawX < minX) minX = pt.rawX;
+    if (pt.rawX > maxX) maxX = pt.rawX;
+    if (pt.rawY < minY) minY = pt.rawY;
+    if (pt.rawY > maxY) maxY = pt.rawY;
+  }
+
+  if (isFinite(minX)) {
+    if (maxX - minX < minSpan) {
+      const c = (minX + maxX) / 2;
+      minX = c - minSpan / 2;
+      maxX = c + minSpan / 2;
+    }
+    if (maxY - minY < minSpan) {
+      const c = (minY + maxY) / 2;
+      minY = c - minSpan / 2;
+      maxY = c + minSpan / 2;
+    }
+    const mx = (maxX - minX) * 0.1,
+      my = (maxY - minY) * 0.1;
+    minX -= mx;
+    maxX += mx;
+    minY -= my;
+    maxY += my;
+
+    // アスペクト比をキャンバスの描画領域に固定
+    const spanX = Math.max(maxX - minX, 1);
+    const spanY = Math.max(maxY - minY, 1);
+    const drawW = CANVAS_WIDTH - PADDING * 2;
+    const drawH = CANVAS_HEIGHT - PADDING * 2;
+    const targetRatio = drawW / drawH;
+    const currentRatio = spanX / spanY;
+
+    if (currentRatio > targetRatio) {
+      const newSpanY = spanX / targetRatio;
+      const cy = (minY + maxY) / 2;
+      minY = cy - newSpanY / 2;
+      maxY = cy + newSpanY / 2;
+    } else {
+      const newSpanX = spanY * targetRatio;
+      const cx = (minX + maxX) / 2;
+      minX = cx - newSpanX / 2;
+      maxX = cx + newSpanX / 2;
+    }
+
+    if (!viewBoundsRef.current) {
+      viewBoundsRef.current = { minX, maxX, minY, maxY };
+    } else {
+      viewBoundsRef.current.minX += (minX - viewBoundsRef.current.minX) * lerp;
+      viewBoundsRef.current.maxX += (maxX - viewBoundsRef.current.maxX) * lerp;
+      viewBoundsRef.current.minY += (minY - viewBoundsRef.current.minY) * lerp;
+      viewBoundsRef.current.maxY += (maxY - viewBoundsRef.current.maxY) * lerp;
+    }
+    return {
+      minX: viewBoundsRef.current.minX,
+      maxX: viewBoundsRef.current.maxX,
+      minY: viewBoundsRef.current.minY,
+      maxY: viewBoundsRef.current.maxY,
+    };
+  }
+
+  return { minX: 0, maxX: CANVAS_WIDTH, minY: 0, maxY: CANVAS_HEIGHT };
+}
+
 export default function WandTrackingPage() {
   const { status, irFrame, isSwitching, joyconState, connect, disconnect } =
     useJoyCon();
@@ -46,7 +134,7 @@ export default function WandTrackingPage() {
     "idle" | "calibrating" | "done"
   >("idle");
   const [calibrationProgress, setCalibrationProgress] = useState(0);
-  const calibrationStartRef = useRef<number>(0);
+  const calibrationStartRef = useRef<number | null>(null);
   const calibrationSamplesRef = useRef<{ x: number; y: number; z: number }[]>(
     [],
   );
@@ -57,6 +145,28 @@ export default function WandTrackingPage() {
   } | null>(null);
   const gyroBiasRef = useRef({ x: 0, y: 0, z: 0 });
 
+  // 接続切断時にセッションごとの状態をリセットする
+  useEffect(() => {
+    if (status !== "CONNECTED" && status !== "CONNECTING") {
+      trailRef.current = [];
+      imuPosRef.current = { x: 0, y: 0 };
+      gyroBiasRef.current = { x: 0, y: 0, z: 0 };
+      lastIrTimestampRef.current = 0;
+      viewBoundsRef.current = null;
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = 0;
+      }
+      if (trackingMode === "IMU") {
+        setCalibrationState("calibrating");
+        setCalibrationProgress(0);
+        calibrationStartRef.current = null;
+        calibrationSamplesRef.current = [];
+        calibrationPrevAccelRef.current = null;
+      }
+    }
+  }, [status, trackingMode]);
+
   // モード変更時に軌跡をリセット
   const handleModeChange = (mode: TrackingMode) => {
     setTrackingMode(mode);
@@ -64,11 +174,12 @@ export default function WandTrackingPage() {
     imuPosRef.current = { x: 0, y: 0 };
     gyroBiasRef.current = { x: 0, y: 0, z: 0 };
     viewBoundsRef.current = null; // スムージングのリセット
+    lastIrTimestampRef.current = 0;
     if (mode === "IMU") {
       // IMUモードに入ったらキャリブレーション開始
       setCalibrationState("calibrating");
       setCalibrationProgress(0);
-      calibrationStartRef.current = Date.now();
+      calibrationStartRef.current = null;
       calibrationSamplesRef.current = [];
       calibrationPrevAccelRef.current = null;
     } else {
@@ -97,7 +208,7 @@ export default function WandTrackingPage() {
           diffZ > CALIBRATION_ACCEL_THRESHOLD
         ) {
           // 動いたのでキャリブレーションをリセット
-          calibrationStartRef.current = Date.now();
+          calibrationStartRef.current = null;
           calibrationSamplesRef.current = [];
           setCalibrationProgress(0);
           calibrationPrevAccelRef.current = { ...accel };
@@ -105,6 +216,10 @@ export default function WandTrackingPage() {
         }
       }
       calibrationPrevAccelRef.current = { ...accel };
+
+      if (calibrationStartRef.current === null) {
+        calibrationStartRef.current = Date.now();
+      }
 
       // キャリブレーション中: サンプルを収集
       calibrationSamplesRef.current.push({ ...gyro });
@@ -139,7 +254,7 @@ export default function WandTrackingPage() {
       viewBoundsRef.current = null;
       setCalibrationState("calibrating");
       setCalibrationProgress(0);
-      calibrationStartRef.current = Date.now();
+      calibrationStartRef.current = null;
       calibrationSamplesRef.current = [];
       calibrationPrevAccelRef.current = null;
       return;
@@ -247,90 +362,20 @@ export default function WandTrackingPage() {
 
       if (isIR) {
         // ── IR モード ──
-        // 自動スケーリング用のmin/max計算
-        let minX = Infinity,
-          maxX = -Infinity,
-          minY = Infinity,
-          maxY = -Infinity;
-        for (const pt of trail) {
-          if (pt.rawX < minX) minX = pt.rawX;
-          if (pt.rawX > maxX) maxX = pt.rawX;
-          if (pt.rawY < minY) minY = pt.rawY;
-          if (pt.rawY > maxY) maxY = pt.rawY;
-        }
+        const extraPoints: { rawX: number; rawY: number }[] = [];
         if (irFrame && irFrame.type === "CLUSTERING") {
           for (const c of irFrame.clusters) {
-            if (c.cx < minX) minX = c.cx;
-            if (c.cx > maxX) maxX = c.cx;
-            if (c.cy < minY) minY = c.cy;
-            if (c.cy > maxY) maxY = c.cy;
+            extraPoints.push({ rawX: c.cx, rawY: c.cy });
           }
         }
 
-        const MIN_SPAN = 200;
-        if (isFinite(minX)) {
-          if (maxX - minX < MIN_SPAN) {
-            const c = (minX + maxX) / 2;
-            minX = c - MIN_SPAN / 2;
-            maxX = c + MIN_SPAN / 2;
-          }
-          if (maxY - minY < MIN_SPAN) {
-            const c = (minY + maxY) / 2;
-            minY = c - MIN_SPAN / 2;
-            maxY = c + MIN_SPAN / 2;
-          }
-          const mx = (maxX - minX) * 0.1,
-            my = (maxY - minY) * 0.1;
-          minX -= mx;
-          maxX += mx;
-          minY -= my;
-          maxY += my;
-        }
-
-        // アスペクト比をキャンバスの描画領域に固定（スケールのみ動かす）
-        if (isFinite(minX)) {
-          const spanX = Math.max(maxX - minX, 1);
-          const spanY = Math.max(maxY - minY, 1);
-          const drawW = CANVAS_WIDTH - PADDING * 2;
-          const drawH = CANVAS_HEIGHT - PADDING * 2;
-          const targetRatio = drawW / drawH;
-          const currentRatio = spanX / spanY;
-
-          if (currentRatio > targetRatio) {
-            // 幅の方が広いので、高さを広げてアスペクト比を合わせる
-            const newSpanY = spanX / targetRatio;
-            const cy = (minY + maxY) / 2;
-            minY = cy - newSpanY / 2;
-            maxY = cy + newSpanY / 2;
-          } else {
-            // 高さの方が広いので、幅を広げてアスペクト比を合わせる
-            const newSpanX = spanY * targetRatio;
-            const cx = (minX + maxX) / 2;
-            minX = cx - newSpanX / 2;
-            maxX = cx + newSpanX / 2;
-          }
-        }
-
-        // LERPによるスムージング処理
-        if (isFinite(minX)) {
-          if (!viewBoundsRef.current) {
-            viewBoundsRef.current = { minX, maxX, minY, maxY };
-          } else {
-            const LERP = 0.1;
-            viewBoundsRef.current.minX +=
-              (minX - viewBoundsRef.current.minX) * LERP;
-            viewBoundsRef.current.maxX +=
-              (maxX - viewBoundsRef.current.maxX) * LERP;
-            viewBoundsRef.current.minY +=
-              (minY - viewBoundsRef.current.minY) * LERP;
-            viewBoundsRef.current.maxY +=
-              (maxY - viewBoundsRef.current.maxY) * LERP;
-          }
-          minX = viewBoundsRef.current.minX;
-          maxX = viewBoundsRef.current.maxX;
-          minY = viewBoundsRef.current.minY;
-          maxY = viewBoundsRef.current.maxY;
-        }
+        const { minX, maxX, minY, maxY } = adjustViewBounds(
+          trail,
+          extraPoints,
+          viewBoundsRef,
+          200,
+          0.1,
+        );
 
         // 軌跡描画
         if (trail.length > 1) {
@@ -404,86 +449,16 @@ export default function WandTrackingPage() {
         }
       } else {
         // ── IMU モード（自動スケーリング）──
-        let minX = Infinity,
-          maxX = -Infinity,
-          minY = Infinity,
-          maxY = -Infinity;
-        for (const pt of trail) {
-          if (pt.rawX < minX) minX = pt.rawX;
-          if (pt.rawX > maxX) maxX = pt.rawX;
-          if (pt.rawY < minY) minY = pt.rawY;
-          if (pt.rawY > maxY) maxY = pt.rawY;
-        }
-        const imuPos = imuPosRef.current;
-        if (imuPos.x < minX) minX = imuPos.x;
-        if (imuPos.x > maxX) maxX = imuPos.x;
-        if (imuPos.y < minY) minY = imuPos.y;
-        if (imuPos.y > maxY) maxY = imuPos.y;
-
-        const MIN_SPAN = 50;
-        if (isFinite(minX)) {
-          if (maxX - minX < MIN_SPAN) {
-            const c = (minX + maxX) / 2;
-            minX = c - MIN_SPAN / 2;
-            maxX = c + MIN_SPAN / 2;
-          }
-          if (maxY - minY < MIN_SPAN) {
-            const c = (minY + maxY) / 2;
-            minY = c - MIN_SPAN / 2;
-            maxY = c + MIN_SPAN / 2;
-          }
-          const mx = (maxX - minX) * 0.1,
-            my = (maxY - minY) * 0.1;
-          minX -= mx;
-          maxX += mx;
-          minY -= my;
-          maxY += my;
-        }
-
-        // アスペクト比をキャンバスの描画領域に固定（スケールのみ動かす）
-        if (isFinite(minX)) {
-          const spanX = Math.max(maxX - minX, 1);
-          const spanY = Math.max(maxY - minY, 1);
-          const drawW = CANVAS_WIDTH - PADDING * 2;
-          const drawH = CANVAS_HEIGHT - PADDING * 2;
-          const targetRatio = drawW / drawH;
-          const currentRatio = spanX / spanY;
-
-          if (currentRatio > targetRatio) {
-            // 幅の方が広いので、高さを広げてアスペクト比を合わせる
-            const newSpanY = spanX / targetRatio;
-            const cy = (minY + maxY) / 2;
-            minY = cy - newSpanY / 2;
-            maxY = cy + newSpanY / 2;
-          } else {
-            // 高さの方が広いので、幅を広げてアスペクト比を合わせる
-            const newSpanX = spanY * targetRatio;
-            const cx = (minX + maxX) / 2;
-            minX = cx - newSpanX / 2;
-            maxX = cx + newSpanX / 2;
-          }
-        }
-
-        // LERPによるスムージング処理
-        if (isFinite(minX)) {
-          if (!viewBoundsRef.current) {
-            viewBoundsRef.current = { minX, maxX, minY, maxY };
-          } else {
-            const LERP = 0.15; // IMUは稍微速めに追従させる
-            viewBoundsRef.current.minX +=
-              (minX - viewBoundsRef.current.minX) * LERP;
-            viewBoundsRef.current.maxX +=
-              (maxX - viewBoundsRef.current.maxX) * LERP;
-            viewBoundsRef.current.minY +=
-              (minY - viewBoundsRef.current.minY) * LERP;
-            viewBoundsRef.current.maxY +=
-              (maxY - viewBoundsRef.current.maxY) * LERP;
-          }
-          minX = viewBoundsRef.current.minX;
-          maxX = viewBoundsRef.current.maxX;
-          minY = viewBoundsRef.current.minY;
-          maxY = viewBoundsRef.current.maxY;
-        }
+        const extraPoints = [
+          { rawX: imuPosRef.current.x, rawY: imuPosRef.current.y },
+        ];
+        const { minX, maxX, minY, maxY } = adjustViewBounds(
+          trail,
+          extraPoints,
+          viewBoundsRef,
+          50,
+          0.15,
+        );
 
         // 軌跡描画
         if (trail.length > 1) {
@@ -517,8 +492,8 @@ export default function WandTrackingPage() {
 
         // カーソル描画
         const { cx: curX, cy: curY } = toCanvasCoords(
-          imuPos.x,
-          imuPos.y,
+          imuPosRef.current.x,
+          imuPosRef.current.y,
           minX,
           maxX,
           minY,
