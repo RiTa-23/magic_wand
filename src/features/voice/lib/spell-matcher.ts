@@ -23,16 +23,25 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     action: "fan_on",
   },
   {
-    id: "reducto",
-    name: "リダクト",
-    keywords: ["リダクト", "りだくと", "爆発", "reducto"],
-    action: "fan_off",
-  },
-  {
     id: "ventus",
     name: "ヴェンタス",
-    keywords: ["ヴェンタス", "べんたす", "ベントス","ベンタス", "ventus", "風よ"],
+    keywords: ["ヴェンタス", "べんたす", "ベントス","ベンタス", "ペンタス", "ventus", "風よ"],
     action: "fan_on",
+  },
+  {
+    id: "arresto_momentum",
+    name: "アレスト モメンタム",
+    keywords: [
+      "アレストモメンタム",
+      "アレスト モメンタム",
+      "あれすと めんたむ",
+      "あれすとめめんたむ",
+      "arresto momentum",
+      "arrest momentum",
+      "止まれ",
+      "減速"
+    ],
+    action: "fan_stop",
   },
 ];
 
