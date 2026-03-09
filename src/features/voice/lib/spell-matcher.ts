@@ -60,32 +60,50 @@ export function matchSpell(
   transcript: string,
   dictionary: SpellEntry[] = SPELL_DICTIONARY,
 ): SpellMatchResult {
-  // 1. Unicode正規化 (NFKC): 見た目が同じでコードが異なる文字（濁点など）を統一
-  // 2. 句読点、記号、スペースをすべて削除
+  // 1. Unicode正規化 (NFKC) と記号・空白の削除
   const normalized = transcript
-    .normalize("NFKC") // 濁点などの文字コードを統一
+    .normalize("NFKC")
     .replace(/[.,。、！？！？\s\n\r]/g, "")
     .trim()
     .toLowerCase();
 
-  console.log(`マッチング中: 原文="${transcript}", 正規化後="${normalized}"`);
+  if (!normalized) {
+    return { matched: false, spell: null, confidence: 0, rawTranscript: transcript };
+  }
 
+  // --- 第一パス: 完全一致を優先 ---
   for (const spell of dictionary) {
     for (const keyword of spell.keywords) {
-      // 辞書側のキーワードも同じ方法で正規化して比較
       const normalizedKeyword = keyword
         .normalize("NFKC")
         .replace(/[.,。、！？！？\s\n\r]/g, "")
         .toLowerCase();
 
-      if (normalized.includes(normalizedKeyword)) {
-        console.log(
-          `✅ マッチ成功: ${spell.name} (正規化一致: ${normalizedKeyword})`,
-        );
+      if (normalized === normalizedKeyword) {
         return {
           matched: true,
           spell,
-          confidence: 1.0,
+          confidence: 1.0, // 完全一致は信頼度1.0
+          rawTranscript: transcript,
+        };
+      }
+    }
+  }
+
+  // --- 第二パス: 部分一致（日常会話での誤爆リスクがあるが、呪文の前後になにか入った場合を救済） ---
+  for (const spell of dictionary) {
+    for (const keyword of spell.keywords) {
+      const normalizedKeyword = keyword
+        .normalize("NFKC")
+        .replace(/[.,。、！？！？\s\n\r]/g, "")
+        .toLowerCase();
+
+      // キーワードが3文字以上、または特定の重要な呪文の場合にのみ部分一致を許容するなどの工夫も可能
+      if (normalized.includes(normalizedKeyword)) {
+        return {
+          matched: true,
+          spell,
+          confidence: 0.8, // 部分一致は少し信頼度を下げる
           rawTranscript: transcript,
         };
       }
@@ -99,3 +117,4 @@ export function matchSpell(
     rawTranscript: transcript,
   };
 }
+
