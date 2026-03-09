@@ -34,6 +34,13 @@ export default function VoiceTestPage() {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, currentResult]);
 
+  // ページ離脱時に音声認識を確実に停止（クリーンアップ）
+  useEffect(() => {
+    return () => {
+      speechRecognitionAPI.stop();
+    };
+  }, []);
+
   // 音声認識の開始
   const handleStart = () => {
     if (!speechRecognitionAPI.isSupported()) {
