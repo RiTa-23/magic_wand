@@ -309,6 +309,18 @@ function StartScreen() {
         .mag-enter:hover .mag-shimmer {
           animation: mag-shimmer 1100ms linear infinite;
         }
+
+        @media (prefers-reduced-motion: reduce) {
+          .mag-title,
+          .mag-subtitle {
+            animation: none !important;
+            transition: none !important;
+          }
+
+          .mag-enter:hover .mag-shimmer {
+            animation: none !important;
+          }
+        }
       `}</style>
     </div>
   );
