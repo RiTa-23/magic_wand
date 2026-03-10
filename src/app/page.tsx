@@ -80,28 +80,29 @@ function MagicParticles() {
       }
     };
 
-    const tick = (ts: number) => {
+    const renderFrame = (dt: number, shouldUpdate: boolean) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       ctx.clearRect(0, 0, w, h);
 
-      if (lastTsRef.current === null) lastTsRef.current = ts;
-      const dtMs = Math.min(50, Math.max(0, ts - lastTsRef.current));
-      lastTsRef.current = ts;
-      const dt = dtMs / (1000 / 60);
       const particles = particlesRef.current;
 
       ctx.shadowBlur = 12;
       ctx.shadowColor = "rgba(255, 140, 60, 0.85)";
 
       for (const p of particles) {
-        p.y -= p.riseSpeed * dt;
-        p.phase += p.twinkleSpeed * dt;
-        p.x += (p.driftSpeed + Math.sin(p.phase * 0.9) * 0.08) * dt;
+        if (shouldUpdate) {
+          p.y -= p.riseSpeed * dt;
+          p.phase += p.twinkleSpeed * dt;
+          p.x += (p.driftSpeed + Math.sin(p.phase * 0.9) * 0.08) * dt;
+        }
 
         const heightT = Math.max(0, Math.min(1, (h - p.y) / h));
 
-        if (p.y < -24 || (p.resetAt <= 1 && heightT >= p.resetAt)) {
+        if (
+          shouldUpdate &&
+          (p.y < -24 || (p.resetAt <= 1 && heightT >= p.resetAt))
+        ) {
           const spawnBand = Math.min(240, h * 0.32);
           p.y = h - Math.pow(Math.random(), 2) * spawnBand;
           p.x = Math.random() * w;
@@ -112,6 +113,7 @@ function MagicParticles() {
           p.twinkleSpeed = 0.012 + Math.random() * 0.028;
           p.resetAt = Math.random() < 0.78 ? 0.42 + Math.random() * 0.22 : 1.2;
         }
+
         if (p.x < -16) p.x = w + 16;
         if (p.x > w + 16) p.x = -16;
 
@@ -133,16 +135,55 @@ function MagicParticles() {
       }
 
       ctx.shadowBlur = 0;
+    };
+
+    const tick = (ts: number) => {
+      if (lastTsRef.current === null) lastTsRef.current = ts;
+      const dtMs = Math.min(50, Math.max(0, ts - lastTsRef.current));
+      lastTsRef.current = ts;
+      const dt = dtMs / (1000 / 60);
+
+      renderFrame(dt, true);
       rafRef.current = window.requestAnimationFrame(tick);
     };
 
+    const stop = (renderStatic: boolean) => {
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      lastTsRef.current = null;
+      if (renderStatic) renderFrame(0, false);
+    };
+
+    const start = () => {
+      if (rafRef.current !== null) return;
+      lastTsRef.current = null;
+      rafRef.current = window.requestAnimationFrame(tick);
+    };
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncMotion = () => {
+      if (motionQuery.matches) stop(true);
+      else start();
+    };
+
+    const onResize = () => {
+      resize();
+      if (motionQuery.matches) renderFrame(0, false);
+    };
+
     resize();
-    window.addEventListener("resize", resize);
-    rafRef.current = window.requestAnimationFrame(tick);
+    window.addEventListener("resize", onResize);
+    syncMotion();
+
+    const onMotionChange = () => syncMotion();
+    motionQuery.addEventListener("change", onMotionChange);
 
     return () => {
-      window.removeEventListener("resize", resize);
-      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", onResize);
+      motionQuery.removeEventListener("change", onMotionChange);
+      stop(false);
     };
   }, []);
 
