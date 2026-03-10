@@ -2,6 +2,7 @@
 
 import { Wifi, BookOpen, Settings, ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MagicCircle } from "@/components/magic-circle";
 import { FloatingParticles } from "@/components/floating-particles";
 import { HeroMagicCircle } from "@/components/hero-magic-circle";
@@ -10,6 +11,8 @@ import { PrimaryMagicButton } from "@/components/primary-magic-button";
 import { WandIcon } from "@/components/wand-icon";
 
 export default function HomePage() {
+  const router = useRouter();
+
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background">
       {/* Background image layer */}
@@ -61,10 +64,13 @@ export default function HomePage() {
           </div>
 
           {/* Settings button - top right */}
-          <button className="group relative flex items-center justify-center w-10 h-10 rounded-lg border border-gold-dim/25 bg-stone/60 backdrop-blur-sm transition-all duration-300 hover:border-gold/40 hover:shadow-[0_0_15px_rgba(212,175,55,0.1)] active:scale-95">
+          <Link
+            href="/settings"
+            className="group relative flex items-center justify-center w-10 h-10 rounded-lg border border-gold-dim/25 bg-stone/60 backdrop-blur-sm transition-all duration-300 hover:border-gold/40 hover:shadow-[0_0_15px_rgba(212,175,55,0.1)] active:scale-95"
+          >
             <Settings className="w-5 h-5 text-gold/70 transition-colors duration-300 group-hover:text-gold-bright" />
             <span className="sr-only">{"設定"}</span>
-          </button>
+          </Link>
         </header>
 
         {/* Main area */}
@@ -78,8 +84,14 @@ export default function HomePage() {
               label="チュートリアル"
               icon={BookOpen}
               delay={100}
+              onClick={() => router.push("/tutorial")}
             />
-            <MagicMenuButton label="接続確認" icon={Wifi} delay={200} />
+            <MagicMenuButton
+              label="接続確認"
+              icon={Wifi}
+              delay={200}
+              onClick={() => router.push("/connection-check")}
+            />
             <PrimaryMagicButton
               label="魔法を発動"
               icon={WandIcon}
