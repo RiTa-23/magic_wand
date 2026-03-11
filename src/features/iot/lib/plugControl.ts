@@ -172,9 +172,6 @@ export async function castMaxima() {
 /**
  * 魔法: ノックス - すべてのポートをOFF
  */
-/**
- * 魔法: ノックス - すべてのポートをOFF
- */
 export async function castNox() {
   try {
     console.log("🌑 ノックス発動！すべてOFFにします");
