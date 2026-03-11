@@ -50,7 +50,7 @@ describe("Tapo Client Tests", () => {
     });
 
     it("TAPO_EMAILが未設定の場合、エラーをスローする", async () => {
-      process.env.TAPO_EMAIL = undefined;
+      delete process.env.TAPO_EMAIL;
       process.env.TAPO_PASSWORD = "test-password";
       process.env.TAPO_P300_IP = "192.168.1.100";
 
@@ -61,7 +61,7 @@ describe("Tapo Client Tests", () => {
 
     it("TAPO_PASSWORDが未設定の場合、エラーをスローする", async () => {
       process.env.TAPO_EMAIL = "test@example.com";
-      process.env.TAPO_PASSWORD = undefined;
+      delete process.env.TAPO_PASSWORD;
       process.env.TAPO_P300_IP = "192.168.1.100";
 
       await expect(getTapoClient()).rejects.toThrow(
@@ -72,7 +72,7 @@ describe("Tapo Client Tests", () => {
     it("TAPO_P300_IPが未設定の場合、エラーをスローする", async () => {
       process.env.TAPO_EMAIL = "test@example.com";
       process.env.TAPO_PASSWORD = "test-password";
-      process.env.TAPO_P300_IP = undefined;
+      delete process.env.TAPO_P300_IP;
 
       await expect(getTapoClient()).rejects.toThrow(
         "環境変数が足りません。.env.localを確認してください。",
@@ -80,9 +80,9 @@ describe("Tapo Client Tests", () => {
     });
 
     it("すべての環境変数が未設定の場合、エラーをスローする", async () => {
-      process.env.TAPO_EMAIL = undefined;
-      process.env.TAPO_PASSWORD = undefined;
-      process.env.TAPO_P300_IP = undefined;
+      delete process.env.TAPO_EMAIL;
+      delete process.env.TAPO_PASSWORD;
+      delete process.env.TAPO_P300_IP;
 
       await expect(getTapoClient()).rejects.toThrow(
         "環境変数が足りません。.env.localを確認してください。",
