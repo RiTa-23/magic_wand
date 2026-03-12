@@ -96,6 +96,7 @@ export default function HomePage() {
               label="魔法を発動"
               icon={WandIcon}
               delay={300}
+              onClick={() => router.push("/play")}
             />
           </nav>
 
