@@ -255,3 +255,67 @@ export async function getDeviceStatus() {
     return { success: false, message: `情報取得失敗: ${errorMessage}` };
   }
 }
+
+// ========================================
+// マスター関数（他チーム用）
+// ========================================
+
+/**
+ * 🎯 マスター関数: 魔法名を指定して実行
+ * 
+ * 画像認識や音声認識を担当するメンバーが、この関数に魔法名を渡すだけで
+ * Tapo制御を簡単に実行できるようにするための統一インターフェース。
+ * 
+ * @param spellName - 魔法名（大文字始まり）
+ * - `"Ventus"` - 風ON（ポート0）
+ * - `"VentusOff"` - 風OFF
+ * - `"Lumos"` - 光ON（ポート1）
+ * - `"LumosOff"` - 光OFF
+ * - `"Incendio"` - 炎ON（ポート2）
+ * - `"IncendioOff"` - 炎OFF
+ * - `"Aguamenti"` - 水ON（ポート3）
+ * - `"AguamentiOff"` - 水OFF
+ * - `"Maxima"` - 全ポートON
+ * - `"Nox"` - 全ポートOFF
+ * 
+ * @returns 実行結果 `{ success: boolean, message: string }`
+ * 
+ * @example
+ * // 音声認識から呼び出す場合
+ * const result = await executeSpell("Ventus");
+ * console.log(result.message); // "ヴェンタス成功！ポート0をONにしました🌪️"
+ * 
+ * @example
+ * // 画像認識から呼び出す場合
+ * const result = await executeSpell("Lumos");
+ * if (result.success) {
+ *   console.log("魔法成功！");
+ * }
+ */
+export async function executeSpell(spellName: string) {
+  switch (spellName) {
+    case "Ventus":
+      return await castVentus();
+    case "VentusOff":
+      return await castVentusOff();
+    case "Lumos":
+      return await castLumos();
+    case "LumosOff":
+      return await castLumosOff();
+    case "Incendio":
+      return await castIncendio();
+    case "IncendioOff":
+      return await castIncendioOff();
+    case "Aguamenti":
+      return await castAguamenti();
+    case "AguamentiOff":
+      return await castAguamentiOff();
+    case "Maxima":
+      return await castMaxima();
+    case "Nox":
+      return await castNox();
+    default:
+      console.log("未知の魔法っす…！");
+      return { success: false, message: "未知の魔法っす" };
+  }
+}
