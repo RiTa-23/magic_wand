@@ -1,10 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { FloatingParticles } from "@/components/floating-particles";
 
 export default function SettingsPage() {
+  const [settings, setSettings] = useState({
+    sound: true,
+    visual: true,
+    energy: false,
+  });
+
+  const toggleSetting = (key: keyof typeof settings) => {
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background">
       <FloatingParticles />
@@ -27,28 +38,56 @@ export default function SettingsPage() {
         </header>
 
         <div className="w-full max-w-md space-y-4">
-          <SimpleToggle label="Sound Effects" active={true} />
-          <SimpleToggle label="Visual Magic" active={true} />
-          <SimpleToggle label="Energy Save" active={false} />
+          <SimpleToggle
+            label="Sound Effects"
+            active={settings.sound}
+            onClick={() => toggleSetting("sound")}
+          />
+          <SimpleToggle
+            label="Visual Magic"
+            active={settings.visual}
+            onClick={() => toggleSetting("visual")}
+          />
+          <SimpleToggle
+            label="Energy Save"
+            active={settings.energy}
+            onClick={() => toggleSetting("energy")}
+          />
         </div>
       </div>
     </main>
   );
 }
 
-function SimpleToggle({ label, active }: { label: string; active: boolean }) {
+function SimpleToggle({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between p-5 rounded-xl border border-gold-dim/10 bg-stone/20 backdrop-blur-sm">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-5 rounded-xl border border-gold-dim/10 bg-stone/20 backdrop-blur-sm cursor-pointer hover:bg-stone/30 hover:border-gold-dim/30 transition-colors"
+    >
       <span className="text-sm tracking-widest text-gold-dim uppercase">
         {label}
       </span>
       <div
-        className={`w-10 h-5 rounded-full border border-gold/30 relative transition-colors ${active ? "bg-gold/20" : "bg-transparent"}`}
+        className={`w-10 h-5 rounded-full border border-gold/30 relative transition-colors ${
+          active ? "bg-gold/20" : "bg-transparent"
+        }`}
       >
         <div
-          className={`absolute top-1 w-2.5 h-2.5 rounded-full bg-gold-bright transition-all ${active ? "right-1" : "left-1"}`}
+          className={`absolute top-[3px] w-3 h-3 rounded-full bg-gold-bright transition-all ${
+            active ? "right-1" : "left-1"
+          }`}
         />
       </div>
-    </div>
+    </button>
   );
 }
