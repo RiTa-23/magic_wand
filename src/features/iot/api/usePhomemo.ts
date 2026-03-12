@@ -41,7 +41,11 @@ export function usePhomemo() {
   const connect = useCallback(async () => {
     if (!phomemoRef.current) return;
     const result = await phomemoRef.current.connect();
-    if (!result.success) {
+    // ユーザーキャンセル以外のエラーの場合のみログ出力
+    if (
+      !result.success &&
+      result.message !== "デバイスが選択されませんでした"
+    ) {
       console.error("接続失敗:", result.message);
     }
   }, []);

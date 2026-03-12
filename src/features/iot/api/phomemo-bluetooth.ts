@@ -24,8 +24,16 @@ export class PhomemoBluetooth {
    */
   async connect(): Promise<BluetoothConnectionResult> {
     try {
+      // Web Bluetooth API の利用可能性チェック
+      if (!navigator.bluetooth) {
+        throw new Error(
+          "お使いのブラウザはWeb Bluetooth APIをサポートしていません",
+        );
+      }
+
+      // 接続開始時に前回のエラーをクリア
       this.status = "CONNECTING";
-      this.emitStateChange();
+      this.emitStateChange(); // errorMessage を undefined に
 
       // Web Bluetooth APIでデバイスをリクエスト
       // namePrefix で M02S から始まるデバイスをフィルタリング
@@ -66,11 +74,24 @@ export class PhomemoBluetooth {
         deviceName: this.device.name,
       };
     } catch (error) {
-      console.error("❌ Bluetooth接続エラー:", error);
+      // 失敗時は接続オブジェクトをクリア
+      this.device = null;
+      this.server = null;
 
-      this.status = "ERROR";
+      // ユーザーがキャンセルした場合は通常のログ、それ以外はエラーログ
+      const isUserCancelled =
+        error instanceof Error && error.name === "NotFoundError";
+
+      if (isUserCancelled) {
+        console.log("ℹ️ デバイス選択がキャンセルされました");
+        this.status = "DISCONNECTED";
+      } else {
+        console.error("❌ Bluetooth接続エラー:", error);
+        this.status = "ERROR";
+      }
+
       const errorMessage = this.getErrorMessage(error);
-      this.emitStateChange(errorMessage);
+      this.emitStateChange(isUserCancelled ? undefined : errorMessage);
 
       return {
         success: false,
@@ -122,6 +143,7 @@ export class PhomemoBluetooth {
   private handleDisconnect(): void {
     console.log("⚠️ デバイスが切断されました");
     this.status = "DISCONNECTED";
+    this.device = null;
     this.server = null;
     this.emitStateChange();
   }
@@ -152,6 +174,22 @@ export class PhomemoBluetooth {
       // Bluetoothが無効な場合
       if (error.name === "NotSupportedError") {
         return "お使いのブラウザはWeb Bluetooth APIをサポートしていません";
+      }
+      // ユーザーが権限を拒否した場合
+      if (error.name === "NotAllowedError") {
+        return "Bluetoothへのアクセスが許可されていません";
+      }
+      // Bluetoothアダプターが無効な場合
+      if (error.name === "InvalidStateError") {
+        return "Bluetoothが無効になっています。設定から有効にしてください";
+      }
+      // デバイスとの通信エラー
+      if (error.name === "NetworkError") {
+        return "デバイスとの通信に失敗しました。デバイスの電源を確認してください";
+      }
+      // GATT接続エラー
+      if (error.message.includes("GATT")) {
+        return "デバイスとの接続に失敗しました。デバイスを再起動してみてください";
       }
       // その他のエラー
       return `接続エラー: ${error.message}`;
