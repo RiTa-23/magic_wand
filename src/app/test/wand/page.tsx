@@ -737,7 +737,7 @@ export default function WandTrackingPage() {
             )}
 
             {/* IMU モードのサイド情報 */}
-            {trackingMode === "IMU" && joyconState && (
+            {trackingMode === "IMU" && joyconState && isConnected && (
               <>
                 <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
                   <h2 className="text-sm font-semibold text-gray-400 mb-3">
