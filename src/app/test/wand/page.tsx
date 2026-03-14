@@ -820,7 +820,7 @@ export default function WandTrackingPage() {
                   imuPosRef.current = { x: 0, y: 0 };
                   setCalibrationState("calibrating");
                   setCalibrationProgress(0);
-                  calibrationStartRef.current = Date.now();
+                  calibrationStartRef.current = null;
                   calibrationSamplesRef.current = [];
                   calibrationPrevAccelRef.current = null;
                 }
