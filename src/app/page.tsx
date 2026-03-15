@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Cinzel, Cormorant_Garamond } from "next/font/google";
 import { useEffect, useRef } from "react";
 
@@ -248,14 +249,14 @@ function StartScreen() {
           </p>
 
           <div className="mag-enter-wrap mt-12 flex items-center justify-center">
-            <button
-              type="button"
+            <Link
+              href="/home"
               className="mag-enter relative overflow-hidden rounded-md border border-amber-700/70 bg-slate-950/40 px-10 py-4 font-[var(--font-cinzel)] text-base tracking-[0.35em] text-amber-100 backdrop-blur-sm transition-colors hover:bg-slate-950/55 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               <span className="relative z-10">ENTER</span>
               <span className="mag-shimmer absolute inset-y-0 left-[-40%] w-[40%] bg-gradient-to-r from-transparent via-amber-200/35 to-transparent" />
-            </button>
+            </Link>
           </div>
 
           <p
