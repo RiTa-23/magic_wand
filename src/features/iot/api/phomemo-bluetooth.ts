@@ -11,6 +11,7 @@ import {
 export class PhomemoBluetooth {
   private device: BluetoothDevice | null = null;
   private server: BluetoothRemoteGATTServer | null = null;
+  private readonly boundHandleDisconnect = this.handleDisconnect.bind(this);
   public status: PhomemoStatus = "DISCONNECTED";
 
   // 状態変更のコールバック
@@ -65,7 +66,7 @@ export class PhomemoBluetooth {
       // デバイスの切断イベントをリスン
       this.device.addEventListener(
         "gattserverdisconnected",
-        this.handleDisconnect.bind(this),
+        this.boundHandleDisconnect,
       );
 
       return {
@@ -75,6 +76,12 @@ export class PhomemoBluetooth {
       };
     } catch (error) {
       // 失敗時は接続オブジェクトをクリア
+      if (this.device) {
+        this.device.removeEventListener(
+          "gattserverdisconnected",
+          this.boundHandleDisconnect,
+        );
+      }
       this.device = null;
       this.server = null;
 
@@ -105,6 +112,13 @@ export class PhomemoBluetooth {
    */
   async disconnect(): Promise<void> {
     try {
+      if (this.device) {
+        this.device.removeEventListener(
+          "gattserverdisconnected",
+          this.boundHandleDisconnect,
+        );
+      }
+
       if (this.server?.connected) {
         this.server.disconnect();
         console.log("🔌 GATTサーバーから切断しました");
@@ -143,6 +157,14 @@ export class PhomemoBluetooth {
   private handleDisconnect(): void {
     console.log("⚠️ デバイスが切断されました");
     this.status = "DISCONNECTED";
+
+    if (this.device) {
+      this.device.removeEventListener(
+        "gattserverdisconnected",
+        this.boundHandleDisconnect,
+      );
+    }
+
     this.device = null;
     this.server = null;
     this.emitStateChange();
