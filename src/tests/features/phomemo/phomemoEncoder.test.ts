@@ -54,22 +54,38 @@ describe("Phomemo Image Processor", () => {
 });
 
 describe("Phomemo Encoder", () => {
-  it("encodes binary image into framed Uint8Array command stream", () => {
+  it("encodes binary image into ESC/POS-like raster commands", () => {
     const binary = {
       width: 8,
       height: 1,
       pixels: new Uint8Array([1, 1, 1, 1, 1, 1, 1, 1]),
     };
 
-    const encoded = encodeBinaryImageToPhomemo(binary, { dataChunkSize: 16 });
+    const encoded = encodeBinaryImageToPhomemo(binary, { stripeHeight: 16 });
     expect(encoded).toBeInstanceOf(Uint8Array);
     expect(encoded.length).toBeGreaterThan(0);
 
-    // First frame: header + CMD_INIT + payload length 0 + checksum + tail
-    expect(Array.from(encoded.slice(0, 7))).toEqual([0x51, 0x78, 0xa0, 0x00, 0x00, 0xa0, 0xff]);
+    expect(Array.from(encoded.slice(0, 17))).toEqual([
+      0x1b,
+      0x40,
+      0x02,
+      0x1b,
+      0x40,
+      0x1b,
+      0x61,
+      0x01,
+      0x1f,
+      0x11,
+      0x37,
+      0x96,
+      0x1f,
+      0x11,
+      0x02,
+      0x01,
+      0x1d,
+    ]);
 
-    // Ensure image data frame command is present in the stream.
-    expect(Array.from(encoded)).toContain(0xa2);
+    expect(Array.from(encoded)).toContain(0x76);
   });
 
   it("supports end-to-end conversion from image data to command bytes", () => {

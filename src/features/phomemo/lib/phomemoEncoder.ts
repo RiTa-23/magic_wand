@@ -6,19 +6,22 @@ import {
   packBinaryPixels,
 } from "./imageProcessor";
 
-const FRAME_HEADER_0 = 0x51;
-const FRAME_HEADER_1 = 0x78;
-const FRAME_TAIL = 0xff;
+const ESC = 0x1b;
+const GS = 0x1d;
+const US = 0x1f;
 
-const CMD_INIT = 0xa0;
-const CMD_START_PAGE = 0xa1;
-const CMD_IMAGE_DATA = 0xa2;
-const CMD_END_PAGE = 0xaf;
-
-const DEFAULT_DATA_CHUNK_SIZE = 240;
+const DEFAULT_STRIPE_HEIGHT = 255;
+const DEFAULT_FEED_LINES = 3;
+const DEFAULT_ALIGNMENT = 1;
+const DEFAULT_CONCENTRATION_COEFFICIENT = 0x96;
+const DEFAULT_CONCENTRATION = 0x01;
 
 export interface PhomemoEncodeOptions {
-  dataChunkSize?: number;
+  stripeHeight?: number;
+  feedLines?: number;
+  alignment?: 0 | 1 | 2;
+  concentrationCoefficient?: number;
+  concentration?: number;
 }
 
 function toUint16LE(value: number): [number, number] {
@@ -26,32 +29,6 @@ function toUint16LE(value: number): [number, number] {
     throw new Error(`value out of range for uint16: ${value}`);
   }
   return [value & 0xff, (value >> 8) & 0xff];
-}
-
-function calculateChecksum(command: number, payload: Uint8Array): number {
-  const [lenL, lenH] = toUint16LE(payload.length);
-  let sum = (command + lenL + lenH) & 0xff;
-  for (let i = 0; i < payload.length; i++) {
-    sum = (sum + payload[i]) & 0xff;
-  }
-  return sum;
-}
-
-function buildFrame(command: number, payload: Uint8Array = new Uint8Array()): Uint8Array {
-  const [lenL, lenH] = toUint16LE(payload.length);
-  const checksum = calculateChecksum(command, payload);
-  const frame = new Uint8Array(7 + payload.length);
-
-  frame[0] = FRAME_HEADER_0;
-  frame[1] = FRAME_HEADER_1;
-  frame[2] = command;
-  frame[3] = lenL;
-  frame[4] = lenH;
-  frame.set(payload, 5);
-  frame[5 + payload.length] = checksum;
-  frame[6 + payload.length] = FRAME_TAIL;
-
-  return frame;
 }
 
 function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
@@ -67,8 +44,22 @@ function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
   return merged;
 }
 
+function buildStripeCommand(
+  raster: Uint8Array,
+  bytesPerRow: number,
+  height: number,
+): Uint8Array {
+  const [widthL, widthH] = toUint16LE(bytesPerRow);
+  const [heightL, heightH] = toUint16LE(height);
+
+  return concatUint8Arrays([
+    new Uint8Array([GS, 0x76, 0x30, 0x00, widthL, widthH, heightL, heightH]),
+    raster,
+  ]);
+}
+
 /**
- * Encode packed monochrome raster data into a framed command stream.
+ * Encode binary raster data using the ESC/POS-like image commands used by M02S examples.
  */
 export function encodeBinaryImageToPhomemo(
   binary: BinaryImageData,
@@ -79,40 +70,45 @@ export function encodeBinaryImageToPhomemo(
     throw new Error("binary pixel length does not match width * height");
   }
 
-  const packed = packBinaryPixels(binary);
-  const bytesPerRow = Math.ceil(width / 8);
-  const dataChunkSize = options.dataChunkSize ?? DEFAULT_DATA_CHUNK_SIZE;
+  const stripeHeight = options.stripeHeight ?? DEFAULT_STRIPE_HEIGHT;
+  const feedLines = options.feedLines ?? DEFAULT_FEED_LINES;
+  const alignment = options.alignment ?? DEFAULT_ALIGNMENT;
+  const concentrationCoefficient =
+    options.concentrationCoefficient ?? DEFAULT_CONCENTRATION_COEFFICIENT;
+  const concentration = options.concentration ?? DEFAULT_CONCENTRATION;
 
-  if (!Number.isInteger(dataChunkSize) || dataChunkSize <= 0) {
-    throw new Error("dataChunkSize must be a positive integer");
+  if (!Number.isInteger(stripeHeight) || stripeHeight <= 0 || stripeHeight > 0xffff) {
+    throw new Error("stripeHeight must be a positive integer");
   }
 
-  const [widthL, widthH] = toUint16LE(width);
-  const [heightL, heightH] = toUint16LE(height);
-  const [rowBytesL, rowBytesH] = toUint16LE(bytesPerRow);
-
-  const pageHeaderPayload = new Uint8Array([
-    widthL,
-    widthH,
-    heightL,
-    heightH,
-    rowBytesL,
-    rowBytesH,
-  ]);
-
-  const frames: Uint8Array[] = [
-    buildFrame(CMD_INIT),
-    buildFrame(CMD_START_PAGE, pageHeaderPayload),
+  const bytesPerRow = Math.ceil(width / 8);
+  const commands: Uint8Array[] = [
+    new Uint8Array([ESC, 0x40, 0x02]),
+    new Uint8Array([ESC, 0x40]),
+    new Uint8Array([ESC, 0x61, alignment]),
+    new Uint8Array([US, 0x11, 0x37, concentrationCoefficient]),
+    new Uint8Array([US, 0x11, 0x02, concentration]),
   ];
 
-  for (let offset = 0; offset < packed.length; offset += dataChunkSize) {
-    const chunk = packed.slice(offset, Math.min(offset + dataChunkSize, packed.length));
-    frames.push(buildFrame(CMD_IMAGE_DATA, chunk));
+  for (let startRow = 0; startRow < height; startRow += stripeHeight) {
+    const chunkHeight = Math.min(stripeHeight, height - startRow);
+    const stripePixels = pixels.slice(
+      startRow * width,
+      (startRow + chunkHeight) * width,
+    );
+    const stripeRaster = packBinaryPixels({
+      width,
+      height: chunkHeight,
+      pixels: stripePixels,
+    });
+
+    commands.push(buildStripeCommand(stripeRaster, bytesPerRow, chunkHeight));
   }
 
-  frames.push(buildFrame(CMD_END_PAGE));
+  commands.push(new Uint8Array([ESC, 0x64, feedLines]));
+  commands.push(new Uint8Array([ESC, 0x40, 0x02]));
 
-  return concatUint8Arrays(frames);
+  return concatUint8Arrays(commands);
 }
 
 /**

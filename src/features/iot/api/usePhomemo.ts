@@ -71,18 +71,24 @@ export function usePhomemo() {
     if (!phomemoRef.current) return;
 
     const imageData = renderCanvasImage({
-      width: 384,
-      height: 240,
+      width: 576,
+      height: 320,
       text: ["Mofurun Omikuji", message].join("\n"),
-      font: "bold 28px sans-serif",
-      padding: 20,
+      font: "bold 36px sans-serif",
+      padding: 24,
     });
 
     const encoded = encodeImageDataToPhomemo(imageData, { threshold: 170 });
     const result = await phomemoRef.current.print(encoded);
     if (!result.success) {
       console.error("印刷失敗:", result.message);
+      return;
     }
+
+    console.log("印刷データ送信完了:", {
+      bytesWritten: result.bytesWritten,
+      preview: Array.from(encoded.slice(0, 24)),
+    });
   }, []);
 
   return {
