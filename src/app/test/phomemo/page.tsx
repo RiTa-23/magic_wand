@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePhomemo } from "@/features/iot/api/usePhomemo";
 
 const STATUS_EMOJI: Record<string, string> = {
@@ -19,8 +20,17 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function PhomemoTestPage() {
-  const { status, deviceName, errorMessage, connect, disconnect, isConnected } =
-    usePhomemo();
+  const [printMessage, setPrintMessage] = useState("今日の運勢は大吉");
+  const {
+    status,
+    deviceName,
+    errorMessage,
+    transportInfo,
+    connect,
+    disconnect,
+    printTestPage,
+    isConnected,
+  } = usePhomemo();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8">
@@ -49,6 +59,14 @@ export default function PhomemoTestPage() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-300">デバイス名:</span>
                 <span className="text-white font-mono">{deviceName}</span>
+              </div>
+            )}
+            {transportInfo && (
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-gray-300">転送先:</span>
+                <span className="text-white font-mono text-right text-xs break-all">
+                  {transportInfo}
+                </span>
               </div>
             )}
             {errorMessage && (
@@ -81,6 +99,23 @@ export default function PhomemoTestPage() {
             >
               🔌 切断する
             </button>
+            <label className="text-sm text-gray-300">
+              印刷メッセージ
+              <textarea
+                value={printMessage}
+                onChange={(event) => setPrintMessage(event.target.value)}
+                rows={3}
+                className="mt-2 w-full rounded-xl border border-white/15 bg-black/20 px-4 py-3 text-white outline-none placeholder:text-gray-500"
+                placeholder="印刷したいメッセージを入力"
+              />
+            </label>
+            <button
+              onClick={() => printTestPage(printMessage)}
+              disabled={!isConnected || status === "PRINTING"}
+              className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:transform-none"
+            >
+              {status === "PRINTING" ? "🖨️ 印刷中..." : "✨ テスト印刷する"}
+            </button>
           </div>
         </div>
 
@@ -93,7 +128,7 @@ export default function PhomemoTestPage() {
             <li>Phomemo M02Sプリンターの電源を入れる</li>
             <li>「デバイスに接続する」ボタンをクリック</li>
             <li>ブラウザのダイアログで「M02S」を選択</li>
-            <li>接続成功を確認する</li>
+            <li>接続後にメッセージを入力して「テスト印刷する」を押す</li>
           </ol>
           <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <p className="text-yellow-200 text-xs">

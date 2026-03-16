@@ -2,7 +2,23 @@ import {
   PhomemoStatus,
   PhomemoState,
   BluetoothConnectionResult,
+  PhomemoPrintResult,
 } from "../types/phomemo";
+
+const PHOMEMO_SERVICE_UUID_CANDIDATES = [
+  "0000ff00-0000-1000-8000-00805f9b34fb",
+  "0000ffe0-0000-1000-8000-00805f9b34fb",
+  "0000ae30-0000-1000-8000-00805f9b34fb",
+];
+
+const PHOMEMO_CHARACTERISTIC_UUID_CANDIDATES = [
+  "0000ff02-0000-1000-8000-00805f9b34fb",
+  "0000ffe1-0000-1000-8000-00805f9b34fb",
+  "0000ae01-0000-1000-8000-00805f9b34fb",
+];
+
+const WRITE_CHUNK_SIZE = 180;
+const WRITE_DELAY_MS = 40;
 
 /**
  * Phomemo M02S モバイルプリンター制御クラス
@@ -11,6 +27,8 @@ import {
 export class PhomemoBluetooth {
   private device: BluetoothDevice | null = null;
   private server: BluetoothRemoteGATTServer | null = null;
+  private writeCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+  private transportInfo: string | undefined = undefined;
   private readonly boundHandleDisconnect = this.handleDisconnect.bind(this);
   public status: PhomemoStatus = "DISCONNECTED";
 
@@ -44,8 +62,7 @@ export class PhomemoBluetooth {
             namePrefix: "M02S",
           },
         ],
-        // optionalServicesは後で印刷用のサービスUUIDを追加する
-        optionalServices: [],
+        optionalServices: PHOMEMO_SERVICE_UUID_CANDIDATES,
       });
 
       console.log(`📱 デバイス選択: ${this.device.name}`);
@@ -58,7 +75,13 @@ export class PhomemoBluetooth {
         throw new Error("GATTサーバーへの接続に失敗しました");
       }
 
+      this.writeCharacteristic = await this.findWritableCharacteristic(
+        this.server,
+      );
+      this.transportInfo = this.describeTransport(this.writeCharacteristic);
+
       console.log(`✅ GATTサーバー接続成功: ${this.device.name}`);
+      console.log(`🛰️ 印刷Characteristic検出: ${this.transportInfo}`);
 
       this.status = "CONNECTED";
       this.emitStateChange();
@@ -84,6 +107,8 @@ export class PhomemoBluetooth {
       }
       this.device = null;
       this.server = null;
+      this.writeCharacteristic = null;
+      this.transportInfo = undefined;
 
       // ユーザーがキャンセルした場合は通常のログ、それ以外はエラーログ
       const isUserCancelled =
@@ -126,6 +151,8 @@ export class PhomemoBluetooth {
 
       this.device = null;
       this.server = null;
+      this.writeCharacteristic = null;
+      this.transportInfo = undefined;
       this.status = "DISCONNECTED";
       this.emitStateChange();
     } catch (error) {
@@ -141,7 +168,7 @@ export class PhomemoBluetooth {
    * 接続状態を取得
    */
   isConnected(): boolean {
-    return this.server?.connected ?? false;
+    return (this.server?.connected ?? false) && this.writeCharacteristic !== null;
   }
 
   /**
@@ -149,6 +176,64 @@ export class PhomemoBluetooth {
    */
   getDeviceName(): string | undefined {
     return this.device?.name;
+  }
+
+  /**
+   * 印刷データを書き込む
+   */
+  async print(data: Uint8Array): Promise<PhomemoPrintResult> {
+    if (!this.server?.connected || !this.writeCharacteristic) {
+      return {
+        success: false,
+        message: "プリンターに接続されていません",
+      };
+    }
+
+    if (data.length === 0) {
+      return {
+        success: false,
+        message: "印刷データが空です",
+      };
+    }
+
+    const previousStatus = this.status;
+
+    try {
+      this.status = "PRINTING";
+      this.emitStateChange();
+
+      for (let offset = 0; offset < data.length; offset += WRITE_CHUNK_SIZE) {
+        const chunk = data.slice(offset, Math.min(offset + WRITE_CHUNK_SIZE, data.length));
+        await this.writeChunk(chunk);
+
+        if (offset + WRITE_CHUNK_SIZE < data.length) {
+          await this.delay(WRITE_DELAY_MS);
+        }
+      }
+
+      this.status = "CONNECTED";
+      this.emitStateChange();
+
+      return {
+        success: true,
+        message: `${data.length} bytes を送信しました`,
+        bytesWritten: data.length,
+      };
+    } catch (error) {
+      console.error("❌ 印刷データ送信エラー:", error);
+      this.status = "ERROR";
+      this.emitStateChange(this.getErrorMessage(error));
+
+      return {
+        success: false,
+        message: this.getErrorMessage(error),
+      };
+    } finally {
+      if (this.server?.connected && this.status !== "ERROR") {
+        this.status = previousStatus === "PRINTING" ? "CONNECTED" : previousStatus;
+        this.emitStateChange();
+      }
+    }
   }
 
   /**
@@ -167,6 +252,8 @@ export class PhomemoBluetooth {
 
     this.device = null;
     this.server = null;
+    this.writeCharacteristic = null;
+    this.transportInfo = undefined;
     this.emitStateChange();
   }
 
@@ -179,9 +266,102 @@ export class PhomemoBluetooth {
         status: this.status,
         deviceName: this.device?.name,
         errorMessage,
+          transportInfo: this.transportInfo,
       };
       this.onStateChange(state);
     }
+  }
+
+  private async findWritableCharacteristic(
+    server: BluetoothRemoteGATTServer,
+  ): Promise<BluetoothRemoteGATTCharacteristic> {
+    for (const serviceUuid of PHOMEMO_SERVICE_UUID_CANDIDATES) {
+      try {
+        const service = await server.getPrimaryService(serviceUuid);
+
+        for (const characteristicUuid of PHOMEMO_CHARACTERISTIC_UUID_CANDIDATES) {
+          try {
+            const characteristic = await service.getCharacteristic(
+              characteristicUuid,
+            );
+            if (this.canWrite(characteristic)) {
+              return characteristic;
+            }
+          } catch {
+            // Try the next known characteristic UUID.
+          }
+        }
+
+        const characteristics = await service.getCharacteristics();
+        const writable = characteristics.find((characteristic) =>
+          this.canWrite(characteristic),
+        );
+        if (writable) {
+          return writable;
+        }
+      } catch {
+        // Try the next known service UUID.
+      }
+    }
+
+    const primaryServices = await server.getPrimaryServices();
+    for (const service of primaryServices) {
+      const characteristics = await service.getCharacteristics();
+      const writable = characteristics.find((characteristic) =>
+        this.canWrite(characteristic),
+      );
+      if (writable) {
+        return writable;
+      }
+    }
+
+    throw new Error("書き込み可能なBluetooth characteristicが見つかりませんでした");
+  }
+
+  private canWrite(characteristic: BluetoothRemoteGATTCharacteristic): boolean {
+    return (
+      characteristic.properties.write === true ||
+      characteristic.properties.writeWithoutResponse === true
+    );
+  }
+
+  private describeTransport(
+    characteristic: BluetoothRemoteGATTCharacteristic,
+  ): string {
+    const serviceUuid = characteristic.service.uuid;
+    const characteristicUuid = characteristic.uuid;
+    return `${serviceUuid} / ${characteristicUuid}`;
+  }
+
+  private async writeChunk(chunk: Uint8Array): Promise<void> {
+    if (!this.writeCharacteristic) {
+      throw new Error("書き込み先Characteristicが初期化されていません");
+    }
+
+    const buffer = this.toArrayBuffer(chunk);
+
+    if (this.writeCharacteristic.properties.writeWithoutResponse) {
+      await this.writeCharacteristic.writeValueWithoutResponse(buffer);
+      return;
+    }
+
+    if (this.writeCharacteristic.properties.write) {
+      await this.writeCharacteristic.writeValueWithResponse(buffer);
+      return;
+    }
+
+    throw new Error("このCharacteristicは書き込みに対応していません");
+  }
+
+  private async delay(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private toArrayBuffer(view: Uint8Array): ArrayBuffer {
+    return view.buffer.slice(
+      view.byteOffset,
+      view.byteOffset + view.byteLength,
+    ) as ArrayBuffer;
   }
 
   /**
