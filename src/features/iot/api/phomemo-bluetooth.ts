@@ -168,7 +168,9 @@ export class PhomemoBluetooth {
    * 接続状態を取得
    */
   isConnected(): boolean {
-    return (this.server?.connected ?? false) && this.writeCharacteristic !== null;
+    return (
+      (this.server?.connected ?? false) && this.writeCharacteristic !== null
+    );
   }
 
   /**
@@ -203,7 +205,10 @@ export class PhomemoBluetooth {
       this.emitStateChange();
 
       for (let offset = 0; offset < data.length; offset += WRITE_CHUNK_SIZE) {
-        const chunk = data.slice(offset, Math.min(offset + WRITE_CHUNK_SIZE, data.length));
+        const chunk = data.slice(
+          offset,
+          Math.min(offset + WRITE_CHUNK_SIZE, data.length),
+        );
         await this.writeChunk(chunk);
 
         if (offset + WRITE_CHUNK_SIZE < data.length) {
@@ -230,7 +235,8 @@ export class PhomemoBluetooth {
       };
     } finally {
       if (this.server?.connected && this.status !== "ERROR") {
-        this.status = previousStatus === "PRINTING" ? "CONNECTED" : previousStatus;
+        this.status =
+          previousStatus === "PRINTING" ? "CONNECTED" : previousStatus;
         this.emitStateChange();
       }
     }
@@ -266,7 +272,7 @@ export class PhomemoBluetooth {
         status: this.status,
         deviceName: this.device?.name,
         errorMessage,
-          transportInfo: this.transportInfo,
+        transportInfo: this.transportInfo,
       };
       this.onStateChange(state);
     }
@@ -281,9 +287,8 @@ export class PhomemoBluetooth {
 
         for (const characteristicUuid of PHOMEMO_CHARACTERISTIC_UUID_CANDIDATES) {
           try {
-            const characteristic = await service.getCharacteristic(
-              characteristicUuid,
-            );
+            const characteristic =
+              await service.getCharacteristic(characteristicUuid);
             if (this.canWrite(characteristic)) {
               return characteristic;
             }
@@ -315,7 +320,9 @@ export class PhomemoBluetooth {
       }
     }
 
-    throw new Error("書き込み可能なBluetooth characteristicが見つかりませんでした");
+    throw new Error(
+      "書き込み可能なBluetooth characteristicが見つかりませんでした",
+    );
   }
 
   private canWrite(characteristic: BluetoothRemoteGATTCharacteristic): boolean {

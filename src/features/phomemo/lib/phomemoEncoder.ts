@@ -77,7 +77,11 @@ export function encodeBinaryImageToPhomemo(
     options.concentrationCoefficient ?? DEFAULT_CONCENTRATION_COEFFICIENT;
   const concentration = options.concentration ?? DEFAULT_CONCENTRATION;
 
-  if (!Number.isInteger(stripeHeight) || stripeHeight <= 0 || stripeHeight > 0xffff) {
+  if (
+    !Number.isInteger(stripeHeight) ||
+    stripeHeight <= 0 ||
+    stripeHeight > 0xffff
+  ) {
     throw new Error("stripeHeight must be a positive integer");
   }
 

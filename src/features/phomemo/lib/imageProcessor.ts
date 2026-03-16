@@ -69,11 +69,20 @@ export function renderCanvasImage(options: RenderCanvasOptions): ImageData {
     ctx.textBaseline = "middle";
 
     const lines = text.split("\n");
-    const lineHeight = Math.max(20, Math.floor(canvas.height / (lines.length + 2)));
-    const startY = Math.floor((canvas.height - lineHeight * (lines.length - 1)) / 2);
+    const lineHeight = Math.max(
+      20,
+      Math.floor(canvas.height / (lines.length + 2)),
+    );
+    const startY = Math.floor(
+      (canvas.height - lineHeight * (lines.length - 1)) / 2,
+    );
 
     lines.forEach((line, index) => {
-      ctx.fillText(line, Math.floor(canvas.width / 2), startY + lineHeight * index);
+      ctx.fillText(
+        line,
+        Math.floor(canvas.width / 2),
+        startY + lineHeight * index,
+      );
     });
   }
 

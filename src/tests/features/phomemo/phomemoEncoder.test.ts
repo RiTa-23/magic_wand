@@ -33,18 +33,7 @@ describe("Phomemo Image Processor", () => {
     const packed = packBinaryPixels({
       width: 10,
       height: 1,
-      pixels: new Uint8Array([
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-      ]),
+      pixels: new Uint8Array([1, 0, 0, 0, 0, 0, 0, 0, 1, 0]),
     });
 
     expect(packed.length).toBe(2);
@@ -66,23 +55,8 @@ describe("Phomemo Encoder", () => {
     expect(encoded.length).toBeGreaterThan(0);
 
     expect(Array.from(encoded.slice(0, 17))).toEqual([
-      0x1b,
-      0x40,
-      0x02,
-      0x1b,
-      0x40,
-      0x1b,
-      0x61,
-      0x01,
-      0x1f,
-      0x11,
-      0x37,
-      0x96,
-      0x1f,
-      0x11,
-      0x02,
-      0x01,
-      0x1d,
+      0x1b, 0x40, 0x02, 0x1b, 0x40, 0x1b, 0x61, 0x01, 0x1f, 0x11, 0x37, 0x96,
+      0x1f, 0x11, 0x02, 0x01, 0x1d,
     ]);
 
     expect(Array.from(encoded)).toContain(0x76);
@@ -94,39 +68,9 @@ describe("Phomemo Encoder", () => {
       height: 2,
       data: new Uint8ClampedArray([
         // row 0: black, white, black, white
-        0,
-        0,
-        0,
-        255,
-        255,
-        255,
-        255,
-        255,
-        0,
-        0,
-        0,
-        255,
-        255,
-        255,
-        255,
-        255,
+        0, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255,
         // row 1: white, black, white, black
-        255,
-        255,
-        255,
-        255,
-        0,
-        0,
-        0,
-        255,
-        255,
-        255,
-        255,
-        255,
-        0,
-        0,
-        0,
-        255,
+        255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255,
       ]),
     };
 
