@@ -294,22 +294,8 @@ export default function CameraWandTestPage() {
 
       // 杖先 + 手元の描画
       if (wp && wp.detected) {
-        const tip = toCanvasCoords(
-          wp.tipX,
-          wp.tipY,
-          minX,
-          maxX,
-          minY,
-          maxY,
-        );
-        const grip = toCanvasCoords(
-          wp.gripX,
-          wp.gripY,
-          minX,
-          maxX,
-          minY,
-          maxY,
-        );
+        const tip = toCanvasCoords(wp.tipX, wp.tipY, minX, maxX, minY, maxY);
+        const grip = toCanvasCoords(wp.gripX, wp.gripY, minX, maxX, minY, maxY);
 
         // tip-grip 接続線
         ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
@@ -356,7 +342,7 @@ export default function CameraWandTestPage() {
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isConnected = status === "CONNECTED";

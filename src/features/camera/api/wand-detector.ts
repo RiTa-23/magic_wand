@@ -211,10 +211,8 @@ export class WandDetector {
             const a = this.EMA_ALPHA;
             this.smoothTipX = a * detection.tipX + (1 - a) * this.smoothTipX;
             this.smoothTipY = a * detection.tipY + (1 - a) * this.smoothTipY;
-            this.smoothGripX =
-              a * detection.gripX + (1 - a) * this.smoothGripX;
-            this.smoothGripY =
-              a * detection.gripY + (1 - a) * this.smoothGripY;
+            this.smoothGripX = a * detection.gripX + (1 - a) * this.smoothGripX;
+            this.smoothGripY = a * detection.gripY + (1 - a) * this.smoothGripY;
           }
 
           this.onWandDetection?.({
