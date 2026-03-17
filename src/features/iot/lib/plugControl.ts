@@ -10,7 +10,7 @@ import { getTapoClient } from "../api/tapoClient";
  * Tapo P300 の差し込み口と魔法の対応マップ
  * ポート番号（0-index）は P300 の物理的な差し込み順に対応する
  */
-export const SPELL_PORT = {
+const SPELL_PORT = {
   VENTUS: 0, // ポート1: 風
   LUMOS: 1, // ポート2: 光
   INCENDIO: 2, // ポート3: 炎
@@ -18,7 +18,7 @@ export const SPELL_PORT = {
 } as const;
 
 /** オートOFFのデフォルト待機時間（ミリ秒） */
-export const DEFAULT_AUTO_OFF_MS = 5000;
+const DEFAULT_AUTO_OFF_MS = 5000;
 
 // ========================================
 // 内部ヘルパー関数
