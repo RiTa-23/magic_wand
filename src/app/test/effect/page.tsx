@@ -63,7 +63,7 @@ function WindEffect() {
   useEffect(() => setMounted(true), []);
 
   const particles = useMemo(() => {
-    return [...Array(30)].map((_, i) => ({
+    return [...Array(30)].map(() => ({
       width: 1 + Math.random() * 2,
       height: 2 + Math.random() * 8,
       left: 45 + Math.random() * 10,
@@ -170,7 +170,7 @@ function WaterEffect() {
   useEffect(() => setMounted(true), []);
 
   const spheres = useMemo(() => {
-    return [...Array(12)].map((_, i) => ({
+    return [...Array(12)].map(() => ({
       size: 30 + Math.random() * 150,
       left: 10 + Math.random() * 80,
       top: 10 + Math.random() * 80,
@@ -313,7 +313,7 @@ function LightEffect() {
   useEffect(() => setMounted(true), []);
 
   const filaments = useMemo(() => {
-    return [...Array(120)].map((_, i) => {
+    return [...Array(120)].map(() => {
       const angle = Math.random() * 360;
       const radius = 30 + Math.random() * 120;
       const length = 30 + Math.random() * 60;
@@ -335,7 +335,7 @@ function LightEffect() {
   }, []);
 
   const glitter = useMemo(() => {
-    return [...Array(50)].map((_, i) => ({
+    return [...Array(50)].map(() => ({
       tx: (Math.random() - 0.5) * 450,
       ty: (Math.random() - 0.5) * 450,
       delay: Math.random() * -5,

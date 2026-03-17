@@ -45,8 +45,9 @@ export default function PlayPage() {
   const isListening = status === "LISTENING";
   const isWaitingForGesture = gateResult?.status === "waiting_for_gesture";
   const isRejected = gateResult?.status === "rejected";
-  const spellName =
-    finalSpellMatch?.matched ? finalSpellMatch.spell?.name : null;
+  const spellName = finalSpellMatch?.matched
+    ? finalSpellMatch.spell?.name
+    : null;
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
