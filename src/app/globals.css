@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Shared magical tokens (used across routes) */
+  --gold: oklch(0.78 0.12 85);
+  --gold-dim: oklch(0.55 0.1 85);
+  --gold-bright: oklch(0.88 0.14 85);
+  --magic-glow: oklch(0.6 0.15 180);
+  --parchment: oklch(0.75 0.06 75);
+  --parchment-dark: oklch(0.45 0.06 70);
+  --stone: oklch(0.25 0.01 250);
+  --stone-light: oklch(0.35 0.01 250);
 }
 
 @theme inline {
@@ -10,6 +20,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Magical palette */
+  --color-gold: var(--gold);
+  --color-gold-dim: var(--gold-dim);
+  --color-gold-bright: var(--gold-bright);
+  --color-magic-glow: var(--magic-glow);
+  --color-parchment: var(--parchment);
+  --color-parchment-dark: var(--parchment-dark);
+  --color-stone: var(--stone);
+  --color-stone-light: var(--stone-light);
 }
 
 @media (prefers-color-scheme: dark) {
