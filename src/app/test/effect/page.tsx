@@ -4,40 +4,46 @@ import { useState, useEffect, Suspense } from "react";
 import { FloatingParticles } from "@/components/floating-particles";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Cinzel } from "next/font/google";
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
+});
 
 type MagicType = "LUMOS" | "VENTUS" | "AGUAMENTI" | "INCENDIO" | "EXCALIBUR";
 
 const MAGIC_THEMES = {
   LUMOS: {
-    name: "LUMOS!",
+    name: "LUMOS",
     color: "255, 255, 255", // White
     particles: "255, 250, 220", // Warm white
     gradient: "from-yellow-200 via-white to-yellow-100",
     glow: "rgba(255, 255, 255, 0.8)"
   },
   VENTUS: {
-    name: "VENTUS!",
+    name: "VENTUS",
     color: "0, 255, 200", // Aqua/Neon Green
     particles: "52, 211, 153", // Emerald
     gradient: "from-[#0891b2] via-[#10b981] to-[#4ade80]", // Aqua -> Green -> Neon
     glow: "rgba(16, 185, 129, 0.6)"
   },
   AGUAMENTI: {
-    name: "AGUAMENTI!",
+    name: "AGUAMENTI",
     color: "30, 144, 255", // Dodger Blue
     particles: "135, 206, 250", // Light Sky Blue
     gradient: "from-blue-600 via-cyan-100 to-blue-400",
     glow: "rgba(0, 191, 255, 0.8)"
   },
   INCENDIO: {
-    name: "INCENDIO!",
+    name: "INCENDIO",
     color: "255, 69, 0", // Red Orange
     particles: "255, 100, 50", // Fiery orange
     gradient: "from-red-600 via-orange-400 to-yellow-500",
     glow: "rgba(255, 69, 0, 0.8)"
   },
   EXCALIBUR: {
-    name: "EXCALIBUR!!",
+    name: "EXCALIBUR",
     color: "100, 180, 255", // Blue
     particles: "212, 175, 55", // Classic gold
     gradient: "from-blue-400 via-white to-purple-400",
@@ -226,7 +232,7 @@ function EffectContent() {
           {castState === "cast" && (
             <div className="absolute transform animate-slide-in">
               <p 
-                className={`text-6xl md:text-8xl font-black italic bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]`}
+                className={`${cinzel.className} text-6xl md:text-8xl font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]`}
                 style={{ filter: `drop-shadow(0 0 30px ${theme.glow})` }}
               >
                 {theme.name}
