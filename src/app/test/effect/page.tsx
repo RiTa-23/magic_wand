@@ -17,10 +17,10 @@ const MAGIC_THEMES = {
   },
   VENTUS: {
     name: "VENTUS!",
-    color: "130, 255, 210", // Mint/Emerald
-    particles: "110, 231, 183", // Emerald
-    gradient: "from-emerald-300 via-white to-teal-200",
-    glow: "rgba(110, 231, 183, 0.8)"
+    color: "0, 255, 200", // Aqua/Neon Green
+    particles: "52, 211, 153", // Emerald
+    gradient: "from-[#0891b2] via-[#10b981] to-[#4ade80]", // Aqua -> Green -> Neon
+    glow: "rgba(16, 185, 129, 0.6)"
   },
   AGUAMENTI: {
     name: "AGUAMENTI!",
@@ -44,6 +44,152 @@ const MAGIC_THEMES = {
     glow: "rgba(255, 255, 255, 0.8)"
   }
 };
+
+/**風魔法のエフェクト：有機的な質感と3D竜巻のフォルムを融合 */
+function WindEffect() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
+      {/* 1. Bloom Base (空間の光のベール) */}
+      <div className="absolute w-[500px] h-[700px] bg-[radial-gradient(circle,_rgba(8,145,178,0.2)_0%,_rgba(16,185,129,0.05)_40%,_transparent_70%)] rounded-full blur-[100px] animate-pulse" />
+
+      {/* 2. 3D Vortex Structure (竜巻の形をした光の筋) */}
+      <div className="relative w-full h-full flex items-center justify-center [transform-style:preserve-3d]">
+        {[...Array(20)].map((_, i) => {
+          const size = 100 + i * 25;
+          const zPos = i * 25 - 200;
+          const opacity = 0.1 + (i * 0.04);
+          // 高さ（i）に応じて色を変える (Aqua -> Neon Green)
+          const color = i < 10 ? '#0891b2' : '#4ade80';
+          
+          return (
+            <div
+              key={`tornado-layer-${i}`}
+              className="absolute animate-wind-vortex-layer"
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                // @ts-ignore
+                "--z": `${zPos}px`,
+                "--op": opacity,
+                animationDelay: `${i * -0.1}s`,
+                animationDuration: `${2 + i * 0.05}s`
+              } as any}
+            >
+              <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_10px_var(--glow-color)]" 
+                style={{ '--glow-color': color } as any}>
+                <path
+                  d="M10,50 A40,40 0 0,1 90,50"
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={2 + Math.random() * 2}
+                  strokeLinecap="round"
+                  className="opacity-60"
+                  strokeDasharray="10 50"
+                  style={{ filter: 'blur(1px)' }}
+                />
+                {/* Bloom layer per ring */}
+                <path
+                  d="M20,50 A30,30 0 0,1 80,50"
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={6}
+                  strokeLinecap="round"
+                  className="opacity-20"
+                  style={{ filter: 'blur(6px)' }}
+                />
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 3. Rising Particles (竜巻に巻き込まれる粒子) */}
+      <div className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]">
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={`vortex-p-${i}`}
+            className="absolute bg-white/60 rounded-full blur-[1px] animate-wind-particle-tornado"
+            style={{
+              width: `${1 + Math.random() * 2}px`,
+              height: `${2 + Math.random() * 8}px`,
+              left: `${45 + Math.random() * 10}%`,
+              // @ts-ignore
+              "--tx": `${(Math.random() - 0.5) * 300}px`,
+              "--ty": `${-300 - Math.random() * 400}px`,
+              "--rz": `${Math.random() * 720}deg`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${1 + Math.random() * 1.5}s`
+            } as any}
+          />
+        ))}
+      </div>
+
+      {/* 4. Core Brightness (中心軸の輝き) */}
+      <div className="absolute z-10 flex flex-col items-center">
+        <div className="w-10 h-10 bg-white rounded-full blur-[2px] shadow-[0_0_30px_#fff,0_0_60px_#00ffa2]" />
+        <div className="w-1 h-64 bg-gradient-to-t from-transparent via-white/40 to-transparent blur-[4px]" />
+      </div>
+    </div>
+  );
+}
+
+/** 水魔法のエフェクト：上昇する泡と青い波紋 */
+function WaterEffect() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute bottom-1/4 w-3 h-3 border border-blue-300/40 rounded-full animate-bubble-rise"
+          style={{
+            left: `${40 + Math.random() * 20}%`,
+            animationDelay: `${i * 0.15}s`,
+            animationDuration: `${1.5 + Math.random() * 1.5}s`,
+            width: `${4 + Math.random() * 6}px`,
+            height: `${4 + Math.random() * 6}px`,
+          }}
+        />
+      ))}
+      {/* Swirling water ring */}
+      <div className="absolute w-72 h-16 border-2 border-cyan-400/30 rounded-[100%] animate-water-rotate blur-[1px]" />
+      <div className="absolute w-64 h-12 border-2 border-blue-300/20 rounded-[100%] animate-water-rotate-reverse blur-[2px]" />
+      
+      <div className="w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] animate-pulse" />
+      <div className="absolute w-48 h-48 border-2 border-blue-400/30 rounded-full animate-ripple" />
+    </div>
+  );
+}
+
+/** 炎魔法のエフェクト：揺らぐ炎と火の粉 */
+function FireEffect() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
+      {[...Array(25)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute bottom-1/3 w-1 h-1 bg-orange-500 rounded-full animate-ember-fly"
+          style={{
+            left: `${45 + Math.random() * 10}%`,
+            boxShadow: '0 0 10px #ff4500',
+            animationDelay: `${i * 0.1}s`,
+          }}
+        />
+      ))}
+      <div className="w-40 h-64 bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-full blur-[40px] animate-fire-dance" />
+    </div>
+  );
+}
+
+/** 光魔法のエフェクト：中央からの強い輝き */
+function LightEffect() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="w-1 h-full bg-white/40 blur-[20px] animate-light-beam" />
+      <div className="absolute w-64 h-64 bg-white rounded-full blur-[100px] animate-ping opacity-20" />
+      <div className="absolute w-32 h-32 bg-yellow-200 rounded-full blur-[40px] animate-pulse" />
+    </div>
+  );
+}
 
 function EffectContent() {
   const [mounted, setMounted] = useState(false);
@@ -97,6 +243,11 @@ function EffectContent() {
 
         {/* Effect Area - 中央 */}
         <div className="relative flex-1 w-full flex items-center justify-center">
+          {castState === "cast" && currentMagic === "VENTUS" && <WindEffect />}
+          {castState === "cast" && currentMagic === "AGUAMENTI" && <WaterEffect />}
+          {castState === "cast" && currentMagic === "INCENDIO" && <FireEffect />}
+          {castState === "cast" && currentMagic === "LUMOS" && <LightEffect />}
+          
           {/* Flash Effect on Cast - 魔法の色を反映 */}
           {castState === "cast" && (
             <div 
@@ -113,6 +264,88 @@ function EffectContent() {
       </div>
 
       <style jsx global>{`
+        /* Wind: Integrated 3D Tornado Animations */
+        @keyframes wind-vortex-layer {
+          0% { transform: rotateX(75deg) translateZ(var(--z)) rotateZ(0deg); opacity: 0; }
+          20% { opacity: var(--op); }
+          80% { opacity: var(--op); }
+          100% { transform: rotateX(75deg) translateZ(calc(var(--z) + 50px)) rotateZ(360deg); opacity: 0; }
+        }
+        .animate-wind-vortex-layer {
+          animation: wind-vortex-layer linear infinite;
+        }
+
+        @keyframes wind-particle-tornado {
+          0% { transform: translateY(200px) rotateZ(0deg) scale(0); opacity: 0; }
+          20% { opacity: 1; }
+          100% { transform: translateY(var(--ty)) rotateZ(var(--rz)) translateX(var(--tx)) scale(1.2); opacity: 0; }
+        }
+        .animate-wind-particle-tornado { animation: wind-particle-tornado linear infinite; }
+
+        /* Existing Animations */
+        @keyframes vortex-rise {
+          0% { transform: translateY(100px) scaleX(1); opacity: 0; }
+          50% { opacity: 0.8; }
+          100% { transform: translateY(-300px) scaleX(0.2); opacity: 0; }
+        }
+        @keyframes vortex-spin {
+          from { transform: rotate(0deg) scale(0.8); }
+          to { transform: rotate(360deg) scale(1.2); }
+        }
+        .animate-vortex-rise { animation: vortex-rise infinite linear; }
+        .animate-vortex-spin { animation: vortex-spin 4s linear infinite; }
+
+        /* Water Animations */
+        @keyframes bubble-rise {
+          0% { transform: translateY(50px) translateX(0); opacity: 0; }
+          50% { opacity: 1; transform: translateY(-50px) translateX(10px); }
+          100% { transform: translateY(-150px) translateX(-10px); opacity: 0; }
+        }
+        @keyframes ripple {
+          0% { transform: scale(0.5); opacity: 1; }
+          100% { transform: scale(2); opacity: 0; }
+        }
+        .animate-bubble-rise { animation: bubble-rise infinite ease-out; }
+        .animate-ripple { animation: ripple 2s ease-out infinite; }
+
+        /* Fire Animations */
+        @keyframes ember-fly {
+          0% { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(-200px) translateX(30px) scale(0); opacity: 0; }
+        }
+        @keyframes fire-dance {
+          0%, 100% { transform: scaleY(1) skewX(0deg); }
+          50% { transform: scaleY(1.2) skewX(5deg); }
+        }
+        .animate-ember-fly { animation: ember-fly 1.5s infinite ease-in; }
+        .animate-fire-dance { animation: fire-dance 0.5s infinite alternate; }
+
+        /* Light Animations */
+        @keyframes light-beam {
+          0%, 100% { transform: scaleX(1); opacity: 0.2; }
+          50% { transform: scaleX(2.5); opacity: 0.5; }
+        }
+        .animate-light-beam { animation: light-beam 0.3s infinite; }
+
+        @keyframes reverse-spin {
+          from { transform: rotate(360deg); }
+          to { transform: rotate(0deg); }
+        }
+        .animate-reverse-spin { animation: reverse-spin 6s linear infinite; }
+
+        @keyframes water-rotate {
+          0% { transform: rotateX(70deg) rotateZ(0deg) scale(0.8); opacity: 0.3; }
+          50% { transform: rotateX(70deg) rotateZ(180deg) scale(1.1); opacity: 0.6; }
+          100% { transform: rotateX(70deg) rotateZ(360deg) scale(0.8); opacity: 0.3; }
+        }
+        @keyframes water-rotate-reverse {
+          0% { transform: rotateX(70deg) rotateZ(360deg) scale(1.1); opacity: 0.2; }
+          50% { transform: rotateX(70deg) rotateZ(180deg) scale(0.9); opacity: 0.4; }
+          100% { transform: rotateX(70deg) rotateZ(0deg) scale(1.1); opacity: 0.2; }
+        }
+        .animate-water-rotate { animation: water-rotate 4s linear infinite; }
+        .animate-water-rotate-reverse { animation: water-rotate-reverse 3s linear infinite; }
+
         @keyframes slide-in {
           0% { opacity: 0; transform: translateX(-100vw) scale(0.6); filter: blur(20px); }
           100% { opacity: 1; transform: translateX(0) scale(1.1); filter: blur(0px); }
