@@ -356,11 +356,11 @@ function EffectContent() {
       
 
 
-      <div className="z-20 flex flex-col items-center justify-start pt-8 gap-12 w-full max-w-2xl text-center h-[600px]">
-        {/* Spell Name Overlay - 上部中央に配置し、左から入って右に消える */}
+      <div className="z-20 flex flex-col items-center justify-start pt-16 gap-12 w-full max-w-2xl text-center h-[600px]">
+        {/* Spell Name Overlay - 上部中央やや下からフェードイン */}
         <div className="relative w-full flex justify-center h-16">
           {castState === "cast" && (
-            <div className="absolute transform animate-slide-in">
+            <div className="absolute transform animate-spell-reveal">
               <p 
                 className={`${cinzel.className} text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]`}
                 style={{ filter: `drop-shadow(0 0 30px ${theme.glow})` }}
@@ -504,12 +504,12 @@ function EffectContent() {
         .animate-water-rotate { animation: water-rotate 4s linear infinite; }
         .animate-water-rotate-reverse { animation: water-rotate-reverse 3s linear infinite; }
 
-        @keyframes slide-in {
-          0% { opacity: 0; transform: translateX(-100vw) scale(0.6); filter: blur(20px); }
-          100% { opacity: 1; transform: translateX(0) scale(1.1); filter: blur(0px); }
+        @keyframes spell-reveal {
+          0% { opacity: 0; transform: translateY(40px) scale(0.9); filter: blur(10px); }
+          100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
         }
-        .animate-slide-in {
-          animation: slide-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        .animate-spell-reveal {
+          animation: spell-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(-10px); }
