@@ -407,7 +407,7 @@ function EffectContent() {
 
   // URLパラメータ ?magic=ventus などから魔法の種類を取得
   const magicParam = searchParams.get("magic")?.toUpperCase() as MagicType;
-  const currentMagic = MAGIC_THEMES[magicParam] ? magicParam : "EXCALIBUR";
+  const currentMagic = MAGIC_THEMES[magicParam] ? magicParam : "LUMOS";
   const theme = MAGIC_THEMES[currentMagic];
 
   const handleCast = useCallback(() => {
@@ -459,7 +459,8 @@ function EffectContent() {
           {castState === "cast" && currentMagic === "INCENDIO" && (
             <FireEffect />
           )}
-          {castState === "cast" && currentMagic === "LUMOS" && <LightEffect />}
+          {(currentMagic === "LUMOS" || currentMagic === "EXCALIBUR") &&
+            castState === "cast" && <LightEffect />}
 
           {/* Flash Effect on Cast - 魔法の色を反映 (VENTUS以外で表示) */}
           {castState === "cast" && currentMagic !== "VENTUS" && (
