@@ -322,19 +322,27 @@ export default function TutorialPage() {
 
 function SlideContent({ slide }: { slide: TutorialSlide }) {
   const [imageError, setImageError] = useState(false);
+  const hasImageSrc = Boolean(slide.imageSrc);
+  const showImage = hasImageSrc && !imageError;
+
+  useEffect(() => {
+    setImageError(false);
+  }, [slide.imageSrc]);
 
   return (
     <div className="h-full w-full px-2 sm:px-6 flex flex-col items-center justify-center gap-5 sm:gap-7">
       <div className="relative w-full max-w-3xl h-[min(360px,32svh)] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
-        <Image
-          src={slide.imageSrc}
-          alt={slide.imageAlt}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 92vw, 960px"
-          priority
-          onError={() => setImageError(true)}
-        />
+        {showImage && (
+          <Image
+            src={slide.imageSrc}
+            alt={slide.imageAlt}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 92vw, 960px"
+            priority
+            onError={() => setImageError(true)}
+          />
+        )}
         <div
           className="absolute inset-0"
           style={{
@@ -344,7 +352,7 @@ function SlideContent({ slide }: { slide: TutorialSlide }) {
           aria-hidden="true"
         />
 
-        {(!slide.imageSrc || imageError) && (
+        {!showImage && (
           <div className="absolute inset-0 grid place-items-center">
             <span className="text-sm tracking-[0.25em] text-[color:var(--gold-dim)]/80">
               画像がここに表示されます
