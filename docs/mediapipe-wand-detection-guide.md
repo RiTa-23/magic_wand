@@ -378,75 +378,47 @@ export function useWandDetector() {
 
 ### Step 3-5: カメラテストページ — `src/app/test/camera/page.tsx`（新規, ~350行）
 
-独立したカメラ検出テストページ。以下の機能を持つ:
+カメラ杖検出の**単独テストページ**。`/test/wand` は変更せず、このページで検出・トレイル描画・デバッグ情報を完結させる。
 
-- ウェブカメラプレビュー（video要素、CSSで左右反転）
+#### 機能一覧
+
+- ウェブカメラプレビュー（video要素、CSSで `scaleX(-1)` による左右反転）
 - バウンディングボックスのオーバーレイ描画（Canvas）
-- Canvas上に杖先のトレイル描画
-- 接続/切断ボタン
-- 検出信頼度・座標・バウンディングボックスの表示パネル
-- トレイルポイント形式: `{ rawX, rawY, t }`（既存と同一）
+- Canvas上に杖先のトレイル描画（`adjustViewBounds` + `toCanvasCoords` を流用）
+- 接続/切断ボタン + ステータスバッジ
+- サイドパネル: 杖先座標、検出信頼度、バウンディングボックス情報
+- 軌跡クリアボタン
+- トレイルポイント形式: `{ rawX, rawY, t }`（既存 `test/wand` と同一）
 
 #### ページの主要構成
 
 ```text
-┌──────────────────────────────────────────────┐
-│  カメラ杖検出テスト                             │
-│  [接続ボタン] [CONNECTED] ステータスバッジ        │
-│                                              │
-│  ┌───────────────────┐  ┌──────────────────┐ │
-│  │                   │  │ 杖先の座標        │ │
-│  │  カメラプレビュー    │  │  X: 320          │ │
-│  │  + BBox描画        │  │  Y: 120          │ │
-│  │  + トレイル描画     │  │ 信頼度: 0.85     │ │
-│  │                   │  │ BBox情報          │ │
-│  │                   │  │ [軌跡クリア]       │ │
-│  └───────────────────┘  └──────────────────┘ │
-└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  カメラ杖検出テスト                                 │
+│  [カメラを接続] [CONNECTED]                        │
+│                                                  │
+│  ┌─────────────────────┐  ┌────────────────────┐ │
+│  │  カメラプレビュー      │  │ 杖先の座標          │ │
+│  │  (video + Canvas)    │  │  X: 320            │ │
+│  │                     │  │  Y: 120            │ │
+│  │  BBox: 緑枠          │  │ 信頼度: 0.85       │ │
+│  │  トレイル: 緑の軌跡    │  │                    │ │
+│  │  杖先: ドット         │  │ BBox               │ │
+│  │                     │  │  x:280 y:80        │ │
+│  │                     │  │  w:80  h:200       │ │
+│  │                     │  │                    │ │
+│  │                     │  │ [軌跡をクリア]       │ │
+│  └─────────────────────┘  └────────────────────┘ │
+└──────────────────────────────────────────────────┘
 ```
 
 #### Canvas描画の要点
 
 - video要素の上にCanvasを重ねて配置（`position: absolute`）
 - 検出結果のバウンディングボックスを緑枠で描画
-- 杖先位置にドットを描画（既存の`drawDot`と同パターン）
+- 杖先位置にドットを描画（既存の `drawDot` と同パターン）
 - トレイルは3秒間フェードアウト
-
-### Step 3-6: 既存杖テストページへの統合 — `src/app/test/wand/page.tsx`（変更）
-
-#### 変更内容
-
-1. `TrackingMode` に `"CAMERA"` を追加
-
-```typescript
-// 変更前
-type TrackingMode = "IR" | "IMU";
-
-// 変更後
-type TrackingMode = "IR" | "IMU" | "CAMERA";
-```
-
-2. `useWandDetector` フックを追加使用
-
-```typescript
-const { status: cameraStatus, wandPoint, videoRef, connect: cameraConnect, disconnect: cameraDisconnect } =
-  useWandDetector();
-```
-
-3. モード切替タブに「CAMERA（カメラ）」を追加（3つ目のタブ、緑色テーマ）
-
-4. CAMERA選択時の動作:
-   - 接続ボタン: `cameraConnect()` を呼ぶ
-   - video要素を小さくプレビュー表示（右下に160x120程度）
-   - `wandPoint` から `tipX`, `tipY` を取得し、トレイルに追加
-   - Canvas描画は既存の `adjustViewBounds` + `toCanvasCoords` をそのまま流用
-   - 色テーマ: `"34, 197, 94"`（green）
-
-5. サイドパネルに CAMERA モード用情報を表示:
-   - 杖先座標（tipX, tipY）
-   - 検出信頼度（confidence）
-   - バウンディングボックス情報
-   - 検出状態（detected / 未検出）
+- 色テーマ: `"34, 197, 94"`（green）— IR(blue), IMU(purple) と区別
 
 ---
 
@@ -460,8 +432,9 @@ const { status: cameraStatus, wandPoint, videoRef, connect: cameraConnect, disco
 | `src/features/camera/api/wand-detector.ts` | 新規 | Phase 3 Step 3-3 |
 | `src/features/camera/api/useWandDetector.ts` | 新規 | Phase 3 Step 3-4 |
 | `src/app/test/camera/page.tsx` | 新規 | Phase 3 Step 3-5 |
-| `src/app/test/wand/page.tsx` | 変更 | Phase 3 Step 3-6 |
 | `package.json` | 変更（依存追加） | Phase 3 Step 3-1 |
+
+> **注意**: `src/app/test/wand/page.tsx` は変更しない。カメラ杖検出のテストは `/test/camera` で完結する。
 
 ---
 
@@ -479,8 +452,7 @@ const { status: cameraStatus, wandPoint, videoRef, connect: cameraConnect, disco
 | 1 | カメラプレビュー + BBox表示 | `/test/camera` を開き、杖を映す |
 | 2 | トレイルの滑らかな追従 | 杖をゆっくり振って軌跡を確認 |
 | 3 | フレームアウト時の安定性 | 杖をフレーム外に出してクラッシュしないことを確認 |
-| 4 | 3モード切替 | `/test/wand` で IR / IMU / CAMERA の切替が動作すること |
-| 5 | パフォーマンス | DevTools Performance タブで **15fps以上**出ていること |
+| 4 | パフォーマンス | DevTools Performance タブで **15fps以上**出ていること |
 
 ### 実装順序
 
@@ -488,8 +460,7 @@ const { status: cameraStatus, wandPoint, videoRef, connect: cameraConnect, disco
 2. **Phase 2**: Colabでモデル学習 → `.tflite` を `public/models/` に配置
 3. **Phase 3 Step 3-1〜3-2**: パッケージ追加 + 型定義
 4. **Phase 3 Step 3-3〜3-4**: WandDetectorクラス + Reactフック
-5. **Phase 3 Step 3-5**: カメラテストページで動作確認
-6. **Phase 3 Step 3-6**: 既存杖テストページにCAMERAモード追加
+5. **Phase 3 Step 3-5**: カメラテストページ `/test/camera` で動作確認
 
 ---
 
