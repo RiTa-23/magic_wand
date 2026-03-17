@@ -369,6 +369,25 @@ export default function WandTrackingPage() {
       const trail = trailRef.current;
       const isRPressed = joyconState?.buttons.r ?? false;
 
+      // --- ジェスチャー判定: Rボタン押下中のみ記録し、離した瞬間に判定 ---
+      // Rボタンが「押された」瞬間に結果と軌跡を明示的にクリアして新しく書き始める
+      if (isRPressed && !prevRButtonRef.current) {
+        setGestureResult(null);
+        trail.splice(0, trail.length); // 既存の軌跡をリセット
+      }
+      // Rボタンが「離された」瞬間に、押していた間に描かれた軌跡で判定
+      else if (!isRPressed && prevRButtonRef.current) {
+        if (trail.length >= 20) {
+          const result = recognizeGesture(trail);
+          console.log(
+            "🪄 [Gesture Recognize Result (R Button Released)]:",
+            result,
+          );
+          setGestureResult(result);
+        }
+      }
+      prevRButtonRef.current = isRPressed;
+
       const isIR = trackingMode === "IR";
       const color = isIR ? "59, 130, 246" : "168, 85, 247"; // blue vs purple
 
@@ -529,25 +548,6 @@ export default function WandTrackingPage() {
       ctx.fillStyle = "rgba(255,255,255,0.4)";
       ctx.font = "bold 12px sans-serif";
       ctx.fillText(`${trackingMode} モード`, PADDING, PADDING - 10);
-
-      // --- ジェスチャー判定: Rボタン押下中のみ記録し、離した瞬間に判定 ---
-      // Rボタンが「押された」瞬間に結果と軌跡を明示的にクリアして新しく書き始める
-      if (isRPressed && !prevRButtonRef.current) {
-        setGestureResult(null);
-        trail.splice(0, trail.length); // 既存の軌跡をリセット
-      }
-      // Rボタンが「離された」瞬間に、押していた間に描かれた軌跡で判定
-      else if (!isRPressed && prevRButtonRef.current) {
-        if (trail.length >= 20) {
-          const result = recognizeGesture(trail);
-          console.log(
-            "🪄 [Gesture Recognize Result (R Button Released)]:",
-            result,
-          );
-          setGestureResult(result);
-        }
-      }
-      prevRButtonRef.current = isRPressed;
 
       animFrameRef.current = requestAnimationFrame(draw);
     };
