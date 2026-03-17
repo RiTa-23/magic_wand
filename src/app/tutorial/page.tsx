@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -194,6 +194,14 @@ export default function TutorialPage() {
             Back
           </span>
         </Link>
+
+        {/* Title (top center) */}
+        <header className="absolute top-10 left-1/2 -translate-x-1/2 text-center">
+          <BookOpen className="w-10 h-10 mx-auto mb-3 text-[color:var(--gold)] opacity-80" />
+          <h1 className="text-2xl font-bold tracking-[0.4em] text-[color:var(--gold-bright)] uppercase">
+            Tutorial
+          </h1>
+        </header>
 
         {/* Center area (carousel) */}
         <div className="min-h-svh flex items-center justify-center">
