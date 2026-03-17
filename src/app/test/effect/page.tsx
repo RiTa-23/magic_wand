@@ -664,6 +664,25 @@ function EffectContent() {
           }
         }
 
+        @keyframes reverse-spin {
+          from {
+            transform: rotate(360deg);
+          }
+          to {
+            transform: rotate(0deg);
+          }
+        }
+
+        .animate-reverse-spin {
+          animation: reverse-spin linear infinite;
+        }
+        .animate-lumos-filament {
+          animation: lumos-filament linear infinite;
+        }
+        .animate-light-particle-fly {
+          animation: light-particle-fly linear infinite;
+        }
+
         @keyframes water-mist-drift {
           0%,
           100% {
