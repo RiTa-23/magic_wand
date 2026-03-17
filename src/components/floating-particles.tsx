@@ -16,7 +16,9 @@ interface FloatingParticlesProps {
   color?: string; // e.g. "rgb(212, 175, 55)" or "212, 175, 55"
 }
 
-export function FloatingParticles({ color = "212, 175, 55" }: FloatingParticlesProps) {
+export function FloatingParticles({
+  color = "212, 175, 55",
+}: FloatingParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
