@@ -16,10 +16,15 @@ export default function PlayPage() {
   const gate = useRef(new IntentGate());
   const { status, finalSpellMatch, start, stop, isSupported } = useSpeech();
   const [gateResult, setGateResult] = useState<IntentGateResult | null>(null);
+  const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
+    null,
+  );
 
   // finalSpellMatch が確定したら IntentGate に渡す（直接発動しない）
   useEffect(() => {
     if (!finalSpellMatch?.matched || !finalSpellMatch.spell) return;
+
+    setPersistedSpellName(finalSpellMatch.spell.name);
 
     const voiceResult = gate.current.pushVoice({
       spellId: finalSpellMatch.spell.id as SpellId,
@@ -36,8 +41,10 @@ export default function PlayPage() {
       stop();
       gate.current.clear();
       setGateResult(null);
+      setPersistedSpellName(null);
     } else {
       setGateResult(null);
+      setPersistedSpellName(null);
       start();
     }
   };
@@ -45,9 +52,7 @@ export default function PlayPage() {
   const isListening = status === "LISTENING";
   const isWaitingForGesture = gateResult?.status === "waiting_for_gesture";
   const isRejected = gateResult?.status === "rejected";
-  const spellName = finalSpellMatch?.matched
-    ? finalSpellMatch.spell?.name
-    : null;
+  const spellName = persistedSpellName;
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
