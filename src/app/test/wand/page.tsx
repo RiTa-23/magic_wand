@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
+import {
+  recognizeGesture,
+  type GestureResult,
+} from "@/features/gesture/recognizer";
 
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
@@ -11,11 +15,11 @@ const PADDING = 40;
 type TrackingMode = "IR" | "IMU";
 
 // ジャイロ感度（値が大きいほど少しの動きで大きく動く）
-const GYRO_SENSITIVITY = 0.15;
+const GYRO_SENSITIVITY = 0.12;
 // キャリブレーション時間（ミリ秒）
 const CALIBRATION_DURATION = 3000;
 // デッドゾーン（これ以下の角速度変化は無視する）
-const GYRO_DEADZONE = 10;
+const GYRO_DEADZONE = 15;
 // キャリブレーション時の静止判定しきい値（加速度の差分）
 const CALIBRATION_ACCEL_THRESHOLD = 500;
 
@@ -113,6 +117,12 @@ export default function WandTrackingPage() {
 
   const [trackingMode, setTrackingMode] = useState<TrackingMode>("IR");
 
+  // ── ジェスチャー認識用 ──
+  const [gestureResult, setGestureResult] = useState<GestureResult | null>(
+    null,
+  );
+  const prevRButtonRef = useRef(false); // Rボタンの前フレーム状態
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
   const animFrameRef = useRef<number>(0);
@@ -157,6 +167,8 @@ export default function WandTrackingPage() {
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = 0;
       }
+      setGestureResult(null);
+      prevRButtonRef.current = false;
       if (trackingMode === "IMU") {
         setCalibrationState("calibrating");
         setCalibrationProgress(0);
@@ -175,6 +187,8 @@ export default function WandTrackingPage() {
     gyroBiasRef.current = { x: 0, y: 0, z: 0 };
     viewBoundsRef.current = null; // スムージングのリセット
     lastIrTimestampRef.current = 0;
+    setGestureResult(null);
+    prevRButtonRef.current = false;
     if (mode === "IMU") {
       // IMUモードに入ったらキャリブレーション開始
       setCalibrationState("calibrating");
@@ -275,10 +289,13 @@ export default function WandTrackingPage() {
     pos.x -= yaw * GYRO_SENSITIVITY;
     pos.y -= pitch * GYRO_SENSITIVITY;
 
-    // 軌跡に追加
-    const now = performance.now();
-    trailRef.current.push({ rawX: pos.x, rawY: pos.y, t: now });
-    if (trailRef.current.length > 300) trailRef.current.shift();
+    // Rボタンが押されている時だけ軌跡に追加
+    const isRPressed = joyconState.buttons.r;
+    if (isRPressed) {
+      const now = performance.now();
+      trailRef.current.push({ rawX: pos.x, rawY: pos.y, t: now });
+      if (trailRef.current.length > 1000) trailRef.current.shift();
+    }
   }, [trackingMode, joyconState, calibrationState]);
 
   // ── IRモード用: 自動スケーリング座標変換 ──
@@ -350,12 +367,26 @@ export default function WandTrackingPage() {
 
       const now = performance.now();
       const trail = trailRef.current;
+      const isRPressed = joyconState?.buttons.r ?? false;
 
-      // 古い軌跡を削除（5秒以上前）
-      const TRAIL_DURATION = trackingMode === "IMU" ? 5000 : 3000;
-      while (trail.length > 0 && now - trail[0].t > TRAIL_DURATION) {
-        trail.shift();
+      // --- ジェスチャー判定: Rボタン押下中のみ記録し、離した瞬間に判定 ---
+      // Rボタンが「押された」瞬間に結果と軌跡を明示的にクリアして新しく書き始める
+      if (isRPressed && !prevRButtonRef.current) {
+        setGestureResult(null);
+        trail.splice(0, trail.length); // 既存の軌跡をリセット
       }
+      // Rボタンが「離された」瞬間に、押していた間に描かれた軌跡で判定
+      else if (!isRPressed && prevRButtonRef.current) {
+        if (trail.length >= 20) {
+          const result = recognizeGesture(trail);
+          console.log(
+            "🪄 [Gesture Recognize Result (R Button Released)]:",
+            result,
+          );
+          setGestureResult(result);
+        }
+      }
+      prevRButtonRef.current = isRPressed;
 
       const isIR = trackingMode === "IR";
       const color = isIR ? "59, 130, 246" : "168, 85, 247"; // blue vs purple
@@ -429,11 +460,11 @@ export default function WandTrackingPage() {
           ctx.font = "11px monospace";
           ctx.fillText(`(${primary.cx}, ${primary.cy})`, cx + 14, cy - 8);
 
-          // 最新フレームのときだけ軌跡に追加
-          if (irFrame.timestamp !== lastIrTimestampRef.current) {
+          // Rボタンが押されている時だけ軌跡に追加
+          if (isRPressed && irFrame.timestamp !== lastIrTimestampRef.current) {
             trail.push({ rawX: primary.cx, rawY: primary.cy, t: now });
             lastIrTimestampRef.current = irFrame.timestamp;
-            if (trail.length > 200) trail.shift();
+            if (trail.length > 1000) trail.shift();
           }
         }
 
@@ -456,14 +487,14 @@ export default function WandTrackingPage() {
           trail,
           extraPoints,
           viewBoundsRef,
-          50,
+          200,
           0.15,
         );
 
         // 軌跡描画
         if (trail.length > 1) {
           for (let i = 1; i < trail.length; i++) {
-            const age = (now - trail[i].t) / TRAIL_DURATION;
+            const age = (now - trail[i].t) / 5000;
             const alpha = Math.max(0, 1 - age);
             const p0 = toCanvasCoords(
               trail[i - 1].rawX,
@@ -636,6 +667,19 @@ export default function WandTrackingPage() {
               className="w-full rounded-xl border border-gray-800 bg-gray-900"
               style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
             />
+
+            {/* ジェスチャー判定結果 */}
+            {gestureResult && gestureResult.type !== "unknown" && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 rounded-xl px-6 py-3 shadow-lg text-center z-20">
+                <div className="text-2xl font-bold text-purple-700">
+                  {gestureResult.type === "V" && "✨ V字を描きました！"}
+                  {gestureResult.type === "M" && "✨ M字を描きました！"}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  信頼度: {Math.round(gestureResult.confidence * 100)}%
+                </div>
+              </div>
+            )}
             {/* オーバーレイ */}
             {!isConnected && (
               <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
