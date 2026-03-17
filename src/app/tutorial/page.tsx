@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FloatingParticles } from "@/components/floating-particles";
 
@@ -164,16 +165,16 @@ export default function TutorialPage() {
       <FloatingParticles />
 
       <div className="relative z-20 min-h-svh px-6 py-8">
-        {/* Page number */}
-        <div className="absolute top-8 left-6 text-sm font-semibold tracking-[0.2em]">
-          <span className="text-[color:var(--gold-bright)]">
-            {formatPageNumber(index + 1)}
+        {/* Back link (match Play/Settings style) */}
+        <Link
+          href="/home"
+          className="absolute top-10 left-10 group flex items-center gap-2 text-[color:var(--gold-dim)] transition-colors hover:text-[color:var(--gold-bright)]"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          <span className="text-xs uppercase tracking-widest text-shadow-glow">
+            Back
           </span>
-          <span className="text-[color:var(--gold-dim)]"> / </span>
-          <span className="text-[color:var(--gold-dim)]">
-            {formatPageNumber(total)}
-          </span>
-        </div>
+        </Link>
 
         {/* Center area (carousel) */}
         <div className="min-h-svh flex items-center justify-center">
@@ -212,6 +213,17 @@ export default function TutorialPage() {
         </div>
 
         {/* Bottom controls */}
+        {/* Page number (bottom center, slightly above controls) */}
+        <div className="absolute left-0 right-0 bottom-24 flex items-center justify-center text-sm font-semibold tracking-[0.2em]">
+          <span className="text-[color:var(--gold-bright)]">
+            {formatPageNumber(index + 1)}
+          </span>
+          <span className="text-[color:var(--gold-dim)]"> / </span>
+          <span className="text-[color:var(--gold-dim)]">
+            {formatPageNumber(total)}
+          </span>
+        </div>
+
         <div className="absolute left-0 right-0 bottom-10 flex items-center justify-center gap-6">
           <button
             type="button"
