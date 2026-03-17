@@ -23,7 +23,7 @@ export class WandDetector {
   private isFirstDetection: boolean = true;
 
   // モデル入力サイズ（モデルの学習時サイズに合わせる）
-  private readonly INPUT_SIZE = 640;
+  private readonly INPUT_SIZE = 320;
   // EMAスムージング係数
   private readonly EMA_ALPHA = 0.4;
   // 検出信頼度しきい値
