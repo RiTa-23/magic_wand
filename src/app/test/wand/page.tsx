@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
-import { recognizeGesture, type GestureResult } from "@/features/gesture/recognizer"
+import {
+  recognizeGesture,
+  type GestureResult,
+} from "@/features/gesture/recognizer";
 
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
@@ -115,7 +118,9 @@ export default function WandTrackingPage() {
   const [trackingMode, setTrackingMode] = useState<TrackingMode>("IR");
 
   // ── ジェスチャー認識用 ──
-  const [gestureResult, setGestureResult] = useState<GestureResult | null>(null);
+  const [gestureResult, setGestureResult] = useState<GestureResult | null>(
+    null,
+  );
   const prevRButtonRef = useRef(false); // Rボタンの前フレーム状態
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -359,7 +364,6 @@ export default function WandTrackingPage() {
       const now = performance.now();
       const trail = trailRef.current;
       const isRPressed = joyconState?.buttons.r ?? false;
-
 
       const isIR = trackingMode === "IR";
       const color = isIR ? "59, 130, 246" : "168, 85, 247"; // blue vs purple
