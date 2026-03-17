@@ -68,16 +68,32 @@ export function renderCanvasImage(options: RenderCanvasOptions): ImageData {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const lines = text.split("\n");
+    const maxLineWidth = canvas.width - padding * 2;
+    const wrappedLines: string[] = [];
+    for (const paragraph of text.split("\n")) {
+      const words = paragraph.split(" ");
+      let current = "";
+      for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (ctx.measureText(candidate).width > maxLineWidth && current) {
+          wrappedLines.push(current);
+          current = word;
+        } else {
+          current = candidate;
+        }
+      }
+      wrappedLines.push(current);
+    }
+
     const lineHeight = Math.max(
       20,
-      Math.floor(canvas.height / (lines.length + 2)),
+      Math.floor(canvas.height / (wrappedLines.length + 2)),
     );
     const startY = Math.floor(
-      (canvas.height - lineHeight * (lines.length - 1)) / 2,
+      (canvas.height - lineHeight * (wrappedLines.length - 1)) / 2,
     );
 
-    lines.forEach((line, index) => {
+    wrappedLines.forEach((line, index) => {
       ctx.fillText(
         line,
         Math.floor(canvas.width / 2),
