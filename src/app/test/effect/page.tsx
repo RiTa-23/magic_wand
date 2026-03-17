@@ -171,25 +171,25 @@ function WaterEffect() {
         ))}
       </div>
 
-      {/* 3. Prismatic Aqua Spheres (歪みと輝きを伴う水球) */}
+      {/* 3. Prismatic Aqua Spheres (極限まで透明度を高めた水球：もはや光の屈折) */}
       <div className="absolute inset-0 flex items-center justify-center" style={{ filter: 'url(#liquid-refraction)' }}>
-        {[...Array(25)].map((_, i) => {
-          const size = 20 + Math.random() * 120;
+        {[...Array(12)].map((_, i) => {
+          const size = 30 + Math.random() * 150;
           return (
             <div
               key={`sacred-sphere-${i}`}
-              className="absolute bg-gradient-to-br from-white/30 via-blue-300/10 to-transparent border border-white/20 rounded-full animate-water-sphere-float shadow-[inset_0_0_30px_rgba(255,255,255,0.3),0_0_40px_rgba(30,144,255,0.1)]"
+              className="absolute bg-gradient-to-br from-white/15 via-blue-300/5 to-transparent border border-white/10 rounded-full animate-water-sphere-float shadow-[inset_0_0_30px_rgba(255,255,255,0.2)]"
               style={{
                 width: `${size}px`,
                 height: `${size}px`,
                 left: `${10 + Math.random() * 80}%`,
                 top: `${10 + Math.random() * 80}%`,
                 animationDelay: `${Math.random() * -12}s`,
-                animationDuration: `${6 + Math.random() * 10}s`
+                animationDuration: `${8 + Math.random() * 8}s`
               } as any}
             >
               {/* Internal light refraction (球体内部の光の筋) */}
-              <div className="absolute top-[20%] left-[20%] w-[25%] h-[25%] bg-white rounded-full blur-[3px] opacity-60" />
+              <div className="absolute top-[20%] left-[20%] w-[30%] h-[30%] bg-white rounded-full blur-[4px] opacity-30" />
               <div className="absolute bottom-[10%] right-[10%] w-[15%] h-[15%] bg-cyan-100 rounded-full blur-[5px] opacity-20 animate-pulse" />
             </div>
           );
@@ -208,19 +208,19 @@ function WaterEffect() {
         <div className="absolute -inset-[28rem] bg-[radial-gradient(circle,_rgba(255,255,255,0.15)_0%,_#0ea5e9_30%,_transparent_70%)] opacity-15 blur-[60px] animate-pulse" />
       </div>
 
-      {/* 5. Glistening Particles (主張を抑えた微細な残光) */}
+      {/* 5. Glistening Particles (主張を完全に消した微細な水蒸気) */}
       <div className="absolute inset-x-0 h-screen">
-        {[...Array(12)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div
             key={`sacred-bubble-${i}`}
-            className="absolute bg-white/20 rounded-full animate-bubble-rise shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+            className="absolute bg-white/10 rounded-full animate-bubble-rise"
             style={{
-              left: `${15 + Math.random() * 70}%`,
-              width: `${2 + Math.random() * 4}px`,
-              height: `${2 + Math.random() * 4}px`,
-              filter: 'blur(1px)',
-              animationDelay: `${i * -0.5}s`,
-              animationDuration: `${3 + Math.random() * 2}s`
+              left: `${20 + Math.random() * 60}%`,
+              width: `${4 + Math.random() * 8}px`,
+              height: `${4 + Math.random() * 8}px`,
+              filter: 'blur(3px)',
+              animationDelay: `${i * -1.5}s`,
+              animationDuration: `${5 + Math.random() * 3}s`
             } as any}
           />
         ))}
@@ -372,7 +372,7 @@ function EffectContent() {
         </div>
 
         {/* Effect Area - 中央 */}
-        <div className="relative flex-1 w-full flex items-center justify-center">
+        <div className={`relative flex-1 w-full flex items-center justify-center ${castState === "cast" && currentMagic === "VENTUS" ? "translate-y-24" : "translate-y-8"}`}>
           {castState === "cast" && currentMagic === "VENTUS" && <WindEffect />}
           {castState === "cast" && currentMagic === "AGUAMENTI" && <WaterEffect />}
           {castState === "cast" && currentMagic === "INCENDIO" && <FireEffect />}
