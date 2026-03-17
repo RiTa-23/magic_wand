@@ -36,6 +36,7 @@ export class WandDetector {
   /** ONNXモデルとカメラを初期化 */
   async initialize(videoElement: HTMLVideoElement): Promise<boolean> {
     // 既存リソースのクリーンアップ（二重呼び出し対策）
+    this.stop();
     if (this.session) {
       await this.session.release();
       this.session = null;
@@ -185,17 +186,15 @@ export class WandDetector {
     const detect = async () => {
       if (!this.running || !this.session || !this.videoElement) return;
 
+      let inputTensor: ort.Tensor | null = null;
+      let outputTensor: ort.Tensor | null = null;
       try {
         // 前処理 → 推論 → 後処理
-        const inputTensor = this.preprocess();
+        inputTensor = this.preprocess();
         const feeds: Record<string, ort.Tensor> = { images: inputTensor };
         const results = await this.session.run(feeds);
-        const outputTensor = Object.values(results)[0];
+        outputTensor = Object.values(results)[0];
         const detection = this.postprocess(outputTensor);
-
-        // テンソルのメモリ解放
-        inputTensor.dispose();
-        outputTensor.dispose();
 
         const now = performance.now();
 
@@ -242,6 +241,9 @@ export class WandDetector {
         this.running = false;
         this.onError?.(e);
         return;
+      } finally {
+        inputTensor?.dispose();
+        outputTensor?.dispose();
       }
 
       // 次フレームをスケジュール（推論完了後に次を開始）

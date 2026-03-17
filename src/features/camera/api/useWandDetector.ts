@@ -22,6 +22,7 @@ export function useWandDetector() {
   const [wandPoint, setWandPoint] = useState<WandDetectionResult | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const detectorRef = useRef<WandDetector | null>(null);
+  const isConnectingRef = useRef(false);
 
   // 初回マウント時にインスタンス化
   useEffect(() => {
@@ -39,8 +40,8 @@ export function useWandDetector() {
 
   const connect = useCallback(async () => {
     if (!detectorRef.current || !videoRef.current) return;
-    // INITIALIZING/CONNECTED中の二重呼び出しを防止
-    if (status === "INITIALIZING" || status === "CONNECTED") return;
+    if (isConnectingRef.current) return;
+    isConnectingRef.current = true;
     setStatus("INITIALIZING");
     try {
       await detectorRef.current.initialize(videoRef.current);
@@ -52,8 +53,10 @@ export function useWandDetector() {
       detectorRef.current.destroy();
       detectorRef.current = createDetector(setWandPoint, setStatus);
       setStatus("ERROR");
+    } finally {
+      isConnectingRef.current = false;
     }
-  }, [status]);
+  }, []);
 
   const disconnect = useCallback(() => {
     if (!detectorRef.current) return;

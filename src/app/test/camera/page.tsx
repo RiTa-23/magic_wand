@@ -171,15 +171,12 @@ export default function CameraWandTestPage() {
       trailRef.current = [];
       lastTimestampRef.current = 0;
       viewBoundsRef.current = null;
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-        animFrameRef.current = 0;
-      }
     }
   }, [status]);
 
-  // ── キャンバス描画 ──
+  // ── キャンバス描画（CONNECTED/INITIALIZING時のみループ） ──
   useEffect(() => {
+    if (status !== "CONNECTED" && status !== "INITIALIZING") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -341,9 +338,11 @@ export default function CameraWandTestPage() {
     };
 
     animFrameRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animFrameRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = 0;
+    };
+  }, [status]);
 
   const isConnected = status === "CONNECTED";
 
