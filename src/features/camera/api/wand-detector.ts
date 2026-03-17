@@ -56,25 +56,48 @@ export class WandDetector {
       },
     );
 
-    // 2. 前処理用Canvas + バッファ
-    const size = this.INPUT_SIZE;
-    this.preprocessCanvas = new OffscreenCanvas(size, size);
-    const ctx = this.preprocessCanvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Failed to get 2d context from OffscreenCanvas");
+    try {
+      // 2. 前処理用Canvas + バッファ
+      const size = this.INPUT_SIZE;
+      this.preprocessCanvas = new OffscreenCanvas(size, size);
+      const ctx = this.preprocessCanvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Failed to get 2d context from OffscreenCanvas");
+      }
+      this.preprocessCtx = ctx;
+      this.inputBuffer = new Float32Array(3 * size * size);
+
+      // 3. カメラストリーム取得（解像度を下げて前処理を軽くする）
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: 320, height: 240 },
+      });
+      videoElement.srcObject = this.stream;
+      await videoElement.play();
+
+      this.videoElement = videoElement;
+      return true;
+    } catch (e) {
+      // セッションの解放
+      if (this.session) {
+        await this.session.release().catch((releaseErr) => {
+          console.error("Failed to release ONNX session during cleanup:", releaseErr);
+        });
+        this.session = null;
+      }
+      // メディアトラックの停止
+      if (this.stream) {
+        this.stream.getTracks().forEach((t) => t.stop());
+        this.stream = null;
+      }
+      // videoElementのクリーンアップ
+      videoElement.srcObject = null;
+      this.videoElement = null;
+      // 前処理リソースのクリーンアップ
+      this.preprocessCanvas = null;
+      this.preprocessCtx = null;
+      this.inputBuffer = null;
+      throw e;
     }
-    this.preprocessCtx = ctx;
-    this.inputBuffer = new Float32Array(3 * size * size);
-
-    // 3. カメラストリーム取得（解像度を下げて前処理を軽くする）
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", width: 320, height: 240 },
-    });
-    videoElement.srcObject = this.stream;
-    await videoElement.play();
-
-    this.videoElement = videoElement;
-    return true;
   }
 
   /** ビデオフレームをモデル入力テンソルに変換（letterbox + NCHW正規化） */
