@@ -12,11 +12,11 @@ const PADDING = 40;
 type TrackingMode = "IR" | "IMU";
 
 // ジャイロ感度（値が大きいほど少しの動きで大きく動く）
-const GYRO_SENSITIVITY = 0.15;
+const GYRO_SENSITIVITY = 0.12;
 // キャリブレーション時間（ミリ秒）
 const CALIBRATION_DURATION = 3000;
 // デッドゾーン（これ以下の角速度変化は無視する）
-const GYRO_DEADZONE = 10;
+const GYRO_DEADZONE = 15;
 // キャリブレーション時の静止判定しきい値（加速度の差分）
 const CALIBRATION_ACCEL_THRESHOLD = 500;
 
@@ -116,8 +116,7 @@ export default function WandTrackingPage() {
 
   // ── ジェスチャー認識用 ──
   const [gestureResult, setGestureResult] = useState<GestureResult | null>(null);
-  const lastTrailLengthRef = useRef(0); // 前フレームの trail 長さ
-  const stillFramesRef = useRef(0); // 静止状態が続いたフレーム数
+  const prevRButtonRef = useRef(false); // Rボタンの前フレーム状態
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
@@ -281,10 +280,13 @@ export default function WandTrackingPage() {
     pos.x -= yaw * GYRO_SENSITIVITY;
     pos.y -= pitch * GYRO_SENSITIVITY;
 
-    // 軌跡に追加
-    const now = performance.now();
-    trailRef.current.push({ rawX: pos.x, rawY: pos.y, t: now });
-    if (trailRef.current.length > 300) trailRef.current.shift();
+    // Rボタンが押されている時だけ軌跡に追加
+    const isRPressed = joyconState.buttons.r;
+    if (isRPressed) {
+      const now = performance.now();
+      trailRef.current.push({ rawX: pos.x, rawY: pos.y, t: now });
+      if (trailRef.current.length > 1000) trailRef.current.shift();
+    }
   }, [trackingMode, joyconState, calibrationState]);
 
   // ── IRモード用: 自動スケーリング座標変換 ──
@@ -356,12 +358,8 @@ export default function WandTrackingPage() {
 
       const now = performance.now();
       const trail = trailRef.current;
+      const isRPressed = joyconState?.buttons.r ?? false;
 
-      // 古い軌跡を削除（5秒以上前）
-      const TRAIL_DURATION = trackingMode === "IMU" ? 5000 : 3000;
-      while (trail.length > 0 && now - trail[0].t > TRAIL_DURATION) {
-        trail.shift();
-      }
 
       const isIR = trackingMode === "IR";
       const color = isIR ? "59, 130, 246" : "168, 85, 247"; // blue vs purple
@@ -435,11 +433,10 @@ export default function WandTrackingPage() {
           ctx.font = "11px monospace";
           ctx.fillText(`(${primary.cx}, ${primary.cy})`, cx + 14, cy - 8);
 
-          // 最新フレームのときだけ軌跡に追加
-          if (irFrame.timestamp !== lastIrTimestampRef.current) {
+          // Rボタンが押されている時だけ軌跡に追加
+          if (isRPressed && irFrame.timestamp !== lastIrTimestampRef.current) {
             trail.push({ rawX: primary.cx, rawY: primary.cy, t: now });
             lastIrTimestampRef.current = irFrame.timestamp;
-            if (trail.length > 200) trail.shift();
           }
         }
 
@@ -462,14 +459,14 @@ export default function WandTrackingPage() {
           trail,
           extraPoints,
           viewBoundsRef,
-          50,
+          200,
           0.15,
         );
 
         // 軌跡描画
         if (trail.length > 1) {
           for (let i = 1; i < trail.length; i++) {
-            const age = (now - trail[i].t) / TRAIL_DURATION;
+            const age = (now - trail[i].t) / 5000;
             const alpha = Math.max(0, 1 - age);
             const p0 = toCanvasCoords(
               trail[i - 1].rawX,
@@ -524,27 +521,24 @@ export default function WandTrackingPage() {
       ctx.font = "bold 12px sans-serif";
       ctx.fillText(`${trackingMode} モード`, PADDING, PADDING - 10);
 
-      // --- ジェスチャー判定: 描き終わりの検出 ---
-      const currentTrail = trail; // 現在有効な trail
-      const STILL_FRAMES_THRESHOLD = 60; // 約1秒（60fps × 1s）静止で判定
-
-      if (currentTrail.length > 0) {
-        if (currentTrail.length === lastTrailLengthRef.current) {
-          // trail が増えていない → 静止中
-          stillFramesRef.current++;
-        } else {
-          // trail が増えている → 動いている
-          stillFramesRef.current = 0;
-          setGestureResult(null); // 動き始めたら結果をリセット
-        }
-        lastTrailLengthRef.current = currentTrail.length;
-
-        // 静止時間が閾値を超えたら判定する
-        if (stillFramesRef.current === STILL_FRAMES_THRESHOLD) {
-          const result = recognizeGesture(currentTrail);
+      // --- ジェスチャー判定: Rボタン押下中のみ記録し、離した瞬間に判定 ---
+      // Rボタンが「押された」瞬間に結果と軌跡を明示的にクリアして新しく書き始める
+      if (isRPressed && !prevRButtonRef.current) {
+        setGestureResult(null);
+        trail.splice(0, trail.length); // 既存の軌跡をリセット
+      }
+      // Rボタンが「離された」瞬間に、押していた間に描かれた軌跡で判定
+      else if (!isRPressed && prevRButtonRef.current) {
+        if (trail.length > 10) {
+          const result = recognizeGesture(trail);
+          console.log(
+            "🪄 [Gesture Recognize Result (R Button Released)]:",
+            result,
+          );
           setGestureResult(result);
         }
       }
+      prevRButtonRef.current = isRPressed;
 
       animFrameRef.current = requestAnimationFrame(draw);
     };

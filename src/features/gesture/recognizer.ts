@@ -75,7 +75,7 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
 
   // Y 方向の移動量が小さすぎる場合は判定しない
   const ySpan = calcYSpan(trail)
-  if (ySpan < 5) return { type: "unknown" }
+  if (ySpan < 2) return { type: "unknown" }
 
   // スムージング（ウィンドウサイズ: 全体の約 10%）
   const windowSize = Math.max(3, Math.floor(trail.length * 0.1))
