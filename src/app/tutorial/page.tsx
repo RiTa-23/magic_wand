@@ -77,6 +77,22 @@ export default function TutorialPage() {
     "idle",
   );
   const rafRef = useRef<number | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setPrefersReducedMotion(mq.matches);
+    update();
+
+    // Safari fallback: addListener/removeListener
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", update);
+      return () => mq.removeEventListener("change", update);
+    }
+
+    mq.addListener(update);
+    return () => mq.removeListener(update);
+  }, []);
 
   const isAnimating = phase !== "idle";
   const canPrev = index > 0 && !isAnimating;
@@ -84,9 +100,20 @@ export default function TutorialPage() {
 
   const startTransition = useCallback(
     (nextIndex: number, nextDirection: "next" | "prev") => {
-      if (isAnimating) return;
       if (nextIndex === index) return;
       if (nextIndex < 0 || nextIndex >= total) return;
+
+      // Accessibility: if the user prefers reduced motion, switch immediately.
+      if (prefersReducedMotion) {
+        if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        setDirection(nextDirection);
+        setPendingIndex(null);
+        setPhase("idle");
+        setIndex(nextIndex);
+        return;
+      }
+
+      if (isAnimating) return;
 
       setDirection(nextDirection);
       setPendingIndex(nextIndex);
@@ -100,7 +127,7 @@ export default function TutorialPage() {
         setPhase("animating");
       });
     },
-    [index, isAnimating, total],
+    [index, isAnimating, prefersReducedMotion, total],
   );
 
   const goPrev = useCallback(() => {
@@ -143,10 +170,11 @@ export default function TutorialPage() {
   const incomingFromX = direction === "next" ? 100 : -100;
   const incomingToX = 0;
 
-  const currentX = phase === "animating" ? currentToX : currentFromX;
-  const incomingX = phase === "animating" ? incomingToX : incomingFromX;
+  const shouldAnimate = !prefersReducedMotion && phase === "animating";
+  const currentX = shouldAnimate ? currentToX : currentFromX;
+  const incomingX = shouldAnimate ? incomingToX : incomingFromX;
 
-  const enableTransition = phase === "animating";
+  const enableTransition = shouldAnimate;
 
   useEffect(() => {
     if (phase !== "reset") return;
