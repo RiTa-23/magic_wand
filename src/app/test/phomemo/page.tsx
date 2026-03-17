@@ -62,19 +62,19 @@ export default function PhomemoTestPage() {
   const omikujiSpells = SPELL_DICTIONARY.filter(
     (s) => s.id === "kyua_uppu_rapa_pa",
   );
-  const { transcript, spellMatch, start, stop, isSupported } =
+  const { transcript, finalSpellMatch, start, stop, isSupported } =
     useSpeech(omikujiSpells);
 
   useEffect(() => {
-    if (!spellMatch?.matched || !spellMatch.spell) return;
-    if (spellMatch.spell.id !== "kyua_uppu_rapa_pa") return;
+    if (!finalSpellMatch?.matched || !finalSpellMatch.spell) return;
+    if (finalSpellMatch.spell.id !== "kyua_uppu_rapa_pa") return;
 
-    const key = `${spellMatch.spell.id}:${spellMatch.rawTranscript}`;
+    const key = `${finalSpellMatch.spell.id}:${finalSpellMatch.rawTranscript}`;
     if (lastVoiceKeyRef.current === key) return;
     lastVoiceKeyRef.current = key;
 
     stop();
-    setVoiceStatus(`✨ 認識: ${spellMatch.spell.name}`);
+    setVoiceStatus(`✨ 認識: ${finalSpellMatch.spell.name}`);
 
     if (!isConnected) {
       setVoiceStatus("❌ プリンターが未接続です");
@@ -90,7 +90,7 @@ export default function PhomemoTestPage() {
       .catch(() => {
         setVoiceStatus("❌ 印刷に失敗しました");
       });
-  }, [spellMatch]);
+  }, [finalSpellMatch, isConnected, printTestPage, stop]);
 
   // 接続完了でモーダルを自動クローズ
   useEffect(() => {
