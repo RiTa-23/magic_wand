@@ -12,10 +12,6 @@ type TutorialSlide = {
   description: string;
 };
 
-function formatPageNumber(n: number) {
-  return String(n).padStart(2, "0");
-}
-
 export default function TutorialPage() {
   const slides = useMemo<TutorialSlide[]>(
     () => [
@@ -204,54 +200,43 @@ export default function TutorialPage() {
         </header>
 
         {/* Center area (carousel) */}
-        <div className="h-full flex items-center justify-center">
-          <div className="w-full max-w-sm">
-            <div className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/15 bg-black/20 backdrop-blur-sm">
-              <div className="relative h-[360px]">
-                {/* Current slide */}
-                <div
-                  key={index}
-                  className={`absolute inset-0 ${enableTransition ? "transition-transform duration-500 ease-in-out" : ""}`}
-                  style={{ transform: `translateX(${currentX}%)` }}
-                >
-                  <SlideContent slide={activeSlide} />
-                </div>
-
-                {/* Incoming slide (only during transition) */}
-                {nextSlide && (
-                  <div
-                    key={pendingIndex}
-                    className={`absolute inset-0 ${enableTransition ? "transition-transform duration-500 ease-in-out" : ""}`}
-                    style={{ transform: `translateX(${incomingX}%)` }}
-                    onTransitionEnd={(e) => {
-                      if (e.target !== e.currentTarget) return;
-                      if (pendingIndex === null) return;
-                      setIndex(pendingIndex);
-                      setPendingIndex(null);
-                      setPhase("reset");
-                    }}
-                  >
-                    <SlideContent slide={nextSlide} />
-                  </div>
-                )}
+        <div className="h-full flex items-start justify-center pt-32 pb-36">
+          <div className="w-full max-w-4xl">
+            <div className="relative h-[min(520px,62svh)] overflow-hidden">
+              {/* Current slide */}
+              <div
+                key={index}
+                className={`absolute inset-0 ${enableTransition ? "transition-transform duration-500 ease-in-out" : ""}`}
+                style={{ transform: `translateX(${currentX}%)` }}
+              >
+                <SlideContent slide={activeSlide} pageNumber={index + 1} />
               </div>
+
+              {/* Incoming slide (only during transition) */}
+              {nextSlide && pendingIndex !== null && (
+                <div
+                  key={pendingIndex}
+                  className={`absolute inset-0 ${enableTransition ? "transition-transform duration-500 ease-in-out" : ""}`}
+                  style={{ transform: `translateX(${incomingX}%)` }}
+                  onTransitionEnd={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    setIndex(pendingIndex);
+                    setPendingIndex(null);
+                    setPhase("reset");
+                  }}
+                >
+                  <SlideContent
+                    slide={nextSlide}
+                    pageNumber={pendingIndex + 1}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Bottom controls */}
-        {/* Page number (bottom center, slightly above controls) */}
-        <div className="absolute left-0 right-0 bottom-24 flex items-center justify-center text-sm font-semibold tracking-[0.2em]">
-          <span className="text-[color:var(--gold-bright)]">
-            {formatPageNumber(index + 1)}
-          </span>
-          <span className="text-[color:var(--gold-dim)]"> / </span>
-          <span className="text-[color:var(--gold-dim)]">
-            {formatPageNumber(total)}
-          </span>
-        </div>
-
-        <div className="absolute left-0 right-0 bottom-10 flex items-center justify-center gap-6">
+        <div className="absolute left-0 right-0 bottom-14 flex items-center justify-center gap-6">
           <button
             type="button"
             onClick={goPrev}
@@ -266,18 +251,24 @@ export default function TutorialPage() {
             className="flex items-center gap-2"
             aria-label="ページインジケーター"
           >
-            {slides.map((_, i) => (
-              <div
-                // indicator only (no click per spec)
-                key={i}
-                className="h-2 w-2 rounded-full"
-                style={{
-                  backgroundColor:
-                    i === index ? "var(--gold-bright)" : "var(--gold-dim)",
-                  opacity: i === index ? 1 : 0.35,
-                }}
-              />
-            ))}
+            {slides.map((_, i) => {
+              const isActive = i === index;
+              return (
+                <div
+                  // indicator only (no click per spec)
+                  key={i}
+                  className={
+                    isActive ? "h-2 w-8 rounded-full" : "h-2 w-2 rounded-full"
+                  }
+                  style={{
+                    backgroundColor: isActive
+                      ? "var(--gold-bright)"
+                      : "var(--gold-dim)",
+                    opacity: isActive ? 1 : 0.35,
+                  }}
+                />
+              );
+            })}
           </div>
 
           <button
@@ -290,22 +281,35 @@ export default function TutorialPage() {
             <ChevronRight className="mx-auto h-5 w-5 text-[color:var(--gold-bright)]" />
           </button>
         </div>
+
+        <div className="absolute left-0 right-0 bottom-6 text-center text-xs tracking-[0.22em] text-[color:var(--gold-dim)]/80">
+          ←→キーでもページ移動できます
+        </div>
       </div>
     </main>
   );
 }
 
-function SlideContent({ slide }: { slide: TutorialSlide }) {
+function SlideContent({
+  slide,
+  pageNumber,
+}: {
+  slide: TutorialSlide;
+  pageNumber: number;
+}) {
+  const [imageError, setImageError] = useState(false);
+
   return (
-    <div className="h-full w-full p-5 flex flex-col items-center justify-center gap-5">
-      <div className="relative w-full max-w-xs aspect-[4/3] overflow-hidden rounded-xl border border-[color:var(--gold)]/15">
+    <div className="h-full w-full px-6 flex flex-col items-center justify-start gap-7">
+      <div className="relative w-full max-w-3xl aspect-[16/9] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
         <Image
           src={slide.imageSrc}
           alt={slide.imageAlt}
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 80vw, 320px"
+          sizes="(max-width: 768px) 92vw, 960px"
           priority
+          onError={() => setImageError(true)}
         />
         <div
           className="absolute inset-0"
@@ -315,7 +319,19 @@ function SlideContent({ slide }: { slide: TutorialSlide }) {
           }}
           aria-hidden="true"
         />
+
+        {(!slide.imageSrc || imageError) && (
+          <div className="absolute inset-0 grid place-items-center">
+            <span className="text-sm tracking-[0.25em] text-[color:var(--gold-dim)]/80">
+              画像がここに表示されます
+            </span>
+          </div>
+        )}
       </div>
+
+      <h2 className="text-center text-3xl font-bold tracking-[0.18em] text-[color:var(--gold-bright)]">
+        ページ {pageNumber}
+      </h2>
 
       <p className="text-center text-base leading-relaxed tracking-wide text-[color:var(--foreground)]/90">
         {slide.description}
