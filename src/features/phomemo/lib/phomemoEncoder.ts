@@ -85,6 +85,30 @@ export function encodeBinaryImageToPhomemo(
     throw new Error("stripeHeight must be a positive integer");
   }
 
+  if (!Number.isInteger(feedLines) || feedLines < 0 || feedLines > 255) {
+    throw new Error("feedLines must be an integer 0..255");
+  }
+
+  if (alignment !== 0 && alignment !== 1 && alignment !== 2) {
+    throw new Error("alignment must be 0 (left), 1 (center), or 2 (right)");
+  }
+
+  if (
+    !Number.isInteger(concentrationCoefficient) ||
+    concentrationCoefficient < 0 ||
+    concentrationCoefficient > 255
+  ) {
+    throw new Error("concentrationCoefficient must be an integer 0..255");
+  }
+
+  if (
+    !Number.isInteger(concentration) ||
+    concentration < 0 ||
+    concentration > 255
+  ) {
+    throw new Error("concentration must be an integer 0..255");
+  }
+
   const bytesPerRow = Math.ceil(width / 8);
   const commands: Uint8Array[] = [
     new Uint8Array([ESC, 0x40, 0x02]),
