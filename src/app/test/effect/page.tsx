@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HeroMagicCircle } from "@/components/hero-magic-circle";
 import { FloatingParticles } from "@/components/floating-particles";
 import Link from "next/link";
 
@@ -54,15 +53,6 @@ export default function EffectTestPage() {
 
         {/* Magic Circle Area */}
         <div className="relative group perspective-1000 h-[400px] w-full flex items-center justify-center">
-          <div className={`
-            transition-all duration-700 ease-out transform
-            ${castState === "charging" ? "scale-110 rotate-[20deg] brightness-150" : ""}
-            ${castState === "cast" ? "scale-[1.5] brightness-200 blur-[2px]" : ""}
-            ${castState === "idle" ? "scale-100 hover:scale-[1.02]" : ""}
-          `}>
-            <HeroMagicCircle />
-          </div>
-
           {/* Flash Effect on Cast */}
           {castState === "cast" && (
             <div className="absolute inset-0 bg-white rounded-full blur-[100px] animate-ping opacity-20 pointer-events-none" />
@@ -79,30 +69,7 @@ export default function EffectTestPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md">
-          <button 
-            onClick={handleCast}
-            disabled={castState !== "idle"}
-            className={`
-              relative group overflow-hidden px-8 py-4 rounded-xl border transition-all duration-300
-              ${castState === "idle" 
-                ? "bg-white/5 border-white/10 hover:border-white/30 hover:bg-white/10" 
-                : "bg-white/2 border-white/5 opacity-50 cursor-not-allowed"}
-            `}
-          >
-            <div className="flex items-center justify-center gap-3">
-              <span className={`w-2 h-2 rounded-full ${castState === "idle" ? "bg-green-400 animate-pulse" : "bg-gray-500"}`} />
-              <span className="font-bold tracking-widest text-sm text-white/90">TRIGGER SPELL</span>
-            </div>
-          </button>
 
-          <button 
-            className="relative group overflow-hidden px-8 py-4 rounded-xl border border-white/10 bg-white/5 transition-all duration-300 hover:border-blue-400/50 hover:bg-blue-400/5"
-          >
-            <span className="font-bold tracking-widest text-sm text-white/90">PARTICLE SETTINGS</span>
-          </button>
-        </div>
 
       </div>
 
