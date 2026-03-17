@@ -37,21 +37,56 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     action: "fan_on",
   },
   {
-    id: "arresto_momentum",
-    name: "アレスト モメンタム",
+    id: "incendio",
+    name: "インセンディオ",
     keywords: [
-      "アレストモメンタム",
-      "アレスト モメンタム",
-      "あれすと めんたむ",
-      "あれすとめめんたむ",
-      "arresto momentum",
-      "arrest momentum",
-      "止まれ",
-      "減速",
+      "インセンディオ",
+      "インセンデイオ",
+      "インセンディオー",
+      "インセンディーオ",
+      "いんせんでぃお",
+      "いんせんでいお",
+      "いんせんでぃおー",
+      "インセンディョ",
+      "いんせんでぃよ",
+      "incendio",
+      "insendio",
+      "炎よ",
     ],
-    action: "fan_stop",
+    action: "fire_on",
   },
 ];
+
+function normalizeForMatch(text: string): string {
+  return text
+    .normalize("NFKC")
+    .replace(/[.,。、！？!?・\s\n\r]/g, "")
+    .replace(/[ーｰ]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j += 1) dp[0][j] = j;
+
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost,
+      );
+    }
+  }
+
+  return dp[a.length][b.length];
+}
 
 /**
  * 認識されたテキストと辞書を照合し、一致する呪文を返す
@@ -60,12 +95,8 @@ export function matchSpell(
   transcript: string,
   dictionary: SpellEntry[] = SPELL_DICTIONARY,
 ): SpellMatchResult {
-  // 1. Unicode正規化 (NFKC) と記号・空白の削除
-  const normalized = transcript
-    .normalize("NFKC")
-    .replace(/[.,。、！？！？\s\n\r]/g, "")
-    .trim()
-    .toLowerCase();
+  // 1. Unicode正規化 (NFKC) + 記号/空白/長音のゆれ吸収
+  const normalized = normalizeForMatch(transcript);
 
   if (!normalized) {
     return {
@@ -79,10 +110,7 @@ export function matchSpell(
   // --- 第一パス: 完全一致を優先 ---
   for (const spell of dictionary) {
     for (const keyword of spell.keywords) {
-      const normalizedKeyword = keyword
-        .normalize("NFKC")
-        .replace(/[.,。、！？！？\s\n\r]/g, "")
-        .toLowerCase();
+      const normalizedKeyword = normalizeForMatch(keyword);
 
       if (normalized === normalizedKeyword) {
         return {
@@ -98,19 +126,44 @@ export function matchSpell(
   // --- 第二パス: 部分一致（日常会話での誤爆リスクがあるが、呪文の前後になにか入った場合を救済） ---
   for (const spell of dictionary) {
     for (const keyword of spell.keywords) {
-      const normalizedKeyword = keyword
-        .normalize("NFKC")
-        .replace(/[.,。、！？！？\s\n\r]/g, "")
-        .toLowerCase();
+      const normalizedKeyword = normalizeForMatch(keyword);
 
       // キーワードが3文字以上、または特定の重要な呪文の場合にのみ部分一致を許容するなどの工夫も可能
-      if (normalized.includes(normalizedKeyword)) {
+      if (
+        normalized.includes(normalizedKeyword) ||
+        normalizedKeyword.includes(normalized)
+      ) {
         return {
           matched: true,
           spell,
           confidence: 0.8, // 部分一致は少し信頼度を下げる
           rawTranscript: transcript,
         };
+      }
+    }
+  }
+
+  // --- 第三パス: 軽いファジー一致（誤認識1-2文字を救済） ---
+  if (normalized.length >= 4) {
+    for (const spell of dictionary) {
+      for (const keyword of spell.keywords) {
+        const normalizedKeyword = normalizeForMatch(keyword);
+        if (!normalizedKeyword) continue;
+
+        const lengthDiff = Math.abs(
+          normalized.length - normalizedKeyword.length,
+        );
+        if (lengthDiff > 2) continue;
+
+        const distance = levenshteinDistance(normalized, normalizedKeyword);
+        if (distance <= 2) {
+          return {
+            matched: true,
+            spell,
+            confidence: 0.65,
+            rawTranscript: transcript,
+          };
+        }
       }
     }
   }

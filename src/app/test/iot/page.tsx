@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   castVentus,
   castVentusOff,
@@ -12,14 +12,27 @@ import {
   castAguamentiOff,
   castMaxima,
   castNox,
+  executeSpell,
   getDeviceStatus,
 } from "@/features/iot/lib/plugControl";
+import { useSpeech } from "@/features/voice/api/useSpeech";
+
+const VOICE_SPELL_MAP: Record<string, string> = {
+  ventus: "Ventus",
+  lumos: "Lumos",
+  aguamenti: "Aguamenti",
+  nox: "Nox",
+  incendio: "Incendio",
+};
 
 export default function IotTestPage() {
   const [status, setStatus] = useState<string>(
     "待機中っす！ボタンを押してほしいっす！",
   );
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
+  const [voiceStatus, setVoiceStatus] = useState<string>("待機中");
+  const { transcript, spellMatch, start, stop, isSupported } = useSpeech();
+  const lastVoiceKeyRef = useRef<string>("");
 
   const handleSpell = async (
     spellFn: () => Promise<any>,
@@ -57,12 +70,90 @@ export default function IotTestPage() {
     }
   };
 
+  const handleVoiceStart = () => {
+    if (!isSupported) {
+      setVoiceStatus("このブラウザは音声認識に非対応です");
+      return;
+    }
+    lastVoiceKeyRef.current = "";
+    start();
+    setVoiceStatus("音声認識中...");
+  };
+
+  const handleVoiceStop = () => {
+    stop();
+    setVoiceStatus("停止中");
+  };
+
+  useEffect(() => {
+    if (!spellMatch?.matched || !spellMatch.spell) return;
+
+    const matchedSpell = spellMatch.spell;
+
+    const mappedSpell = VOICE_SPELL_MAP[matchedSpell.id];
+    if (!mappedSpell) return;
+
+    const key = `${matchedSpell.id}:${spellMatch.rawTranscript}`;
+    if (lastVoiceKeyRef.current === key) return;
+    lastVoiceKeyRef.current = key;
+
+    const run = async () => {
+      stop();
+      setStatus(
+        `🎤 ${matchedSpell.name} を認識したっす。${mappedSpell}を実行します...`,
+      );
+      setVoiceStatus(`認識: ${matchedSpell.name}`);
+      const result = await executeSpell(mappedSpell);
+      setStatus(result.message);
+    };
+
+    run().catch((error) => {
+      const errorMessage =
+        error instanceof Error ? error.message : "不明なエラー";
+      setStatus(`❌ 音声経由の実行に失敗しました: ${errorMessage}`);
+      setVoiceStatus("実行失敗");
+    });
+  }, [spellMatch]);
+
   return (
     <div className="p-8 space-y-6 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold">🪄 魔法陣（IoT）テスト画面</h1>
 
       <div className="bg-blue-50 p-4 rounded border border-blue-200">
         <p className="text-gray-700 font-medium">状態: {status}</p>
+      </div>
+
+      {/* 音声認識連携 */}
+      <div className="space-y-3">
+        <h2 className="text-xl font-semibold">音声認識連携</h2>
+        <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={handleVoiceStart}
+            className="bg-emerald-600 text-white px-6 py-3 rounded shadow hover:bg-emerald-700 transition font-semibold"
+          >
+            🎤 音声認識開始
+          </button>
+          <button
+            onClick={handleVoiceStop}
+            className="bg-slate-500 text-white px-6 py-3 rounded shadow hover:bg-slate-600 transition font-semibold"
+          >
+            ⏹ 音声認識停止
+          </button>
+        </div>
+        <div className="bg-emerald-50 p-4 rounded border border-emerald-200 text-sm space-y-1">
+          <p>
+            <strong>認識状態:</strong> {voiceStatus}
+          </p>
+          <p>
+            <strong>文字起こし:</strong> {transcript || "（まだ認識なし）"}
+          </p>
+          <p>
+            <strong>マッチ:</strong>{" "}
+            {spellMatch?.matched && spellMatch.spell
+              ? `${spellMatch.spell.name} (${spellMatch.spell.id})`
+              : "（未一致）"}
+          </p>
+        </div>
       </div>
 
       {/* 個別ポート制御 */}

@@ -3,6 +3,111 @@
 import { getTapoClient } from "../api/tapoClient";
 
 // ========================================
+// 簡易ジョブスケジューラー（自動OFFタイマー管理）
+// ========================================
+
+const IS_TEST_ENV = process.env.NODE_ENV === "test";
+
+interface ScheduledJob {
+  timeoutId: NodeJS.Timeout;
+  portIndex: number;
+  scheduledAt: number;
+}
+
+const scheduledJobs = new Map<number, ScheduledJob>();
+
+function scheduleAutoOff(
+  portIndex: number,
+  durationMs: number,
+  callback: () => Promise<void>,
+): string {
+  if (IS_TEST_ENV) {
+    return `test-job-${Date.now()}`;
+  }
+
+  cancelScheduledJob(portIndex);
+
+  const jobId = `port-${portIndex}-${Date.now()}`;
+  const timeoutId = setTimeout(async () => {
+    try {
+      await callback();
+    } catch (err) {
+      console.error(`❌ スケジュール済みOFF実行失敗:`, err);
+    } finally {
+      scheduledJobs.delete(portIndex);
+    }
+  }, durationMs);
+
+  scheduledJobs.set(portIndex, {
+    timeoutId,
+    portIndex,
+    scheduledAt: Date.now(),
+  });
+
+  return jobId;
+}
+
+function cancelScheduledJob(portIndex: number): boolean {
+  if (IS_TEST_ENV) {
+    return true;
+  }
+
+  const job = scheduledJobs.get(portIndex);
+  if (job) {
+    clearTimeout(job.timeoutId);
+    scheduledJobs.delete(portIndex);
+    return true;
+  }
+  return false;
+}
+
+// ========================================
+// ポートマッピング定数
+// ========================================
+
+/**
+ * Tapo P300 の差し込み口と魔法の対応マップ
+ * ポート番号（0-index）は P300 の物理的な差し込み順に対応する
+ */
+const SPELL_PORT = {
+  VENTUS: 0, // ポート1: 風
+  LUMOS: 1, // ポート2: 光
+  INCENDIO: 2, // ポート3: 炎
+  AGUAMENTI: 3, // ポート4: 水
+} as const;
+
+/** オートOFFのデフォルト待機時間（ミリ秒） */
+const DEFAULT_AUTO_OFF_MS = 5000;
+const CHILD_DEVICES_CACHE_TTL_MS = 15000;
+
+let childDevicesCache: {
+  fetchedAt: number;
+  items: Awaited<
+    ReturnType<Awaited<ReturnType<typeof getTapoClient>>["getChildDevicesInfo"]>
+  >;
+} | null = null;
+
+async function getCachedChildDevices(
+  p300: Awaited<ReturnType<typeof getTapoClient>>,
+) {
+  if (IS_TEST_ENV) {
+    return await p300.getChildDevicesInfo();
+  }
+
+  const now = Date.now();
+  if (
+    childDevicesCache &&
+    now - childDevicesCache.fetchedAt <= CHILD_DEVICES_CACHE_TTL_MS
+  ) {
+    return childDevicesCache.items;
+  }
+
+  const items = await p300.getChildDevicesInfo();
+  childDevicesCache = { fetchedAt: now, items };
+  return items;
+}
+
+// ========================================
 // 内部ヘルパー関数
 // ========================================
 
@@ -20,13 +125,17 @@ async function togglePort(
   emoji: string,
 ) {
   try {
+    if (!turnOn) {
+      cancelScheduledJob(portIndex);
+    }
+
     console.log(
       `${emoji} ${spellName}発動！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にします`,
     );
     const p300 = await getTapoClient();
 
     // P300の子デバイス（各ポート）を取得
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
     console.log(`📡 子デバイス数: ${childDevices.length}`);
 
     if (childDevices.length === 0) {
@@ -69,6 +178,37 @@ async function togglePort(
 }
 
 // ========================================
+// オートOFF内部ヘルパー
+// ========================================
+
+/**
+ * ポートをONにし、指定時間後に自動でOFFにする
+ * @param portIndex - ポート番号（SPELL_PORT定数を使うこと）
+ * @param spellName - 魔法の名前（ログ用）
+ * @param emoji - 絵文字（ログ用）
+ * @param durationMs - ONのままにする時間（ミリ秒）
+ */
+async function castPortWithAutoOff(
+  portIndex: number,
+  spellName: string,
+  emoji: string,
+  durationMs: number,
+) {
+  const result = await togglePort(portIndex, true, spellName, emoji);
+  if (result.success) {
+    const jobId = scheduleAutoOff(portIndex, durationMs, async () => {
+      await togglePort(portIndex, false, `${spellName}自動解除`, "⏱️");
+    });
+    return {
+      ...result,
+      jobId,
+      message: `${result.message}（${durationMs / 1000}秒後に自動解除）`,
+    };
+  }
+  return result;
+}
+
+// ========================================
 // 個別ポート制御の魔法
 // ========================================
 
@@ -76,56 +216,102 @@ async function togglePort(
  * 魔法: ヴェンタス - ポート0（風）をON
  */
 export async function castVentus() {
-  return togglePort(0, true, "ヴェンタス", "🌪️");
+  return togglePort(SPELL_PORT.VENTUS, true, "ヴェンタス", "🌪️");
 }
 
 /**
  * 魔法: ルーモス - ポート1（光）をON
  */
 export async function castLumos() {
-  return togglePort(1, true, "ルーモス", "💡");
+  return togglePort(SPELL_PORT.LUMOS, true, "ルーモス", "💡");
 }
 
 /**
  * 魔法: インセンディオ - ポート2（炎）をON
  */
 export async function castIncendio() {
-  return togglePort(2, true, "インセンディオ", "🔥");
+  return togglePort(SPELL_PORT.INCENDIO, true, "インセンディオ", "🔥");
 }
 
 /**
  * 魔法: アグアメンティ - ポート3（水）をON
  */
 export async function castAguamenti() {
-  return togglePort(3, true, "アグアメンティ", "💧");
+  return togglePort(SPELL_PORT.AGUAMENTI, true, "アグアメンティ", "💧");
 }
 
 /**
  * 魔法: ヴェンタスOFF - ポート0（風）をOFF
  */
 export async function castVentusOff() {
-  return togglePort(0, false, "ヴェンタス解除", "🌫️");
+  return togglePort(SPELL_PORT.VENTUS, false, "ヴェンタス解除", "🌫️");
 }
 
 /**
  * 魔法: ルーモスOFF - ポート1（光）をOFF
  */
 export async function castLumosOff() {
-  return togglePort(1, false, "ルーモス解除", "🌑");
+  return togglePort(SPELL_PORT.LUMOS, false, "ルーモス解除", "🌑");
 }
 
 /**
  * 魔法: インセンディオOFF - ポート2（炎）をOFF
  */
 export async function castIncendioOff() {
-  return togglePort(2, false, "インセンディオ解除", "❄️");
+  return togglePort(SPELL_PORT.INCENDIO, false, "インセンディオ解除", "❄️");
 }
 
 /**
  * 魔法: アグアメンティOFF - ポート3（水）をOFF
  */
 export async function castAguamentiOff() {
-  return togglePort(3, false, "アグアメンティ解除", "🔥");
+  return togglePort(SPELL_PORT.AGUAMENTI, false, "アグアメンティ解除", "🔥");
+}
+
+// ========================================
+// オートOFF付き魔法（指定時間後に自動解除）
+// ========================================
+
+/**
+ * 魔法: ヴェンタス（オートOFF）- ポート0をONにし、指定秒後にOFF
+ * @param durationMs - ONのままにする時間（デフォルト: 5秒）
+ */
+export async function castVentusAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+  return castPortWithAutoOff(SPELL_PORT.VENTUS, "ヴェンタス", "🌪️", durationMs);
+}
+
+/**
+ * 魔法: ルーモス（オートOFF）- ポート1をONにし、指定秒後にOFF
+ * @param durationMs - ONのままにする時間（デフォルト: 5秒）
+ */
+export async function castLumosAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+  return castPortWithAutoOff(SPELL_PORT.LUMOS, "ルーモス", "💡", durationMs);
+}
+
+/**
+ * 魔法: インセンディオ（オートOFF）- ポート2をONにし、指定秒後にOFF
+ * @param durationMs - ONのままにする時間（デフォルト: 5秒）
+ */
+export async function castIncendioAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+  return castPortWithAutoOff(
+    SPELL_PORT.INCENDIO,
+    "インセンディオ",
+    "🔥",
+    durationMs,
+  );
+}
+
+/**
+ * 魔法: アグアメンティ（オートOFF）- ポート3をONにし、指定秒後にOFF
+ * @param durationMs - ONのままにする時間（デフォルト: 5秒）
+ */
+export async function castAguamentiAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+  return castPortWithAutoOff(
+    SPELL_PORT.AGUAMENTI,
+    "アグアメンティ",
+    "💧",
+    durationMs,
+  );
 }
 
 // ========================================
@@ -143,7 +329,7 @@ export async function castMaxima() {
     console.log("✅ デバイス接続成功");
 
     // P300の子デバイス（各ポート）を取得
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
     console.log(`📡 子デバイス数: ${childDevices.length}`);
     console.log("子デバイスリスト:", JSON.stringify(childDevices, null, 2));
 
@@ -180,7 +366,7 @@ export async function castNox() {
     console.log("✅ デバイス接続成功");
 
     // P300の子デバイス（各ポート）を取得
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
     console.log(`📡 子デバイス数: ${childDevices.length}`);
 
     if (childDevices.length === 0) {
@@ -219,7 +405,7 @@ export async function getDeviceStatus() {
     const p300 = await getTapoClient();
 
     const deviceInfo = await p300.getDeviceInfo();
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
 
     console.log("📱 デバイス情報:", JSON.stringify(deviceInfo, null, 2));
     console.log("🔌 子デバイス:", JSON.stringify(childDevices, null, 2));
@@ -314,6 +500,14 @@ export async function executeSpell(spellName: string) {
       return await castMaxima();
     case "Nox":
       return await castNox();
+    case "VentusAuto":
+      return await castVentusAuto();
+    case "LumosAuto":
+      return await castLumosAuto();
+    case "IncendioAuto":
+      return await castIncendioAuto();
+    case "AguamentiAuto":
+      return await castAguamentiAuto();
     default:
       console.log("未知の魔法っす…！");
       return { success: false, message: "未知の魔法っす" };

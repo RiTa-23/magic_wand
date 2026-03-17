@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { speechRecognitionAPI } from "./speech-recognition";
 import { matchSpell, SPELL_DICTIONARY } from "../lib/spell-matcher";
 import {
@@ -18,6 +18,8 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
   const [result, setResult] = useState<SpeechResult | null>(null);
   const [spellMatch, setSpellMatch] = useState<SpellMatchResult | null>(null);
   const [transcript, setTranscript] = useState<string>("");
+  const removeListenerRef = useRef<(() => void) | null>(null);
+  const hasDispatchedMatchRef = useRef(false);
 
   /**
    * 音声認識の開始
@@ -30,7 +32,14 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
 
     setSpellMatch(null);
     setTranscript("");
+    hasDispatchedMatchRef.current = false;
     setStatus("LISTENING");
+
+    // 既存リスナーが残っていれば先に解除（多重登録を防止）
+    if (removeListenerRef.current) {
+      removeListenerRef.current();
+      removeListenerRef.current = null;
+    }
 
     // リスナー登録
     const removeListener = speechRecognitionAPI.addListener({
@@ -38,9 +47,20 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
         setResult(res);
         setTranscript(res.transcript);
 
-        if (res.isFinal) {
-          const match = matchSpell(res.transcript, spells);
-          setSpellMatch(match);
+        // マッチング: final結果での確定を優先、interim結果は高信頼度のみ暫定表示
+        const match = matchSpell(res.transcript, spells);
+        if (match.matched) {
+          if (res.isFinal) {
+            // final結果: 信頼度を問わず確定させ、ロック
+            setSpellMatch(match);
+            hasDispatchedMatchRef.current = true;
+          } else if (
+            !hasDispatchedMatchRef.current &&
+            match.confidence >= 0.8
+          ) {
+            // interim結果: 高信頼度(0.8以上)のみ表示、finalで上書き可能に保つ
+            setSpellMatch(match);
+          }
         }
       },
       onError: (err) => {
@@ -54,8 +74,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
 
     // エンジン開始
     speechRecognitionAPI.start();
-
-    return removeListener;
+    removeListenerRef.current = removeListener;
   }, [spells]);
 
   /**
@@ -63,12 +82,21 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
    */
   const stop = useCallback(() => {
     speechRecognitionAPI.stop();
+    hasDispatchedMatchRef.current = false;
+    if (removeListenerRef.current) {
+      removeListenerRef.current();
+      removeListenerRef.current = null;
+    }
     setStatus("IDLE");
   }, []);
 
   // コンポーネントのアンマウント時に停止
   useEffect(() => {
     return () => {
+      if (removeListenerRef.current) {
+        removeListenerRef.current();
+        removeListenerRef.current = null;
+      }
       speechRecognitionAPI.stop();
     };
   }, []);
