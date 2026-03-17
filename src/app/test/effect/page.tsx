@@ -133,29 +133,98 @@ function WindEffect() {
   );
 }
 
-/** 水魔法のエフェクト：上昇する泡と青い波紋 */
+/** 水魔法のエフェクト：ハリー・ポッター風の「浮遊する水球と神秘的な霧」 */
+/** 水魔法のエフェクト：実在感を極めたハリー・ポッター風「Sacred Aqua Sigil」 */
 function WaterEffect() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
-      {[...Array(20)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute bottom-1/4 w-2 h-2 border border-blue-300/40 rounded-full animate-bubble-rise"
-          style={{
-            left: `${42 + Math.random() * 16}%`,
-            animationDelay: `${i * 0.15}s`,
-            animationDuration: `${1.5 + Math.random() * 1.5}s`,
-            width: `${3 + Math.random() * 5}px`,
-            height: `${3 + Math.random() * 5}px`,
-          }}
-        />
-      ))}
-      {/* Swirling water ring */}
-      <div className="absolute w-56 h-12 border-2 border-cyan-400/30 rounded-[100%] animate-water-rotate blur-[1px]" />
-      <div className="absolute w-48 h-9 border-2 border-blue-300/20 rounded-[100%] animate-water-rotate-reverse blur-[2px]" />
-      
-      <div className="w-64 h-64 bg-blue-500/10 rounded-full blur-[70px] animate-pulse" />
-      <div className="absolute w-36 h-36 border-2 border-blue-400/30 rounded-full animate-ripple" />
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
+      {/* SVG Filters for Liquid Realism (液体のゆらぎを定義) */}
+      <svg className="absolute w-0 h-0">
+        <defs>
+          <filter id="liquid-refraction">
+            <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="1">
+              <animate attributeName="baseFrequency" dur="10s" values="0.02;0.05;0.02" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" scale="10" />
+          </filter>
+        </defs>
+      </svg>
+
+      {/* 1. Aqua Core (魔法の源泉) */}
+      <div className="absolute w-32 h-32 bg-white rounded-full blur-[40px] opacity-40 animate-pulse animate-ping" />
+      <div className="absolute w-[500px] h-[500px] bg-[radial-gradient(circle,_rgba(255,255,255,0.3)_0%,_rgba(0,191,255,0.1)_40%,_transparent_70%)] rounded-full blur-[60px]" />
+
+      {/* 2. Mystical Layered Mist (深く濃い水の霧) */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={`sacred-mist-${i}`}
+            className="absolute bg-[radial-gradient(circle,_rgba(135,206,250,0.12)_0%,_transparent_75%)] rounded-full blur-[90px] animate-water-mist-drift"
+            style={{ 
+              width: `${1200 - i * 120}px`,
+              height: `${800 - i * 80}px`,
+              animationDelay: `${i * -1.8}s`,
+              animationDuration: `${12 + (8-i) * 2}s`,
+              transform: `rotate(${i * 45}deg) scale(${1 + i * 0.1})`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* 3. Prismatic Aqua Spheres (歪みと輝きを伴う水球) */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{ filter: 'url(#liquid-refraction)' }}>
+        {[...Array(25)].map((_, i) => {
+          const size = 20 + Math.random() * 120;
+          return (
+            <div
+              key={`sacred-sphere-${i}`}
+              className="absolute bg-gradient-to-br from-white/60 via-blue-300/20 to-transparent border border-white/40 rounded-full animate-water-sphere-float shadow-[inset_0_0_30px_rgba(255,255,255,0.5),0_0_40px_rgba(30,144,255,0.3)]"
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                left: `${10 + Math.random() * 80}%`,
+                top: `${10 + Math.random() * 80}%`,
+                animationDelay: `${Math.random() * -12}s`,
+                animationDuration: `${6 + Math.random() * 10}s`
+              } as any}
+            >
+              {/* Internal light refraction (球体内部の光の筋) */}
+              <div className="absolute top-[20%] left-[20%] w-[25%] h-[25%] bg-white rounded-full blur-[3px] opacity-80" />
+              <div className="absolute bottom-[10%] right-[10%] w-[15%] h-[15%] bg-cyan-200 rounded-full blur-[5px] opacity-40 animate-pulse" />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. Ground Reservoir & Ripples (足元に出現する聖なる池) */}
+      <div className="absolute [transform-style:preserve-3d] transform rotate-x-75 translate-y-48">
+        {[...Array(6)].map((_, i) => (
+          <div 
+            key={`abyssal-ripple-${i}`}
+            className="absolute -inset-[32rem] border-4 border-white/20 rounded-full animate-water-ripple-flow"
+            style={{ animationDelay: `${i * 1.8}s`, animationDuration: '5s' }}
+          />
+        ))}
+        <div className="absolute -inset-[28rem] bg-[radial-gradient(circle,_rgba(255,255,255,0.2)_0%,_#0ea5e9_30%,_transparent_70%)] opacity-20 blur-[60px] animate-pulse" />
+      </div>
+
+      {/* 5. Sacred Bubbles (上昇する清浄な気泡) */}
+      <div className="absolute inset-x-0 h-screen">
+        {[...Array(45)].map((_, i) => (
+          <div
+            key={`sacred-bubble-${i}`}
+            className="absolute bg-white/90 rounded-full animate-bubble-rise shadow-[0_0_12px_rgba(255,255,255,0.8)]"
+            style={{
+              left: `${15 + Math.random() * 70}%`,
+              width: `${3 + Math.random() * 6}px`,
+              height: `${3 + Math.random() * 6}px`,
+              filter: 'blur(0.5px)',
+              animationDelay: `${i * -0.25}s`,
+              animationDuration: `${2.5 + Math.random() * 2}s`
+            } as any}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -405,11 +474,22 @@ function EffectContent() {
           100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
         }
 
-        @keyframes reverse-spin {
-          from { transform: rotate(360deg); }
-          to { transform: rotate(0deg); }
+        @keyframes water-mist-drift {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+          50% { transform: translate(30px, -20px) scale(1.1); opacity: 0.6; }
         }
-        .animate-reverse-spin { animation: reverse-spin 6s linear infinite; }
+        @keyframes water-sphere-float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+          33% { transform: translate(15px, -25px) rotate(10deg) scale(1.05); }
+          66% { transform: translate(-10px, 15px) rotate(-5deg) scale(0.95); }
+        }
+        @keyframes water-ripple-flow {
+          0% { transform: scale(0.3); border-color: rgba(255, 255, 255, 0.6); opacity: 1; border-width: 4px; }
+          100% { transform: scale(3.5); border-color: rgba(30, 144, 255, 0); opacity: 0; border-width: 1px; }
+        }
+        .animate-water-mist-drift { animation: water-mist-drift 10s ease-in-out infinite; }
+        .animate-water-sphere-float { animation: water-sphere-float 6s ease-in-out infinite; }
+        .animate-water-ripple-flow { animation: water-ripple-flow 4s ease-out infinite; }
 
         @keyframes water-rotate {
           0% { transform: rotateX(70deg) rotateZ(0deg) scale(0.8); opacity: 0.3; }
