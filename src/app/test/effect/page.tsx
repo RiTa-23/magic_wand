@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { FloatingParticles } from "@/components/floating-particles";
 import { useSearchParams } from "next/navigation";
 import { Cinzel } from "next/font/google";
@@ -410,21 +410,21 @@ function EffectContent() {
   const currentMagic = MAGIC_THEMES[magicParam] ? magicParam : "EXCALIBUR";
   const theme = MAGIC_THEMES[currentMagic];
 
-  useEffect(() => {
-    setMounted(true);
-
-    // パラメータがある場合は自動的に発動（テスト用）
-    if (searchParams.get("magic")) {
-      handleCast();
-    }
-  }, [searchParams]);
-
-  const handleCast = () => {
+  const handleCast = useCallback(() => {
     setCastState("charging");
     setTimeout(() => {
       setCastState("cast");
     }, 1000);
-  };
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+
+    // パラメータがある場合は自動的に発動（テスト用）
+    if (magicParam) {
+      handleCast();
+    }
+  }, [handleCast, magicParam]);
 
   if (!mounted) return <div className="min-h-screen bg-[#0a0815]" />;
 
