@@ -12,7 +12,11 @@ interface Particle {
   fadeDir: number;
 }
 
-export function FloatingParticles() {
+interface FloatingParticlesProps {
+  color?: string; // e.g. "rgb(212, 175, 55)" or "212, 175, 55"
+}
+
+export function FloatingParticles({ color = "212, 175, 55" }: FloatingParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -60,16 +64,16 @@ export function FloatingParticles() {
         if (p.x < -10) p.x = canvas.width + 10;
         if (p.x > canvas.width + 10) p.x = -10;
 
-        // Golden particle
+        // Color particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 175, 55, ${p.opacity})`;
+        ctx.fillStyle = `rgba(${color}, ${p.opacity})`;
         ctx.fill();
 
         // Glow effect
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 175, 55, ${p.opacity * 0.15})`;
+        ctx.fillStyle = `rgba(${color}, ${p.opacity * 0.15})`;
         ctx.fill();
       }
 

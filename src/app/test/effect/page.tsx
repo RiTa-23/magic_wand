@@ -1,16 +1,61 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { FloatingParticles } from "@/components/floating-particles";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
-export default function EffectTestPage() {
+type MagicType = "LUMOS" | "VENTUS" | "AGUAMENTI" | "EXCALIBUR";
+
+const MAGIC_THEMES = {
+  LUMOS: {
+    name: "LUMOS!",
+    color: "255, 255, 255", // White
+    particles: "255, 250, 220", // Warm white
+    gradient: "from-yellow-200 via-white to-yellow-100",
+    glow: "rgba(255, 255, 255, 0.8)"
+  },
+  VENTUS: {
+    name: "VENTUS!",
+    color: "130, 255, 210", // Mint/Emerald
+    particles: "110, 231, 183", // Emerald
+    gradient: "from-emerald-300 via-white to-teal-200",
+    glow: "rgba(110, 231, 183, 0.8)"
+  },
+  AGUAMENTI: {
+    name: "AGUAMENTI!",
+    color: "30, 144, 255", // Dodger Blue
+    particles: "135, 206, 250", // Light Sky Blue
+    gradient: "from-blue-600 via-cyan-100 to-blue-400",
+    glow: "rgba(0, 191, 255, 0.8)"
+  },
+  EXCALIBUR: {
+    name: "EXCALIBUR!!",
+    color: "100, 180, 255", // Blue
+    particles: "212, 175, 55", // Classic gold
+    gradient: "from-blue-400 via-white to-purple-400",
+    glow: "rgba(255, 255, 255, 0.8)"
+  }
+};
+
+function EffectContent() {
   const [mounted, setMounted] = useState(false);
   const [castState, setCastState] = useState<"idle" | "charging" | "cast">("idle");
+  const searchParams = useSearchParams();
+  
+  // URLパラメータ ?magic=ventus などから魔法の種類を取得
+  const magicParam = searchParams.get("magic")?.toUpperCase() as MagicType;
+  const currentMagic = MAGIC_THEMES[magicParam] ? magicParam : "EXCALIBUR";
+  const theme = MAGIC_THEMES[currentMagic];
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // パラメータがある場合は自動的に発動（テスト用）
+    if (searchParams.get("magic")) {
+      handleCast();
+    }
+  }, [searchParams]);
 
   const handleCast = () => {
     setCastState("charging");
@@ -19,15 +64,15 @@ export default function EffectTestPage() {
       setTimeout(() => {
         setCastState("idle");
       }, 3000);
-    }, 1500);
+    }, 1000);
   };
 
   if (!mounted) return <div className="min-h-screen bg-[#0a0815]" />;
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden bg-[radial-gradient(circle_at_center,_#1a1033_0%,_#0a0815_100%)] flex flex-col items-center justify-center p-4">
-      {/* Background Ambience */}
-      <FloatingParticles />
+      {/* Background Ambience - 魔法の色に合わせたパーティクル */}
+      <FloatingParticles color={theme.particles} />
       
       {/* HUD Link */}
       <div className="absolute top-8 left-8 z-50">
@@ -47,30 +92,38 @@ export default function EffectTestPage() {
             MAGIC EFFECTS
           </h1>
           <p className="text-magic-glow/60 text-sm md:text-base font-medium tracking-[0.2em] uppercase">
-            Visual Feedback & Particle System Test
+            {currentMagic} MODE
           </p>
         </div>
 
-        {/* Magic Circle Area */}
-        <div className="relative group perspective-1000 h-[400px] w-full flex items-center justify-center">
-          {/* Flash Effect on Cast */}
+        {/* Effect Area */}
+        <div className="relative h-[400px] w-full flex items-center justify-center">
+          {/* Flash Effect on Cast - 魔法の色を反映 */}
           {castState === "cast" && (
-            <div className="absolute inset-0 bg-white rounded-full blur-[100px] animate-ping opacity-20 pointer-events-none" />
+            <div 
+              className="absolute inset-0 rounded-full blur-[120px] animate-ping opacity-30 pointer-events-none"
+              style={{ backgroundColor: `rgb(${theme.color})` }}
+            />
           )}
 
           {/* Spell Name Overlay */}
           <div className={`
-            absolute bottom-0 transform transition-all duration-500
-            ${castState === "cast" ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-90"}
+            absolute transform transition-all duration-700 ease-out
+            ${castState === "cast" ? "opacity-100 translate-y-0 scale-125" : "opacity-0 translate-y-12 scale-90"}
           `}>
-            <p className="text-5xl font-black italic bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-white to-purple-400 drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">
-              EXCALIBUR!!
+            <p 
+              className={`text-6xl md:text-8xl font-black italic bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient}`}
+              style={{ filter: `drop-shadow(0 0 30px ${theme.glow})` }}
+            >
+              {theme.name}
             </p>
           </div>
         </div>
 
-
-
+        {/* Instructions */}
+        <div className="text-white/20 text-[10px] tracking-[0.3em] uppercase mt-12">
+          URL Parameter: ?magic=ventus | lumos | aguamenti
+        </div>
       </div>
 
       <style jsx global>{`
@@ -81,10 +134,15 @@ export default function EffectTestPage() {
         .animate-fade-in {
           animation: fade-in 1s ease-out forwards;
         }
-        .perspective-1000 {
-          perspective: 1000px;
-        }
       `}</style>
     </main>
+  );
+}
+
+export default function EffectTestPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0815]" />}>
+      <EffectContent />
+    </Suspense>
   );
 }
