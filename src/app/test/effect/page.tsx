@@ -61,7 +61,7 @@ function WindEffect() {
       height: 2 + Math.random() * 8,
       left: 45 + Math.random() * 10,
       tx: (Math.random() - 0.5) * 240,
-      ty: -250 - Math.random() * 300,
+      ty: -100 - Math.random() * 150, // 高度を抑えて文字との重なりを防ぐ
       rz: Math.random() * 720,
       delay: Math.random() * -5,
       duration: 1 + Math.random() * 1.5,
@@ -71,7 +71,7 @@ function WindEffect() {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
       {/* 1. Bloom Base (空間の光のベール) - サイズ調整 */}
-      <div className="absolute w-[400px] h-[560px] bg-[radial-gradient(circle,_rgba(8,145,178,0.4)_0%,_rgba(16,185,129,0.15)_40%,_transparent_70%)] rounded-full blur-[90px] animate-pulse" />
+      <div className="absolute w-[400px] h-[560px] bg-[radial-gradient(circle,_rgba(8,145,178,0.4)_0%,_rgba(16,185,129,0.15)_40%,_transparent_70%)] rounded-full blur-[90px]" />
 
       {/* 2. 3D Vortex Structure (竜巻の形をした光の筋) */}
       <div className="relative w-full h-full flex items-center justify-center [transform-style:preserve-3d]">
@@ -461,8 +461,8 @@ function EffectContent() {
           )}
           {castState === "cast" && currentMagic === "LUMOS" && <LightEffect />}
 
-          {/* Flash Effect on Cast - 魔法の色を反映 */}
-          {castState === "cast" && (
+          {/* Flash Effect on Cast - 魔法の色を反映 (VENTUS以外で表示) */}
+          {castState === "cast" && currentMagic !== "VENTUS" && (
             <div
               className="absolute w-[300px] h-[300px] rounded-full blur-[120px] animate-ping opacity-30 pointer-events-none"
               style={{ backgroundColor: `rgb(${theme.color})` }}
