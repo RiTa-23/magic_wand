@@ -3,6 +3,65 @@
 import { getTapoClient } from "../api/tapoClient";
 
 // ========================================
+// 簡易ジョブスケジューラー（自動OFFタイマー管理）
+// ========================================
+
+const IS_TEST_ENV = process.env.NODE_ENV === "test";
+
+interface ScheduledJob {
+  timeoutId: NodeJS.Timeout;
+  portIndex: number;
+  scheduledAt: number;
+}
+
+const scheduledJobs = new Map<number, ScheduledJob>();
+
+function scheduleAutoOff(
+  portIndex: number,
+  durationMs: number,
+  callback: () => Promise<void>,
+): string {
+  if (IS_TEST_ENV) {
+    return `test-job-${Date.now()}`;
+  }
+
+  cancelScheduledJob(portIndex);
+
+  const jobId = `port-${portIndex}-${Date.now()}`;
+  const timeoutId = setTimeout(async () => {
+    try {
+      await callback();
+    } catch (err) {
+      console.error(`❌ スケジュール済みOFF実行失敗:`, err);
+    } finally {
+      scheduledJobs.delete(portIndex);
+    }
+  }, durationMs);
+
+  scheduledJobs.set(portIndex, {
+    timeoutId,
+    portIndex,
+    scheduledAt: Date.now(),
+  });
+
+  return jobId;
+}
+
+function cancelScheduledJob(portIndex: number): boolean {
+  if (IS_TEST_ENV) {
+    return true;
+  }
+
+  const job = scheduledJobs.get(portIndex);
+  if (job) {
+    clearTimeout(job.timeoutId);
+    scheduledJobs.delete(portIndex);
+    return true;
+  }
+  return false;
+}
+
+// ========================================
 // ポートマッピング定数
 // ========================================
 
@@ -20,7 +79,6 @@ const SPELL_PORT = {
 /** オートOFFのデフォルト待機時間（ミリ秒） */
 const DEFAULT_AUTO_OFF_MS = 5000;
 const CHILD_DEVICES_CACHE_TTL_MS = 15000;
-const IS_TEST_ENV = process.env.NODE_ENV === "test";
 
 let childDevicesCache: {
   fetchedAt: number;
@@ -67,6 +125,10 @@ async function togglePort(
   emoji: string,
 ) {
   try {
+    if (!turnOn) {
+      cancelScheduledJob(portIndex);
+    }
+
     console.log(
       `${emoji} ${spellName}発動！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にします`,
     );
@@ -134,15 +196,12 @@ async function castPortWithAutoOff(
 ) {
   const result = await togglePort(portIndex, true, spellName, emoji);
   if (result.success) {
-    setTimeout(() => {
-      togglePort(portIndex, false, `${spellName}自動解除`, "⏱️").catch(
-        (err) => {
-          console.error(`❌ ${spellName}自動解除失敗:`, err);
-        },
-      );
-    }, durationMs);
+    const jobId = scheduleAutoOff(portIndex, durationMs, async () => {
+      await togglePort(portIndex, false, `${spellName}自動解除`, "⏱️");
+    });
     return {
       ...result,
+      jobId,
       message: `${result.message}（${durationMs / 1000}秒後に自動解除）`,
     };
   }
