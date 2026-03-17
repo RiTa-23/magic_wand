@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { speechRecognitionAPI } from "./speech-recognition";
 import { matchSpell, SPELL_DICTIONARY } from "../lib/spell-matcher";
 import {
@@ -18,6 +18,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
   const [result, setResult] = useState<SpeechResult | null>(null);
   const [spellMatch, setSpellMatch] = useState<SpellMatchResult | null>(null);
   const [transcript, setTranscript] = useState<string>("");
+  const removeListenerRef = useRef<(() => void) | null>(null);
 
   /**
    * 音声認識の開始
@@ -32,11 +33,19 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     setTranscript("");
     setStatus("LISTENING");
 
+    // 既存リスナーが残っていれば先に解除（多重登録を防止）
+    if (removeListenerRef.current) {
+      removeListenerRef.current();
+      removeListenerRef.current = null;
+    }
+
     // リスナー登録
     const removeListener = speechRecognitionAPI.addListener({
       onResult: (res) => {
         setResult(res);
-        setTranscript(res.transcript);
+        if (res.isFinal) {
+          setTranscript(res.transcript);
+        }
 
         if (res.isFinal) {
           const match = matchSpell(res.transcript, spells);
@@ -54,8 +63,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
 
     // エンジン開始
     speechRecognitionAPI.start();
-
-    return removeListener;
+    removeListenerRef.current = removeListener;
   }, [spells]);
 
   /**
@@ -63,12 +71,20 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
    */
   const stop = useCallback(() => {
     speechRecognitionAPI.stop();
+    if (removeListenerRef.current) {
+      removeListenerRef.current();
+      removeListenerRef.current = null;
+    }
     setStatus("IDLE");
   }, []);
 
   // コンポーネントのアンマウント時に停止
   useEffect(() => {
     return () => {
+      if (removeListenerRef.current) {
+        removeListenerRef.current();
+        removeListenerRef.current = null;
+      }
       speechRecognitionAPI.stop();
     };
   }, []);

@@ -98,6 +98,7 @@ export default function IotTestPage() {
     lastVoiceKeyRef.current = key;
 
     const run = async () => {
+      stop();
       setStatus(
         `🎤 ${matchedSpell.name} を認識したっす。${mappedSpell}を実行します...`,
       );

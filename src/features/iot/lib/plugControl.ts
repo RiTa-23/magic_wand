@@ -19,6 +19,30 @@ const SPELL_PORT = {
 
 /** オートOFFのデフォルト待機時間（ミリ秒） */
 const DEFAULT_AUTO_OFF_MS = 5000;
+const CHILD_DEVICES_CACHE_TTL_MS = 15000;
+
+let childDevicesCache:
+  | {
+      fetchedAt: number;
+      items: Awaited<ReturnType<Awaited<ReturnType<typeof getTapoClient>>["getChildDevicesInfo"]>>;
+    }
+  | null = null;
+
+async function getCachedChildDevices(
+  p300: Awaited<ReturnType<typeof getTapoClient>>,
+) {
+  const now = Date.now();
+  if (
+    childDevicesCache &&
+    now - childDevicesCache.fetchedAt <= CHILD_DEVICES_CACHE_TTL_MS
+  ) {
+    return childDevicesCache.items;
+  }
+
+  const items = await p300.getChildDevicesInfo();
+  childDevicesCache = { fetchedAt: now, items };
+  return items;
+}
 
 // ========================================
 // 内部ヘルパー関数
@@ -44,7 +68,7 @@ async function togglePort(
     const p300 = await getTapoClient();
 
     // P300の子デバイス（各ポート）を取得
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
     console.log(`📡 子デバイス数: ${childDevices.length}`);
 
     if (childDevices.length === 0) {
@@ -241,7 +265,7 @@ export async function castMaxima() {
     console.log("✅ デバイス接続成功");
 
     // P300の子デバイス（各ポート）を取得
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
     console.log(`📡 子デバイス数: ${childDevices.length}`);
     console.log("子デバイスリスト:", JSON.stringify(childDevices, null, 2));
 
@@ -278,7 +302,7 @@ export async function castNox() {
     console.log("✅ デバイス接続成功");
 
     // P300の子デバイス（各ポート）を取得
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
     console.log(`📡 子デバイス数: ${childDevices.length}`);
 
     if (childDevices.length === 0) {
@@ -317,7 +341,7 @@ export async function getDeviceStatus() {
     const p300 = await getTapoClient();
 
     const deviceInfo = await p300.getDeviceInfo();
-    const childDevices = await p300.getChildDevicesInfo();
+    const childDevices = await getCachedChildDevices(p300);
 
     console.log("📱 デバイス情報:", JSON.stringify(deviceInfo, null, 2));
     console.log("🔌 子デバイス:", JSON.stringify(childDevices, null, 2));
