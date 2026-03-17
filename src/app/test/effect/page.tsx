@@ -45,7 +45,7 @@ const MAGIC_THEMES = {
   }
 };
 
-/**風魔法のエフェクト：有機的な質感と3D竜巻のフォルムを融合 */
+/**風魔法のエフェクト：中心コアを排した3Dボルテックス（竜巻） */
 function WindEffect() {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
@@ -81,7 +81,7 @@ function WindEffect() {
                   d="M10,50 A40,40 0 0,1 90,50"
                   fill="none"
                   stroke={color}
-                  strokeWidth={2 + Math.random() * 2}
+                  strokeWidth={2}
                   strokeLinecap="round"
                   className="opacity-60"
                   strokeDasharray="10 50"
@@ -122,12 +122,6 @@ function WindEffect() {
             } as any}
           />
         ))}
-      </div>
-
-      {/* 4. Core Brightness (中心軸の輝き) */}
-      <div className="absolute z-10 flex flex-col items-center">
-        <div className="w-10 h-10 bg-white rounded-full blur-[2px] shadow-[0_0_30px_#fff,0_0_60px_#00ffa2]" />
-        <div className="w-1 h-64 bg-gradient-to-t from-transparent via-white/40 to-transparent blur-[4px]" />
       </div>
     </div>
   );
