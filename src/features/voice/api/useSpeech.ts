@@ -47,11 +47,15 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
         setResult(res);
         setTranscript(res.transcript);
 
-        // interim結果でも先にマッチすれば即時確定し、認識待ち時間を短縮する
-        if (!hasDispatchedMatchRef.current) {
-          const match = matchSpell(res.transcript, spells);
-          if (match.matched) {
+        // マッチング: final結果での確定を優先、interim結果は高信頼度のみ暫定表示
+        const match = matchSpell(res.transcript, spells);
+        if (match.matched) {
+          if (res.isFinal) {
+            // final結果: 信頼度を問わず確定させ、ロック
+            setSpellMatch(match);
             hasDispatchedMatchRef.current = true;
+          } else if (!hasDispatchedMatchRef.current && match.confidence >= 0.8) {
+            // interim結果: 高信頼度(0.8以上)のみ表示、finalで上書き可能に保つ
             setSpellMatch(match);
           }
         }
