@@ -71,7 +71,7 @@ function WindEffect() {
                 // @ts-ignore
                 "--z": `${zPos}px`,
                 "--op": opacity,
-                animationDelay: `${i * -0.1}s`,
+                animationDelay: `${i * -0.5}s`,
                 animationDuration: `${2 + i * 0.05}s`
               } as any}
             >
@@ -83,7 +83,7 @@ function WindEffect() {
                   stroke={color}
                   strokeWidth={2}
                   strokeLinecap="round"
-                  className="opacity-60"
+                  className="opacity-60 animate-wind-flow"
                   strokeDasharray="10 50"
                   style={{ filter: 'blur(1px)' }}
                 />
@@ -94,7 +94,7 @@ function WindEffect() {
                   stroke={color}
                   strokeWidth={6}
                   strokeLinecap="round"
-                  className="opacity-20"
+                  className="opacity-20 animate-wind-flow"
                   style={{ filter: 'blur(6px)' }}
                 />
               </svg>
@@ -117,7 +117,7 @@ function WindEffect() {
               "--tx": `${(Math.random() - 0.5) * 300}px`,
               "--ty": `${-300 - Math.random() * 400}px`,
               "--rz": `${Math.random() * 720}deg`,
-              animationDelay: `${Math.random() * 2}s`,
+              animationDelay: `${Math.random() * -5}s`,
               animationDuration: `${1 + Math.random() * 1.5}s`
             } as any}
           />
@@ -258,21 +258,27 @@ function EffectContent() {
       </div>
 
       <style jsx global>{`
-        /* Wind: Integrated 3D Tornado Animations */
+        /* Wind: Constant Swirling State Animations */
         @keyframes wind-vortex-layer {
           0% { transform: rotateX(75deg) translateZ(var(--z)) rotateZ(0deg); opacity: 0; }
-          20% { opacity: var(--op); }
-          80% { opacity: var(--op); }
+          10% { opacity: var(--op); }
+          90% { opacity: var(--op); }
           100% { transform: rotateX(75deg) translateZ(calc(var(--z) + 50px)) rotateZ(360deg); opacity: 0; }
         }
         .animate-wind-vortex-layer {
           animation: wind-vortex-layer linear infinite;
         }
 
+        @keyframes wind-flow {
+          from { stroke-dashoffset: 60; }
+          to { stroke-dashoffset: 0; }
+        }
+        .animate-wind-flow { animation: wind-flow 1.5s linear infinite; }
+
         @keyframes wind-particle-tornado {
-          0% { transform: translateY(200px) rotateZ(0deg) scale(0); opacity: 0; }
+          0% { transform: translateY(300px) rotateZ(0deg) scale(0); opacity: 0; }
           20% { opacity: 1; }
-          100% { transform: translateY(var(--ty)) rotateZ(var(--rz)) translateX(var(--tx)) scale(1.2); opacity: 0; }
+          100% { transform: translateY(var(--ty)) rotateZ(var(--rz)) translateX(var(--tx)) scale(1.5); opacity: 0; }
         }
         .animate-wind-particle-tornado { animation: wind-particle-tornado linear infinite; }
 
