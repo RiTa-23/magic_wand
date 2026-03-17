@@ -151,15 +151,15 @@ function WaterEffect() {
       </svg>
 
       {/* 1. Aqua Core (魔法の源泉) */}
-      <div className="absolute w-32 h-32 bg-white rounded-full blur-[40px] opacity-40 animate-pulse animate-ping" />
-      <div className="absolute w-[500px] h-[500px] bg-[radial-gradient(circle,_rgba(255,255,255,0.3)_0%,_rgba(0,191,255,0.1)_40%,_transparent_70%)] rounded-full blur-[60px]" />
+      <div className="absolute w-32 h-32 bg-white rounded-full blur-[40px] opacity-20 animate-pulse animate-ping" />
+      <div className="absolute w-[500px] h-[500px] bg-[radial-gradient(circle,_rgba(255,255,255,0.2)_0%,_rgba(0,191,255,0.05)_40%,_transparent_70%)] rounded-full blur-[60px]" />
 
       {/* 2. Mystical Layered Mist (深く濃い水の霧) */}
       <div className="absolute inset-0 flex items-center justify-center">
         {[...Array(8)].map((_, i) => (
           <div
             key={`sacred-mist-${i}`}
-            className="absolute bg-[radial-gradient(circle,_rgba(135,206,250,0.12)_0%,_transparent_75%)] rounded-full blur-[90px] animate-water-mist-drift"
+            className="absolute bg-[radial-gradient(circle,_rgba(135,206,250,0.1)_0%,_transparent_75%)] rounded-full blur-[90px] animate-water-mist-drift"
             style={{ 
               width: `${1200 - i * 120}px`,
               height: `${800 - i * 80}px`,
@@ -178,7 +178,7 @@ function WaterEffect() {
           return (
             <div
               key={`sacred-sphere-${i}`}
-              className="absolute bg-gradient-to-br from-white/60 via-blue-300/20 to-transparent border border-white/40 rounded-full animate-water-sphere-float shadow-[inset_0_0_30px_rgba(255,255,255,0.5),0_0_40px_rgba(30,144,255,0.3)]"
+              className="absolute bg-gradient-to-br from-white/30 via-blue-300/10 to-transparent border border-white/20 rounded-full animate-water-sphere-float shadow-[inset_0_0_30px_rgba(255,255,255,0.3),0_0_40px_rgba(30,144,255,0.1)]"
               style={{
                 width: `${size}px`,
                 height: `${size}px`,
@@ -189,8 +189,8 @@ function WaterEffect() {
               } as any}
             >
               {/* Internal light refraction (球体内部の光の筋) */}
-              <div className="absolute top-[20%] left-[20%] w-[25%] h-[25%] bg-white rounded-full blur-[3px] opacity-80" />
-              <div className="absolute bottom-[10%] right-[10%] w-[15%] h-[15%] bg-cyan-200 rounded-full blur-[5px] opacity-40 animate-pulse" />
+              <div className="absolute top-[20%] left-[20%] w-[25%] h-[25%] bg-white rounded-full blur-[3px] opacity-60" />
+              <div className="absolute bottom-[10%] right-[10%] w-[15%] h-[15%] bg-cyan-100 rounded-full blur-[5px] opacity-20 animate-pulse" />
             </div>
           );
         })}
@@ -201,26 +201,26 @@ function WaterEffect() {
         {[...Array(6)].map((_, i) => (
           <div 
             key={`abyssal-ripple-${i}`}
-            className="absolute -inset-[32rem] border-4 border-white/20 rounded-full animate-water-ripple-flow"
+            className="absolute -inset-[32rem] border-4 border-white/10 rounded-full animate-water-ripple-flow"
             style={{ animationDelay: `${i * 1.8}s`, animationDuration: '5s' }}
           />
         ))}
-        <div className="absolute -inset-[28rem] bg-[radial-gradient(circle,_rgba(255,255,255,0.2)_0%,_#0ea5e9_30%,_transparent_70%)] opacity-20 blur-[60px] animate-pulse" />
+        <div className="absolute -inset-[28rem] bg-[radial-gradient(circle,_rgba(255,255,255,0.15)_0%,_#0ea5e9_30%,_transparent_70%)] opacity-15 blur-[60px] animate-pulse" />
       </div>
 
-      {/* 5. Sacred Bubbles (上昇する清浄な気泡) */}
+      {/* 5. Glistening Particles (主張を抑えた微細な残光) */}
       <div className="absolute inset-x-0 h-screen">
-        {[...Array(45)].map((_, i) => (
+        {[...Array(12)].map((_, i) => (
           <div
             key={`sacred-bubble-${i}`}
-            className="absolute bg-white/90 rounded-full animate-bubble-rise shadow-[0_0_12px_rgba(255,255,255,0.8)]"
+            className="absolute bg-white/20 rounded-full animate-bubble-rise shadow-[0_0_8px_rgba(255,255,255,0.4)]"
             style={{
               left: `${15 + Math.random() * 70}%`,
-              width: `${3 + Math.random() * 6}px`,
-              height: `${3 + Math.random() * 6}px`,
-              filter: 'blur(0.5px)',
-              animationDelay: `${i * -0.25}s`,
-              animationDuration: `${2.5 + Math.random() * 2}s`
+              width: `${2 + Math.random() * 4}px`,
+              height: `${2 + Math.random() * 4}px`,
+              filter: 'blur(1px)',
+              animationDelay: `${i * -0.5}s`,
+              animationDuration: `${3 + Math.random() * 2}s`
             } as any}
           />
         ))}
