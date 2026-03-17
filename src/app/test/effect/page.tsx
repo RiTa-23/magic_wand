@@ -236,15 +236,15 @@ function FireEffect() {
       {[...Array(25)].map((_, i) => (
         <div
           key={i}
-          className="absolute bottom-1/3 w-1 h-1 bg-orange-500 rounded-full animate-ember-fly"
+          className="absolute bottom-1/3 w-1.5 h-1.5 bg-orange-500 rounded-full animate-ember-fly"
           style={{
-            left: `${46 + Math.random() * 8}%`,
+            left: `${42 + Math.random() * 16}%`,
             boxShadow: '0 0 10px #ff4500',
             animationDelay: `${i * 0.1}s`,
           }}
         />
       ))}
-      <div className="w-32 h-52 bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-full blur-[35px] animate-fire-dance" />
+      <div className="w-48 h-[360px] bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-full blur-[50px] animate-fire-dance" />
     </div>
   );
 }
