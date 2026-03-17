@@ -162,9 +162,28 @@ export default function TutorialPage() {
 
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-[color:var(--background)] text-[color:var(--foreground)]">
+      {/* Background layers (match Home ambience) */}
+      <div
+        className="fixed inset-0"
+        style={{ background: "var(--background)", opacity: 0.3 }}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15), rgba(0,0,0,0.35))",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
+        aria-hidden="true"
+      />
+
       <FloatingParticles />
 
-      <div className="relative z-20 min-h-svh px-6 py-8">
+      <div className="relative z-20 min-h-svh px-10 py-8">
         {/* Back link (match Play/Settings style) */}
         <Link
           href="/home"
@@ -178,9 +197,9 @@ export default function TutorialPage() {
 
         {/* Center area (carousel) */}
         <div className="min-h-svh flex items-center justify-center">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-sm">
             <div className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/15 bg-black/20 backdrop-blur-sm">
-              <div className="relative h-[420px]">
+              <div className="relative h-[360px]">
                 {/* Current slide */}
                 <div
                   key={index}
@@ -270,14 +289,14 @@ export default function TutorialPage() {
 
 function SlideContent({ slide }: { slide: TutorialSlide }) {
   return (
-    <div className="h-full w-full p-6 flex flex-col items-center justify-center gap-6">
-      <div className="relative w-full max-w-sm aspect-[4/3] overflow-hidden rounded-xl border border-[color:var(--gold)]/15">
+    <div className="h-full w-full p-5 flex flex-col items-center justify-center gap-5">
+      <div className="relative w-full max-w-xs aspect-[4/3] overflow-hidden rounded-xl border border-[color:var(--gold)]/15">
         <Image
           src={slide.imageSrc}
           alt={slide.imageAlt}
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 80vw, 420px"
+          sizes="(max-width: 768px) 80vw, 320px"
           priority
         />
         <div
