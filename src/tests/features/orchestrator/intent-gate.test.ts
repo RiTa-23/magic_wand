@@ -127,4 +127,26 @@ describe("IntentGate", () => {
 
     expect(result.status).toBe("committed");
   });
+
+  it("不正な timeWindowMs では RangeError を投げる", () => {
+    expect(() => new IntentGate({ timeWindowMs: 0 })).toThrow(RangeError);
+    expect(() => new IntentGate({ timeWindowMs: -1 })).toThrow(
+      /DEFAULT_TIME_WINDOW_MS/,
+    );
+  });
+
+  it("不正な confidence 閾値では RangeError を投げる", () => {
+    expect(() => new IntentGate({ voiceConfidenceThreshold: -0.1 })).toThrow(
+      /DEFAULT_VOICE_CONFIDENCE_THRESHOLD/,
+    );
+    expect(() => new IntentGate({ voiceConfidenceThreshold: 1.1 })).toThrow(
+      RangeError,
+    );
+    expect(() => new IntentGate({ gestureConfidenceThreshold: -0.1 })).toThrow(
+      /DEFAULT_GESTURE_CONFIDENCE_THRESHOLD/,
+    );
+    expect(() => new IntentGate({ gestureConfidenceThreshold: 1.1 })).toThrow(
+      RangeError,
+    );
+  });
 });

@@ -23,11 +23,33 @@ export class IntentGate {
   private pendingGesture: GestureIntentInput | null = null;
 
   constructor(config: IntentGateConfig = {}) {
-    this.timeWindowMs = config.timeWindowMs ?? DEFAULT_TIME_WINDOW_MS;
-    this.voiceConfidenceThreshold =
+    const timeWindowMs = config.timeWindowMs ?? DEFAULT_TIME_WINDOW_MS;
+    const voiceConfidenceThreshold =
       config.voiceConfidenceThreshold ?? DEFAULT_VOICE_CONFIDENCE_THRESHOLD;
-    this.gestureConfidenceThreshold =
+    const gestureConfidenceThreshold =
       config.gestureConfidenceThreshold ?? DEFAULT_GESTURE_CONFIDENCE_THRESHOLD;
+
+    if (timeWindowMs <= 0) {
+      throw new RangeError(
+        `timeWindowMs must be greater than 0 (default: DEFAULT_TIME_WINDOW_MS=${DEFAULT_TIME_WINDOW_MS})`,
+      );
+    }
+
+    if (voiceConfidenceThreshold < 0 || voiceConfidenceThreshold > 1) {
+      throw new RangeError(
+        `voiceConfidenceThreshold must be within [0, 1] (default: DEFAULT_VOICE_CONFIDENCE_THRESHOLD=${DEFAULT_VOICE_CONFIDENCE_THRESHOLD})`,
+      );
+    }
+
+    if (gestureConfidenceThreshold < 0 || gestureConfidenceThreshold > 1) {
+      throw new RangeError(
+        `gestureConfidenceThreshold must be within [0, 1] (default: DEFAULT_GESTURE_CONFIDENCE_THRESHOLD=${DEFAULT_GESTURE_CONFIDENCE_THRESHOLD})`,
+      );
+    }
+
+    this.timeWindowMs = timeWindowMs;
+    this.voiceConfidenceThreshold = voiceConfidenceThreshold;
+    this.gestureConfidenceThreshold = gestureConfidenceThreshold;
     this.gestureBySpell = {
       ...DEFAULT_SPELL_GESTURE_MAP,
       ...config.gestureBySpell,
