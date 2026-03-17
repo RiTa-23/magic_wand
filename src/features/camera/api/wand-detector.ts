@@ -36,7 +36,7 @@ export class WandDetector {
   async initialize(videoElement: HTMLVideoElement): Promise<boolean> {
     // 1. ONNX Runtime セッション初期化（webgpu → webgl → wasm の順でフォールバック）
     this.session = await ort.InferenceSession.create(
-      "/models/wand_pose.onnx",
+      "/models/wand_pose_v4.onnx",
       {
         executionProviders: ["webgpu", "webgl", "wasm"],
       },
