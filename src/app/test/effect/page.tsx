@@ -5,7 +5,7 @@ import { FloatingParticles } from "@/components/floating-particles";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-type MagicType = "LUMOS" | "VENTUS" | "AGUAMENTI" | "EXCALIBUR";
+type MagicType = "LUMOS" | "VENTUS" | "AGUAMENTI" | "INCENDIO" | "EXCALIBUR";
 
 const MAGIC_THEMES = {
   LUMOS: {
@@ -28,6 +28,13 @@ const MAGIC_THEMES = {
     particles: "135, 206, 250", // Light Sky Blue
     gradient: "from-blue-600 via-cyan-100 to-blue-400",
     glow: "rgba(0, 191, 255, 0.8)"
+  },
+  INCENDIO: {
+    name: "INCENDIO!",
+    color: "255, 69, 0", // Red Orange
+    particles: "255, 100, 50", // Fiery orange
+    gradient: "from-red-600 via-orange-400 to-yellow-500",
+    glow: "rgba(255, 69, 0, 0.8)"
   },
   EXCALIBUR: {
     name: "EXCALIBUR!!",
@@ -74,59 +81,50 @@ function EffectContent() {
       {/* Background Ambience - 魔法の色に合わせたパーティクル */}
       <FloatingParticles color={theme.particles} />
       
-      {/* HUD Link */}
-      <div className="absolute top-8 left-8 z-50">
-        <Link 
-          href="/test/wand" 
-          className="text-white/40 hover:text-white transition-colors flex items-center gap-2 group"
-        >
-          <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
-          <span className="font-medium tracking-wider text-sm">WAND TEST</span>
-        </Link>
-      </div>
 
-      <div className="z-20 flex flex-col items-center justify-center gap-12 w-full max-w-2xl text-center">
-        {/* Title Section */}
-        <div className="space-y-3">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white/80 to-white/20 animate-fade-in">
-            MAGIC EFFECTS
-          </h1>
-          <p className="text-magic-glow/60 text-sm md:text-base font-medium tracking-[0.2em] uppercase">
-            {currentMagic} MODE
-          </p>
+
+      <div className="z-20 flex flex-col items-center justify-start pt-20 gap-12 w-full max-w-2xl text-center h-[600px]">
+        {/* Spell Name Overlay - 上部中央に配置し、左から入って右に消える */}
+        <div className="relative w-full flex justify-center h-24">
+          {castState === "cast" && (
+            <div className="absolute transform animate-slide-through">
+              <p 
+                className={`text-6xl md:text-8xl font-black italic bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]`}
+                style={{ filter: `drop-shadow(0 0 30px ${theme.glow})` }}
+              >
+                {theme.name}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Effect Area */}
-        <div className="relative h-[400px] w-full flex items-center justify-center">
+        {/* Effect Area - 中央 */}
+        <div className="relative flex-1 w-full flex items-center justify-center">
           {/* Flash Effect on Cast - 魔法の色を反映 */}
           {castState === "cast" && (
             <div 
-              className="absolute inset-0 rounded-full blur-[120px] animate-ping opacity-30 pointer-events-none"
+              className="absolute w-[300px] h-[300px] rounded-full blur-[120px] animate-ping opacity-30 pointer-events-none"
               style={{ backgroundColor: `rgb(${theme.color})` }}
             />
           )}
-
-          {/* Spell Name Overlay */}
-          <div className={`
-            absolute transform transition-all duration-700 ease-out
-            ${castState === "cast" ? "opacity-100 translate-y-0 scale-125" : "opacity-0 translate-y-12 scale-90"}
-          `}>
-            <p 
-              className={`text-6xl md:text-8xl font-black italic bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient}`}
-              style={{ filter: `drop-shadow(0 0 30px ${theme.glow})` }}
-            >
-              {theme.name}
-            </p>
-          </div>
         </div>
 
         {/* Instructions */}
         <div className="text-white/20 text-[10px] tracking-[0.3em] uppercase mt-12">
-          URL Parameter: ?magic=ventus | lumos | aguamenti
+          URL Parameter: ?magic=ventus | lumos | aguamenti | incendio
         </div>
       </div>
 
       <style jsx global>{`
+        @keyframes slide-through {
+          0% { opacity: 0; transform: translateX(-100vw) scale(0.6); filter: blur(20px); }
+          45% { opacity: 1; transform: translateX(-2vw) scale(1.1); filter: blur(0px); }
+          55% { opacity: 1; transform: translateX(2vw) scale(1.1); filter: blur(0px); }
+          100% { opacity: 0; transform: translateX(100vw) scale(0.6); filter: blur(20px); }
+        }
+        .animate-slide-through {
+          animation: slide-through 5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
