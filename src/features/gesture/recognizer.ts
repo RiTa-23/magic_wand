@@ -45,7 +45,8 @@ function countDirectionChanges(smoothedY: number[], minChange: number): number {
       // 方向が逆になった → 転換1回
       changes++;
       lastExtreme = smoothedY[i];
-    } else if (direction === 0) {
+    } else {
+      // 同方向に進行中または開始直後: 極値を常に最新に更新する
       lastExtreme = smoothedY[i];
     }
 

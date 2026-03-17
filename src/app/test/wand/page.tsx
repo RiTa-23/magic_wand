@@ -167,6 +167,8 @@ export default function WandTrackingPage() {
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = 0;
       }
+      setGestureResult(null);
+      prevRButtonRef.current = false;
       if (trackingMode === "IMU") {
         setCalibrationState("calibrating");
         setCalibrationProgress(0);
@@ -185,6 +187,8 @@ export default function WandTrackingPage() {
     gyroBiasRef.current = { x: 0, y: 0, z: 0 };
     viewBoundsRef.current = null; // スムージングのリセット
     lastIrTimestampRef.current = 0;
+    setGestureResult(null);
+    prevRButtonRef.current = false;
     if (mode === "IMU") {
       // IMUモードに入ったらキャリブレーション開始
       setCalibrationState("calibrating");
@@ -441,6 +445,7 @@ export default function WandTrackingPage() {
           if (isRPressed && irFrame.timestamp !== lastIrTimestampRef.current) {
             trail.push({ rawX: primary.cx, rawY: primary.cy, t: now });
             lastIrTimestampRef.current = irFrame.timestamp;
+            if (trail.length > 1000) trail.shift();
           }
         }
 
