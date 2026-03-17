@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { FloatingParticles } from "@/components/floating-particles";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Cinzel } from "next/font/google";
 
@@ -53,6 +52,22 @@ const MAGIC_THEMES = {
 
 /**風魔法のエフェクト：中心コアを排した3Dボルテックス（竜巻） */
 function WindEffect() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const particles = useMemo(() => {
+    return [...Array(30)].map((_, i) => ({
+      width: 1 + Math.random() * 2,
+      height: 2 + Math.random() * 8,
+      left: 45 + Math.random() * 10,
+      tx: (Math.random() - 0.5) * 240,
+      ty: -250 - Math.random() * 300,
+      rz: Math.random() * 720,
+      delay: Math.random() * -5,
+      duration: 1 + Math.random() * 1.5,
+    }));
+  }, []);
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
       {/* 1. Bloom Base (空間の光のベール) - サイズ調整 */}
@@ -116,25 +131,26 @@ function WindEffect() {
 
       {/* 3. Rising Particles (竜巻に巻き込まれる粒子) */}
       <div className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]">
-        {[...Array(30)].map((_, i) => (
-          <div
-            key={`vortex-p-${i}`}
-            className="absolute bg-white/90 rounded-full blur-[1px] animate-wind-particle-tornado"
-            style={
-              {
-                width: `${1 + Math.random() * 2}px`,
-                height: `${2 + Math.random() * 8}px`,
-                left: `${45 + Math.random() * 10}%`,
-                // @ts-ignore
-                "--tx": `${(Math.random() - 0.5) * 240}px`,
-                "--ty": `${-250 - Math.random() * 300}px`,
-                "--rz": `${Math.random() * 720}deg`,
-                animationDelay: `${Math.random() * -5}s`,
-                animationDuration: `${1 + Math.random() * 1.5}s`,
-              } as any
-            }
-          />
-        ))}
+        {mounted &&
+          particles.map((p, i) => (
+            <div
+              key={`vortex-p-${i}`}
+              className="absolute bg-white/90 rounded-full blur-[1px] animate-wind-particle-tornado"
+              style={
+                {
+                  width: `${p.width}px`,
+                  height: `${p.height}px`,
+                  left: `${p.left}%`,
+                  // @ts-ignore
+                  "--tx": `${p.tx}px`,
+                  "--ty": `${p.ty}px`,
+                  "--rz": `${p.rz}deg`,
+                  animationDelay: `${p.delay}s`,
+                  animationDuration: `${p.duration}s`,
+                } as any
+              }
+            />
+          ))}
       </div>
     </div>
   );
@@ -143,6 +159,29 @@ function WindEffect() {
 /** 水魔法のエフェクト：ハリー・ポッター風の「浮遊する水球と神秘的な霧」 */
 /** 水魔法のエフェクト：実在感を極めたハリー・ポッター風「Sacred Aqua Sigil」 */
 function WaterEffect() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const spheres = useMemo(() => {
+    return [...Array(12)].map((_, i) => ({
+      size: 30 + Math.random() * 150,
+      left: 10 + Math.random() * 80,
+      top: 10 + Math.random() * 80,
+      delay: Math.random() * -12,
+      duration: 8 + Math.random() * 8,
+    }));
+  }, []);
+
+  const bubbles = useMemo(() => {
+    return [...Array(8)].map((_, i) => ({
+      left: 20 + Math.random() * 60,
+      width: 4 + Math.random() * 8,
+      height: 4 + Math.random() * 8,
+      delay: i * -1.5,
+      duration: 5 + Math.random() * 3,
+    }));
+  }, []);
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
       {/* SVG Filters for Liquid Realism (液体のゆらぎを定義) */}
@@ -193,20 +232,19 @@ function WaterEffect() {
         className="absolute inset-0 flex items-center justify-center"
         style={{ filter: "url(#liquid-refraction)" }}
       >
-        {[...Array(12)].map((_, i) => {
-          const size = 30 + Math.random() * 150;
-          return (
+        {mounted &&
+          spheres.map((s, i) => (
             <div
               key={`sacred-sphere-${i}`}
               className="absolute bg-gradient-to-br from-white/15 via-blue-300/5 to-transparent border border-white/10 rounded-full animate-water-sphere-float shadow-[inset_0_0_30px_rgba(255,255,255,0.2)]"
               style={
                 {
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  left: `${10 + Math.random() * 80}%`,
-                  top: `${10 + Math.random() * 80}%`,
-                  animationDelay: `${Math.random() * -12}s`,
-                  animationDuration: `${8 + Math.random() * 8}s`,
+                  width: `${s.size}px`,
+                  height: `${s.size}px`,
+                  left: `${s.left}%`,
+                  top: `${s.top}%`,
+                  animationDelay: `${s.delay}s`,
+                  animationDuration: `${s.duration}s`,
                 } as any
               }
             >
@@ -214,8 +252,7 @@ function WaterEffect() {
               <div className="absolute top-[20%] left-[20%] w-[30%] h-[30%] bg-white rounded-full blur-[4px] opacity-30" />
               <div className="absolute bottom-[10%] right-[10%] w-[15%] h-[15%] bg-cyan-100 rounded-full blur-[5px] opacity-20 animate-pulse" />
             </div>
-          );
-        })}
+          ))}
       </div>
 
       {/* 4. Ground Reservoir & Ripples (足元に出現する聖なる池) */}
@@ -232,22 +269,23 @@ function WaterEffect() {
 
       {/* 5. Glistening Particles (主張を完全に消した微細な水蒸気) */}
       <div className="absolute inset-x-0 h-screen">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={`sacred-bubble-${i}`}
-            className="absolute bg-white/10 rounded-full animate-bubble-rise"
-            style={
-              {
-                left: `${20 + Math.random() * 60}%`,
-                width: `${4 + Math.random() * 8}px`,
-                height: `${4 + Math.random() * 8}px`,
-                filter: "blur(3px)",
-                animationDelay: `${i * -1.5}s`,
-                animationDuration: `${5 + Math.random() * 3}s`,
-              } as any
-            }
-          />
-        ))}
+        {mounted &&
+          bubbles.map((b, i) => (
+            <div
+              key={`sacred-bubble-${i}`}
+              className="absolute bg-white/10 rounded-full animate-bubble-rise"
+              style={
+                {
+                  left: `${b.left}%`,
+                  width: `${b.width}px`,
+                  height: `${b.height}px`,
+                  filter: "blur(3px)",
+                  animationDelay: `${b.delay}s`,
+                  animationDuration: `${b.duration}s`,
+                } as any
+              }
+            />
+          ))}
       </div>
     </div>
   );
@@ -264,6 +302,40 @@ function FireEffect() {
 
 /** 光魔法のエフェクト：画像イメージに基づく無数の黄金フィラメントの渦 */
 function LightEffect() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const filaments = useMemo(() => {
+    return [...Array(120)].map((_, i) => {
+      const angle = Math.random() * 360;
+      const radius = 30 + Math.random() * 120;
+      const length = 30 + Math.random() * 60;
+      const endAngle = angle + ((length / radius) * 180) / Math.PI;
+
+      return {
+        startX: 200 + Math.cos((angle * Math.PI) / 180) * radius,
+        startY: 200 + Math.sin((angle * Math.PI) / 180) * radius,
+        endX: 200 + Math.cos((endAngle * Math.PI) / 180) * radius,
+        endY: 200 + Math.sin((endAngle * Math.PI) / 180) * radius,
+        radius,
+        length,
+        strokeWidth: 0.4 + Math.random() * 1.2,
+        opacity: 0.3 + Math.random() * 0.7,
+        duration: 2 + Math.random() * 4,
+        delay: Math.random() * -10,
+      };
+    });
+  }, []);
+
+  const glitter = useMemo(() => {
+    return [...Array(50)].map((_, i) => ({
+      tx: (Math.random() - 0.5) * 450,
+      ty: (Math.random() - 0.5) * 450,
+      delay: Math.random() * -5,
+      duration: 2.5 + Math.random() * 2,
+    }));
+  }, []);
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
       {/* 1. Supernova Core (中心の強烈な輝き) */}
@@ -276,66 +348,51 @@ function LightEffect() {
           viewBox="0 0 400 400"
           className="w-[450px] h-[450px] overflow-visible"
         >
-          {[...Array(120)].map((_, i) => {
-            const angle = Math.random() * 360;
-            const radius = 30 + Math.random() * 120;
-            const length = 30 + Math.random() * 60;
-            const strokeWidth = 0.4 + Math.random() * 1.2;
-            const opacity = 0.3 + Math.random() * 0.7;
-            const duration = 2 + Math.random() * 4;
-            const delay = Math.random() * -10;
-
-            // 弧のパスを計算
-            const startX = 200 + Math.cos((angle * Math.PI) / 180) * radius;
-            const startY = 200 + Math.sin((angle * Math.PI) / 180) * radius;
-            const endAngle = angle + ((length / radius) * 180) / Math.PI;
-            const endX = 200 + Math.cos((endAngle * Math.PI) / 180) * radius;
-            const endY = 200 + Math.sin((endAngle * Math.PI) / 180) * radius;
-
-            return (
+          {mounted &&
+            filaments.map((f, i) => (
               <path
                 key={i}
-                d={`M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`}
+                d={`M ${f.startX} ${f.startY} A ${f.radius} ${f.radius} 0 0 1 ${f.endX} ${f.endY}`}
                 fill="none"
                 stroke={i % 2 === 0 ? "#fef3c7" : "#fbbf24"}
-                strokeWidth={strokeWidth}
+                strokeWidth={f.strokeWidth}
                 strokeLinecap="round"
                 className="animate-lumos-filament"
                 style={
                   {
-                    opacity,
+                    opacity: f.opacity,
                     // @ts-ignore
-                    "--dash": length,
-                    animationDelay: `${delay}s`,
-                    animationDuration: `${duration}s`,
+                    "--dash": f.length,
+                    animationDelay: `${f.delay}s`,
+                    animationDuration: `${f.duration}s`,
                   } as any
                 }
               />
-            );
-          })}
+            ))}
         </svg>
       </div>
 
       {/* 3. Radiant Glitter (周囲に飛び散る光子) */}
       <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={`glitter-${i}`}
-            className="absolute w-1 h-1 bg-yellow-100 rounded-full blur-[1px] animate-light-particle-fly"
-            style={
-              {
-                left: "50%",
-                top: "50%",
-                // @ts-ignore
-                "--tx": `${(Math.random() - 0.5) * 450}px`,
-                // @ts-ignore
-                "--ty": `${(Math.random() - 0.5) * 450}px`,
-                animationDelay: `${Math.random() * -5}s`,
-                animationDuration: `${2.5 + Math.random() * 2}s`,
-              } as any
-            }
-          />
-        ))}
+        {mounted &&
+          glitter.map((g, i) => (
+            <div
+              key={`glitter-${i}`}
+              className="absolute w-1 h-1 bg-yellow-100 rounded-full blur-[1px] animate-light-particle-fly"
+              style={
+                {
+                  left: "50%",
+                  top: "50%",
+                  // @ts-ignore
+                  "--tx": `${g.tx}px`,
+                  // @ts-ignore
+                  "--ty": `${g.ty}px`,
+                  animationDelay: `${g.delay}s`,
+                  animationDuration: `${g.duration}s`,
+                } as any
+              }
+            />
+          ))}
       </div>
     </div>
   );
