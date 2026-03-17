@@ -80,14 +80,14 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
 
 **YOLOv8** は Ultralytics が開発するリアルタイム物体検出フレームワーク。その **pose** バリアントはキーポイント検出（姿勢推定）に特化しており、バウンディングボックスとキーポイント座標を同時に出力する。
 
-| 項目 | 内容 |
-|------|------|
-| 開発元 | Ultralytics |
-| ベースタスク | 物体検出 + キーポイント推定 |
-| 入力 | RGB画像（640x640にリサイズ） |
-| 出力 | バウンディングボックス + N個のキーポイント座標 |
+| 項目         | 内容                                            |
+| ------------ | ----------------------------------------------- |
+| 開発元       | Ultralytics                                     |
+| ベースタスク | 物体検出 + キーポイント推定                     |
+| 入力         | RGB画像（640x640にリサイズ）                    |
+| 出力         | バウンディングボックス + N個のキーポイント座標  |
 | 本実装の設定 | 1クラス (`wand`)、2キーポイント (`tip`, `grip`) |
-| モデルサイズ | YOLOv8n-pose（nano）: ~6MB — ブラウザ推論向き |
+| モデルサイズ | YOLOv8n-pose（nano）: ~6MB — ブラウザ推論向き   |
 
 **カスタムキーポイント検出の仕組み:**
 
@@ -107,22 +107,26 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
 
 **ONNX Runtime Web** はそのブラウザ向け実装で、以下のバックエンドで推論を実行できる:
 
-| バックエンド | 速度 | 対応環境 |
-|-------------|------|---------|
-| **WebGL** | 高速（GPU利用） | 大半のブラウザ |
-| **WASM** | 中速（CPU） | 全ブラウザ |
-| **WebGPU** | 最速（次世代GPU API） | Chrome 113+ |
+| バックエンド | 速度                  | 対応環境       |
+| ------------ | --------------------- | -------------- |
+| **WebGL**    | 高速（GPU利用）       | 大半のブラウザ |
+| **WASM**     | 中速（CPU）           | 全ブラウザ     |
+| **WebGPU**   | 最速（次世代GPU API） | Chrome 113+    |
 
 本実装では **WebGL** をプライマリ、**WASM** をフォールバックとして使用する。
 
 ```typescript
 // セッション初期化
 const session = await ort.InferenceSession.create("/models/wand_pose.onnx", {
-  executionProviders: ["webgl"],  // WebGLで高速推論
+  executionProviders: ["webgl"], // WebGLで高速推論
 });
 
 // 推論実行
-const inputTensor = new ort.Tensor("float32", preprocessedData, [1, 3, 640, 640]);
+const inputTensor = new ort.Tensor(
+  "float32",
+  preprocessedData,
+  [1, 3, 640, 640],
+);
 const results = await session.run({ images: inputTensor });
 ```
 
@@ -137,7 +141,7 @@ MediaPipe Model Maker にはキーポイント検出の学習機能がない。Y
 ```typescript
 const stream = await navigator.mediaDevices.getUserMedia({
   video: {
-    facingMode: "user",   // フロントカメラ優先
+    facingMode: "user", // フロントカメラ優先
     width: 640,
     height: 480,
   },
@@ -145,20 +149,20 @@ const stream = await navigator.mediaDevices.getUserMedia({
 videoElement.srcObject = stream;
 ```
 
-| 項目 | 内容 |
-|------|------|
+| 項目         | 内容                                                |
+| ------------ | --------------------------------------------------- |
 | 対応ブラウザ | Chrome, Firefox, Safari, Edge（全メジャーブラウザ） |
-| HTTPS | 必須（localhost は例外） |
-| 許可 | ユーザーにカメラアクセス許可ダイアログが表示される |
+| HTTPS        | 必須（localhost は例外）                            |
+| 許可         | ユーザーにカメラアクセス許可ダイアログが表示される  |
 
 ### YOLOv8-pose の入出力フォーマット
 
 #### 入力
 
-| 項目 | 値 |
-|------|------|
-| 形状 | `[1, 3, 640, 640]` (NCHW) |
-| 値域 | `0.0 〜 1.0`（RGB各チャンネルを255で除算） |
+| 項目   | 値                                                   |
+| ------ | ---------------------------------------------------- |
+| 形状   | `[1, 3, 640, 640]` (NCHW)                            |
+| 値域   | `0.0 〜 1.0`（RGB各チャンネルを255で除算）           |
 | 前処理 | letterbox（アスペクト比保持リサイズ + 黒パディング） |
 
 ```text
@@ -212,11 +216,11 @@ videoElement.srcObject = stream;
 smoothed = α × current + (1 - α) × previous
 ```
 
-| パラメータ | 値 | 効果 |
-|-----------|------|------|
-| α = 0.4 | 現在値40% + 前回値60% | 滑らかさと応答性のバランス |
-| α → 1.0 | 生の値に近い | 応答は速いがブレが大きい |
-| α → 0.0 | ほぼ動かない | 滑らかだが遅延が大きい |
+| パラメータ | 値                    | 効果                       |
+| ---------- | --------------------- | -------------------------- |
+| α = 0.4    | 現在値40% + 前回値60% | 滑らかさと応答性のバランス |
+| α → 1.0    | 生の値に近い          | 応答は速いがブレが大きい   |
+| α → 0.0    | ほぼ動かない          | 滑らかだが遅延が大きい     |
 
 tip (杖先) と grip (手元) の両方に独立して適用する。
 
@@ -228,12 +232,12 @@ tip (杖先) と grip (手元) の両方に独立して適用する。
 
 ウェブカメラ or スマホで杖を様々な条件で撮影する。
 
-| 条件 | バリエーション |
-|------|-------------|
-| 角度 | 正面、斜め、横、振っている最中 |
-| 背景 | 実際に使う環境（部屋）で撮影 |
-| 照明 | 明るい / 暗い |
-| 持ち方 | 片手、両手、振り上げ、振り下ろし |
+| 条件     | バリエーション                                           |
+| -------- | -------------------------------------------------------- |
+| 角度     | 正面、斜め、横、振っている最中                           |
+| 背景     | 実際に使う環境（部屋）で撮影                             |
+| 照明     | 明るい / 暗い                                            |
+| 持ち方   | 片手、両手、振り上げ、振り下ろし                         |
 | 杖の向き | **縦・横・斜めを均等に**（キーポイント検出では特に重要） |
 
 > **Tips**: 撮影スクリプトをNext.jsのテストページとして作成すると効率的。
@@ -302,12 +306,11 @@ train: train/images
 val: val/images
 
 # キーポイント定義
-kpt_shape: [2, 3]  # 2キーポイント、各3値(x, y, visible)
+kpt_shape: [2, 3] # 2キーポイント、各3値(x, y, visible)
 
 # クラス定義
 names:
   0: wand
-
 # キーポイント名（ドキュメント用）
 # 0: tip  (杖先)
 # 1: grip (手元)
@@ -387,7 +390,11 @@ bun add onnxruntime-web
 
 ```typescript
 /** カメラの接続状態 */
-export type CameraStatus = "DISCONNECTED" | "INITIALIZING" | "CONNECTED" | "ERROR";
+export type CameraStatus =
+  | "DISCONNECTED"
+  | "INITIALIZING"
+  | "CONNECTED"
+  | "ERROR";
 
 /** 杖のキーポイント検出結果 */
 export type WandDetectionResult = {
@@ -452,15 +459,15 @@ export class WandDetector {
   async initialize(videoElement: HTMLVideoElement): Promise<boolean> {
     // 1. ONNX Runtime セッション初期化
     ort.env.wasm.wasmPaths = "/onnx/";
-    this.session = await ort.InferenceSession.create(
-      "/models/wand_pose.onnx",
-      {
-        executionProviders: ["webgl"],  // WebGLで高速化、フォールバックはWASM
-      }
-    );
+    this.session = await ort.InferenceSession.create("/models/wand_pose.onnx", {
+      executionProviders: ["webgl"], // WebGLで高速化、フォールバックはWASM
+    });
 
     // 2. 前処理用Canvas
-    this.preprocessCanvas = new OffscreenCanvas(this.INPUT_SIZE, this.INPUT_SIZE);
+    this.preprocessCanvas = new OffscreenCanvas(
+      this.INPUT_SIZE,
+      this.INPUT_SIZE,
+    );
     this.preprocessCtx = this.preprocessCanvas.getContext("2d")!;
 
     // 3. カメラストリーム取得
@@ -497,8 +504,8 @@ export class WandDetector {
     // NCHW形式 [1, 3, 640, 640]、0〜1正規化
     const float32 = new Float32Array(3 * size * size);
     for (let i = 0; i < size * size; i++) {
-      float32[i] = data[i * 4] / 255;                    // R
-      float32[size * size + i] = data[i * 4 + 1] / 255;  // G
+      float32[i] = data[i * 4] / 255; // R
+      float32[size * size + i] = data[i * 4 + 1] / 255; // G
       float32[2 * size * size + i] = data[i * 4 + 2] / 255; // B
     }
 
@@ -594,10 +601,14 @@ export class WandDetector {
           this.smoothGripY = detection.gripY;
           this.isFirstDetection = false;
         } else {
-          this.smoothTipX = alpha * detection.tipX + (1 - alpha) * this.smoothTipX;
-          this.smoothTipY = alpha * detection.tipY + (1 - alpha) * this.smoothTipY;
-          this.smoothGripX = alpha * detection.gripX + (1 - alpha) * this.smoothGripX;
-          this.smoothGripY = alpha * detection.gripY + (1 - alpha) * this.smoothGripY;
+          this.smoothTipX =
+            alpha * detection.tipX + (1 - alpha) * this.smoothTipX;
+          this.smoothTipY =
+            alpha * detection.tipY + (1 - alpha) * this.smoothTipY;
+          this.smoothGripX =
+            alpha * detection.gripX + (1 - alpha) * this.smoothGripX;
+          this.smoothGripY =
+            alpha * detection.gripY + (1 - alpha) * this.smoothGripY;
         }
 
         this.onWandDetection?.({
@@ -771,15 +782,15 @@ export function useWandDetector() {
 
 ## 6. ファイル一覧
 
-| ファイル | 操作 | 工程 |
-|---------|------|------|
-| Colabノートブック（外部） | 新規 | Phase 2 |
-| `public/models/wand_pose.onnx` | 新規（学習済みモデル配置） | Phase 2 |
-| `src/features/camera/types/camera.ts` | 新規 | Phase 3 Step 3-2 |
-| `src/features/camera/api/wand-detector.ts` | 新規 | Phase 3 Step 3-3 |
-| `src/features/camera/api/useWandDetector.ts` | 新規 | Phase 3 Step 3-4 |
-| `src/app/test/camera/page.tsx` | 新規 | Phase 3 Step 3-5 |
-| `package.json` | 変更（依存追加） | Phase 3 Step 3-1 |
+| ファイル                                     | 操作                       | 工程             |
+| -------------------------------------------- | -------------------------- | ---------------- |
+| Colabノートブック（外部）                    | 新規                       | Phase 2          |
+| `public/models/wand_pose.onnx`               | 新規（学習済みモデル配置） | Phase 2          |
+| `src/features/camera/types/camera.ts`        | 新規                       | Phase 3 Step 3-2 |
+| `src/features/camera/api/wand-detector.ts`   | 新規                       | Phase 3 Step 3-3 |
+| `src/features/camera/api/useWandDetector.ts` | 新規                       | Phase 3 Step 3-4 |
+| `src/app/test/camera/page.tsx`               | 新規                       | Phase 3 Step 3-5 |
+| `package.json`                               | 変更（依存追加）           | Phase 3 Step 3-1 |
 
 > **注意**: `src/app/test/wand/page.tsx` は変更しない。カメラ杖検出のテストは `/test/camera` で完結する。
 
@@ -795,13 +806,13 @@ export function useWandDetector() {
 
 ### Phase 3 検証（ブラウザ）
 
-| # | 検証項目 | 確認方法 |
-|---|---------|---------|
-| 1 | カメラプレビュー + キーポイント表示 | `/test/camera` を開き、杖を映す。tip(緑)とgrip(黄)が正しい位置に出ること |
-| 2 | トレイルの滑らかな追従 | 杖をゆっくり振って、杖先の軌跡が滑らかに追従すること |
-| 3 | 杖の角度対応 | 縦・横・斜めに持ち替えても tip が杖先を追跡すること |
-| 4 | フレームアウト時の安定性 | 杖をフレーム外に出してクラッシュしないこと |
-| 5 | パフォーマンス | DevTools Performance タブで **15fps以上**出ていること |
+| #   | 検証項目                            | 確認方法                                                                 |
+| --- | ----------------------------------- | ------------------------------------------------------------------------ |
+| 1   | カメラプレビュー + キーポイント表示 | `/test/camera` を開き、杖を映す。tip(緑)とgrip(黄)が正しい位置に出ること |
+| 2   | トレイルの滑らかな追従              | 杖をゆっくり振って、杖先の軌跡が滑らかに追従すること                     |
+| 3   | 杖の角度対応                        | 縦・横・斜めに持ち替えても tip が杖先を追跡すること                      |
+| 4   | フレームアウト時の安定性            | 杖をフレーム外に出してクラッシュしないこと                               |
+| 5   | パフォーマンス                      | DevTools Performance タブで **15fps以上**出ていること                    |
 
 ### 実装順序
 

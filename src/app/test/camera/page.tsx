@@ -83,14 +83,10 @@ function adjustViewBounds(
     if (!viewBoundsRef.current) {
       viewBoundsRef.current = { minX, maxX, minY, maxY };
     } else {
-      viewBoundsRef.current.minX +=
-        (minX - viewBoundsRef.current.minX) * lerp;
-      viewBoundsRef.current.maxX +=
-        (maxX - viewBoundsRef.current.maxX) * lerp;
-      viewBoundsRef.current.minY +=
-        (minY - viewBoundsRef.current.minY) * lerp;
-      viewBoundsRef.current.maxY +=
-        (maxY - viewBoundsRef.current.maxY) * lerp;
+      viewBoundsRef.current.minX += (minX - viewBoundsRef.current.minX) * lerp;
+      viewBoundsRef.current.maxX += (maxX - viewBoundsRef.current.maxX) * lerp;
+      viewBoundsRef.current.minY += (minY - viewBoundsRef.current.minY) * lerp;
+      viewBoundsRef.current.maxY += (maxY - viewBoundsRef.current.maxY) * lerp;
     }
     return {
       minX: viewBoundsRef.current.minX,
@@ -360,9 +356,7 @@ export default function CameraWandTestPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">
-          カメラ杖検出テスト
-        </h1>
+        <h1 className="text-2xl font-bold mb-4">カメラ杖検出テスト</h1>
 
         {/* 接続ボタン + ステータス */}
         <div className="flex items-center gap-4 mb-6 flex-wrap">
@@ -443,9 +437,7 @@ export default function CameraWandTestPage() {
               />
               {isConnected && !wandPoint?.detected && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
-                  <p className="text-gray-500 text-sm">
-                    杖を検出中...
-                  </p>
+                  <p className="text-gray-500 text-sm">杖を検出中...</p>
                 </div>
               )}
             </div>
