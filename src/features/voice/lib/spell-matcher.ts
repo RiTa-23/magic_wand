@@ -37,6 +37,21 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     action: "fan_on",
   },
   {
+    id: "kyua_uppu_rapa_pa",
+    name: "キュアップラパパ",
+    keywords: [
+      "キュアップラパパ",
+      "きゅあっぷらぱぱ",
+      "キュアップラパ",
+      "きゅあっぷらぱ",
+      "キュアップ",
+      "おみくじ",
+      "今日のおみくじ",
+      "キュアップラパパ今日のおみくじ",
+    ],
+    action: "print_omikuji",
+  },
+  {
     id: "incendio",
     name: "インセンディオ",
     keywords: [

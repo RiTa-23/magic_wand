@@ -5,6 +5,11 @@ const IS_TEST_ENV = process.env.NODE_ENV === "test";
 let cachedClient: Awaited<ReturnType<typeof loginDeviceByIp>> | null = null;
 let cachedClientKey: string | null = null;
 
+export function resetTapoClientCache() {
+  cachedClient = null;
+  cachedClientKey = null;
+}
+
 export async function getTapoClient(): Promise<
   Awaited<ReturnType<typeof loginDeviceByIp>>
 > {
