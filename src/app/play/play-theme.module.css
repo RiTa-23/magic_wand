@@ -1,6 +1,9 @@
 .theme {
   min-height: 100svh;
 
+  /* Lock font tokens within /play to avoid route-CSS load order flashes */
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
   /* Ensure form controls etc follow dark palette */
   color-scheme: dark;
 
