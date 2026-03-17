@@ -209,7 +209,7 @@ export default function TutorialPage() {
                 className={`absolute inset-0 ${enableTransition ? "transition-transform duration-500 ease-in-out" : ""}`}
                 style={{ transform: `translateX(${currentX}%)` }}
               >
-                <SlideContent slide={activeSlide} pageNumber={index + 1} />
+                <SlideContent slide={activeSlide} />
               </div>
 
               {/* Incoming slide (only during transition) */}
@@ -225,10 +225,7 @@ export default function TutorialPage() {
                     setPhase("reset");
                   }}
                 >
-                  <SlideContent
-                    slide={nextSlide}
-                    pageNumber={pendingIndex + 1}
-                  />
+                  <SlideContent slide={nextSlide} />
                 </div>
               )}
             </div>
@@ -290,13 +287,7 @@ export default function TutorialPage() {
   );
 }
 
-function SlideContent({
-  slide,
-  pageNumber,
-}: {
-  slide: TutorialSlide;
-  pageNumber: number;
-}) {
+function SlideContent({ slide }: { slide: TutorialSlide }) {
   const [imageError, setImageError] = useState(false);
 
   return (
@@ -328,10 +319,6 @@ function SlideContent({
           </div>
         )}
       </div>
-
-      <h2 className="text-center text-3xl font-bold tracking-[0.18em] text-[color:var(--gold-bright)]">
-        ページ {pageNumber}
-      </h2>
 
       <p className="text-center text-base leading-relaxed tracking-wide text-[color:var(--foreground)]/90">
         {slide.description}
