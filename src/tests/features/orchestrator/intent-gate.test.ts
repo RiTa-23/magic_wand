@@ -61,6 +61,46 @@ describe("IntentGate", () => {
     expect(result.commit).toBeUndefined();
   });
 
+  it("逆順到着で絶対時間差が大きい場合も commit しない", () => {
+    const gate = new IntentGate();
+
+    gate.pushGesture({
+      gestureType: "V",
+      confidence: 0.9,
+      timestamp: 5000,
+    });
+    const result = gate.pushVoice({
+      spellId: "ventus",
+      confidence: 0.95,
+      timestamp: 1000,
+    });
+
+    expect(result.status).toBe("waiting_for_voice");
+    expect(result.reasonCode).toBe("window_timeout");
+    expect(result.commit).toBeUndefined();
+    expect(gate.getState(5000).status).toBe("waiting_for_voice");
+  });
+
+  it("逆順到着で新しい入力を保持して継続待機できる", () => {
+    const gate = new IntentGate();
+
+    gate.pushVoice({
+      spellId: "ventus",
+      confidence: 0.95,
+      timestamp: 1000,
+    });
+    const result = gate.pushGesture({
+      gestureType: "V",
+      confidence: 0.9,
+      timestamp: 5000,
+    });
+
+    expect(result.status).toBe("waiting_for_voice");
+    expect(result.reasonCode).toBe("window_timeout");
+    expect(result.commit).toBeUndefined();
+    expect(gate.getState(5000).status).toBe("waiting_for_voice");
+  });
+
   it("音声 confidence が不足している場合は reject する", () => {
     const gate = new IntentGate();
 

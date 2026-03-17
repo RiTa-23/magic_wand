@@ -84,6 +84,25 @@ export class IntentGate {
       };
     }
 
+    if (
+      !this.isWithinTimeWindow(input.timestamp, this.pendingGesture.timestamp)
+    ) {
+      if (input.timestamp >= this.pendingGesture.timestamp) {
+        this.pendingGesture = null;
+        this.pendingVoice = input;
+        return {
+          status: "waiting_for_gesture",
+          reasonCode: "window_timeout",
+        };
+      }
+
+      this.pendingVoice = null;
+      return {
+        status: "waiting_for_voice",
+        reasonCode: "window_timeout",
+      };
+    }
+
     const commit: IntentCommit = {
       spellId: input.spellId,
       gestureType: this.pendingGesture.gestureType,
@@ -125,6 +144,25 @@ export class IntentGate {
       return {
         status: "waiting_for_voice",
         reasonCode: "spell_gesture_mismatch",
+      };
+    }
+
+    if (
+      !this.isWithinTimeWindow(this.pendingVoice.timestamp, input.timestamp)
+    ) {
+      if (input.timestamp >= this.pendingVoice.timestamp) {
+        this.pendingVoice = null;
+        this.pendingGesture = input;
+        return {
+          status: "waiting_for_voice",
+          reasonCode: "window_timeout",
+        };
+      }
+
+      this.pendingGesture = null;
+      return {
+        status: "waiting_for_gesture",
+        reasonCode: "window_timeout",
       };
     }
 
@@ -183,6 +221,10 @@ export class IntentGate {
     }
 
     return didExpire ? "window_timeout" : null;
+  }
+
+  private isWithinTimeWindow(firstTimestamp: number, secondTimestamp: number) {
+    return Math.abs(firstTimestamp - secondTimestamp) <= this.timeWindowMs;
   }
 }
 
