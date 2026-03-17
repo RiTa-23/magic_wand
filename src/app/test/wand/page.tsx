@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
+import { recognizeGesture, type GestureResult } from "@/features/gesture/recognizer"
 
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
