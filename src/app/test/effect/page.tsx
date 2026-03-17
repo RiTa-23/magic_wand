@@ -229,22 +229,11 @@ function WaterEffect() {
   );
 }
 
-/** 炎魔法のエフェクト：揺らぐ炎と火の粉 */
+/** 炎魔法のエフェクト：揺らぐ炎 */
 function FireEffect() {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
-      {[...Array(25)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute bottom-1/3 w-1.5 h-1.5 bg-orange-500 rounded-full animate-ember-fly"
-          style={{
-            left: `${42 + Math.random() * 16}%`,
-            boxShadow: '0 0 10px #ff4500',
-            animationDelay: `${i * 0.1}s`,
-          }}
-        />
-      ))}
-      <div className="w-48 h-[360px] bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-full blur-[50px] animate-fire-dance" />
+      <div className="w-48 h-[360px] bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-[50%_50%_35%_35%_/_80%_80%_20%_20%] blur-[45px] animate-fire-dance" />
     </div>
   );
 }
@@ -450,11 +439,11 @@ function EffectContent() {
           100% { transform: translateY(-200px) translateX(30px) scale(0); opacity: 0; }
         }
         @keyframes fire-dance {
-          0%, 100% { transform: scaleY(1) skewX(0deg); }
-          50% { transform: scaleY(1.2) skewX(5deg); }
+          0%, 100% { transform: scaleY(1) scaleX(1) skewX(2deg); opacity: 1; }
+          50% { transform: scaleY(1.05) scaleX(0.95) skewX(-2deg); opacity: 0.9; }
         }
         .animate-ember-fly { animation: ember-fly 1.5s infinite ease-in; }
-        .animate-fire-dance { animation: fire-dance 0.5s infinite alternate; }
+        .animate-fire-dance { animation: fire-dance 0.8s infinite alternate ease-in-out; }
 
         @keyframes light-beam {
           0%, 100% { transform: scaleX(1); opacity: 0.2; }
