@@ -1,6 +1,6 @@
-# MediaPipe カスタムモデルによる杖検知 実装ガイド
+# YOLOv8-pose キーポイント検出による杖先トラッキング 実装ガイド
 
-Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を振ることでも杖振りを検知できるようにする。MediaPipe Model Makerでカスタム物体検出モデルを学習し、ブラウザ上でリアルタイム推論する。
+Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を振ることでも杖先を検知できるようにする。YOLOv8-poseでカスタムキーポイント検出モデルを学習し、ONNX Runtime Webでブラウザ上リアルタイム推論する。
 
 ---
 
@@ -22,10 +22,10 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
 │  ブラウザ (Chrome)                                           │
 │                                                             │
 │  page.tsx ─── useWandDetector.ts ─── wand-detector.ts       │
-│  (React UI)   (React Hook)          (MediaPipe推論コア)      │
+│  (React UI)   (React Hook)          (ONNX推論コア)           │
 │                                          │                  │
-│                               @mediapipe/tasks-vision       │
-│                               (ObjectDetector API)          │
+│                                  onnxruntime-web            │
+│                              (WebGL/WASM バックエンド)        │
 │                                          │                  │
 │                                   getUserMedia API          │
 └──────────────────────────────┬──────────────────────────────┘
@@ -36,21 +36,44 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
                     └─────────────────────┘
 ```
 
+### なぜキーポイント検出か
+
+物体検出（バウンディングボックス）では杖全体の矩形しか得られず、杖先の正確な座標がわからない。
+キーポイント検出なら**杖先 (tip)** と**手元 (grip)** の2点を直接学習するため、杖の角度に関係なく杖先座標が正確に得られる。
+
+```text
+物体検出の場合:                   キーポイント検出の場合:
+┌─────────────┐
+│  ↑ 杖先?    │  ← 上端中央は      ● tip  ← 直接座標が出る
+│  │          │    近似にすぎない    │
+│  │ 杖       │                    │
+│  │          │                    │
+│  ↓ 手元     │                    ● grip
+└─────────────┘
+```
+
+### なぜ YOLOv8-pose + ONNX Runtime か
+
+- **MediaPipe Model Maker** にはキーポイント検出の学習機能がない
+- **YOLOv8-pose** はカスタムキーポイント検出の学習をサポート
+- **ONNX形式** にエクスポートでき、**onnxruntime-web** でブラウザ上WebGL推論が可能
+- YOLOv8n-pose（nano）は軽量で、ブラウザでもリアルタイム推論可能
+
 ### 全体の流れ
 
 ```
-[Phase 1] 画像収集・アノテーション（Roboflow / ブラウザ）
+[Phase 1] 画像収集 + キーポイントアノテーション（CVAT / Roboflow）
     ↓
-[Phase 2] モデル学習（Python / Google Colab）
+[Phase 2] YOLOv8-pose学習（Python / Google Colab）→ ONNX書き出し
     ↓
-[Phase 3] Next.jsでリアルタイム検出実装（TypeScript / ブラウザ）
+[Phase 3] Next.jsでリアルタイム推論実装（TypeScript / ブラウザ）
 ```
 
 ---
 
 ## 2. Phase 1: 学習データ準備
 
-### Step 1-1: 杖の画像収集（50〜200枚）
+### Step 1-1: 杖の画像収集（100〜300枚推奨）
 
 ウェブカメラ or スマホで杖を様々な条件で撮影する。
 
@@ -60,28 +83,79 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
 | 背景 | 実際に使う環境（部屋）で撮影 |
 | 照明 | 明るい / 暗い |
 | 持ち方 | 片手、両手、振り上げ、振り下ろし |
+| 杖の向き | **縦・横・斜めを均等に**（キーポイント検出では特に重要） |
 
 > **Tips**: 撮影スクリプトをNext.jsのテストページとして作成すると効率的。
 
-### Step 1-2: アノテーション（バウンディングボックス付け）
+### Step 1-2: キーポイントアノテーション
 
-**Roboflow**（無料枠あり）を使用する。
+各画像に対して以下を付与する:
 
-1. 画像をアップロード
-2. 杖の周りにバウンディングボックスを描く
-3. ラベル: `wand`（1クラス）
-4. **COCO JSON形式**でエクスポート
+1. **バウンディングボックス** — 杖全体を囲む矩形
+2. **キーポイント2点** — `tip`（杖先）と `grip`（手元/持ち手）
 
-データセット構成:
+```text
+画像上で:
+  ● ← tip (キーポイント0): 杖の先端
+  │
+  │  杖
+  │
+  ● ← grip (キーポイント1): 手で持っている部分
+```
+
+#### アノテーションツール
+
+**CVAT**（推奨）または **Roboflow** を使用。
+
+- CVAT: 無料・OSS、キーポイントアノテーションをネイティブサポート
+- Roboflow: キーポイントプロジェクトタイプを選択
+
+#### YOLO キーポイント形式
+
+各画像に対応する `.txt` ラベルファイル:
 
 ```
-wand_dataset/
+# class_id  cx  cy  w  h  tip_x  tip_y  tip_visible  grip_x  grip_y  grip_visible
+0  0.5  0.4  0.1  0.6  0.5  0.1  2  0.5  0.7  2
+```
+
+- 座標は画像サイズで正規化（0〜1）
+- visible: 0=不可視, 1=オクルージョン, 2=可視
+
+#### データセット構成
+
+```
+wand_keypoint_dataset/
+├── data.yaml
 ├── train/
 │   ├── images/
-│   └── labels.json   # COCO形式
-└── validation/
+│   │   ├── 001.jpg
+│   │   └── ...
+│   └── labels/
+│       ├── 001.txt
+│       └── ...
+└── val/
     ├── images/
-    └── labels.json
+    └── labels/
+```
+
+#### data.yaml
+
+```yaml
+path: ./wand_keypoint_dataset
+train: train/images
+val: val/images
+
+# キーポイント定義
+kpt_shape: [2, 3]  # 2キーポイント、各3値(x, y, visible)
+
+# クラス定義
+names:
+  0: wand
+
+# キーポイント名（ドキュメント用）
+# 0: tip  (杖先)
+# 1: grip (手元)
 ```
 
 ---
@@ -92,47 +166,54 @@ wand_dataset/
 
 ```python
 # Google Colab notebook
-!pip install mediapipe-model-maker
+!pip install ultralytics
 
-from mediapipe_model_maker import object_detector
+from ultralytics import YOLO
 
-# データセット読み込み（Roboflowからエクスポートしたもの）
-train_data = object_detector.Dataset.from_coco_folder("wand_dataset/train/")
-val_data = object_detector.Dataset.from_coco_folder("wand_dataset/validation/")
+# YOLOv8n-pose ベースモデル読み込み（nano = 最軽量）
+model = YOLO("yolov8n-pose.pt")
 
-# ハイパーパラメータ設定
-hparams = object_detector.HParams(
-    batch_size=8,
-    learning_rate=0.01,
-    epochs=50,
-    export_dir="exported_model/"
-)
-options = object_detector.ObjectDetectorOptions(
-    supported_model=object_detector.SupportedModels.MOBILENET_V2,
-    hparams=hparams
-)
-
-# 学習実行
-model = object_detector.ObjectDetector.create(
-    train_data=train_data,
-    validation_data=val_data,
-    options=options
+# カスタムキーポイント検出の学習
+results = model.train(
+    data="wand_keypoint_dataset/data.yaml",
+    epochs=100,
+    imgsz=640,
+    batch=16,
+    name="wand_tip_detector",
+    # キーポイント設定
+    pose=True,  # キーポイント検出モード
 )
 
 # 評価
-metrics = model.evaluate(val_data)
-print(metrics)
+metrics = model.val()
+print(f"mAP50: {metrics.box.map50}")
+print(f"mAP50-95: {metrics.box.map}")
 
-# TFLiteモデル書き出し
-model.export_model()  # → exported_model/model.tflite
+# テスト推論
+results = model.predict("test_image.jpg", save=True)
+for r in results:
+    print(f"Keypoints: {r.keypoints.xy}")  # [[tip_x, tip_y], [grip_x, grip_y]]
 ```
 
-### Step 2-2: モデルファイル配置
+### Step 2-2: ONNXエクスポート
 
-学習済みモデルをダウンロードし、プロジェクトに配置する。
+```python
+# ONNX形式でエクスポート（ブラウザ推論用）
+model.export(
+    format="onnx",
+    imgsz=640,
+    simplify=True,
+    opset=17,
+)
+# → runs/pose/wand_tip_detector/weights/best.onnx
+```
+
+### Step 2-3: モデルファイル配置
+
+エクスポートした `.onnx` をダウンロードし、プロジェクトに配置する。
 
 ```
-public/models/wand_detector.tflite
+public/models/wand_pose.onnx
 ```
 
 ---
@@ -142,69 +223,92 @@ public/models/wand_detector.tflite
 ### Step 3-1: 依存パッケージ追加
 
 ```bash
-bun add @mediapipe/tasks-vision
+bun add onnxruntime-web
 ```
+
+> `@mediapipe/tasks-vision` は不要。ONNX Runtime Web で直接推論する。
 
 ### Step 3-2: 型定義 — `src/features/camera/types/camera.ts`（新規）
 
 ```typescript
+/** カメラの接続状態 */
 export type CameraStatus = "DISCONNECTED" | "INITIALIZING" | "CONNECTED" | "ERROR";
 
+/** 杖のキーポイント検出結果 */
 export type WandDetectionResult = {
-  tipX: number;          // 杖先のX座標（ピクセル）
-  tipY: number;          // 杖先のY座標（ピクセル）
-  confidence: number;    // 検出信頼度 0〜1
-  detected: boolean;     // 杖が検出されたか
-  boundingBox: {         // バウンディングボックス
+  /** 杖先のX座標（ピクセル、ミラー反転済み） */
+  tipX: number;
+  /** 杖先のY座標（ピクセル） */
+  tipY: number;
+  /** 手元のX座標（ピクセル、ミラー反転済み） */
+  gripX: number;
+  /** 手元のY座標（ピクセル） */
+  gripY: number;
+  /** 検出信頼度 0〜1 */
+  confidence: number;
+  /** 杖先キーポイントの信頼度 0〜1 */
+  tipConfidence: number;
+  /** 杖が検出されたか */
+  detected: boolean;
+  /** バウンディングボックス */
+  boundingBox: {
     x: number;
     y: number;
     width: number;
     height: number;
   };
+  /** タイムスタンプ */
   timestamp: number;
 };
 ```
 
-### Step 3-3: APIクラス — `src/features/camera/api/wand-detector.ts`（新規, ~180行）
+### Step 3-3: APIクラス — `src/features/camera/api/wand-detector.ts`（新規, ~200行）
 
 `WandDetector`クラス（`JoyConWebHID`と同パターン）:
 
 ```typescript
-import { ObjectDetector, FilesetResolver } from "@mediapipe/tasks-vision";
+import * as ort from "onnxruntime-web";
 import type { WandDetectionResult } from "../types/camera";
 
 export class WandDetector {
-  private detector: ObjectDetector | null = null;
+  private session: ort.InferenceSession | null = null;
   private stream: MediaStream | null = null;
   private videoElement: HTMLVideoElement | null = null;
   private animFrameId: number = 0;
-  private lastTimestamp: number = -1;
+
+  // 前処理用のオフスクリーンCanvas
+  private preprocessCanvas: OffscreenCanvas | null = null;
+  private preprocessCtx: OffscreenCanvasRenderingContext2D | null = null;
 
   // EMAスムージング用
-  private smoothX: number = 0;
-  private smoothY: number = 0;
+  private smoothTipX: number = 0;
+  private smoothTipY: number = 0;
+  private smoothGripX: number = 0;
+  private smoothGripY: number = 0;
   private isFirstDetection: boolean = true;
+
+  // モデル入力サイズ
+  private readonly INPUT_SIZE = 640;
 
   // コールバック
   onWandDetection: ((result: WandDetectionResult) => void) | null = null;
 
-  /** MediaPipeモデルとカメラを初期化 */
+  /** ONNXモデルとカメラを初期化 */
   async initialize(videoElement: HTMLVideoElement): Promise<boolean> {
-    // 1. MediaPipe ObjectDetector初期化
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    // 1. ONNX Runtime セッション初期化
+    ort.env.wasm.wasmPaths = "/onnx/";
+    this.session = await ort.InferenceSession.create(
+      "/models/wand_pose.onnx",
+      {
+        executionProviders: ["webgl"],  // WebGLで高速化、フォールバックはWASM
+      }
     );
-    this.detector = await ObjectDetector.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: "/models/wand_detector.tflite",
-        delegate: "GPU",
-      },
-      runningMode: "VIDEO",
-      maxResults: 1,
-      scoreThreshold: 0.5,
-    });
 
-    // 2. カメラストリーム取得
+    // 2. 前処理用Canvas
+    this.preprocessCanvas = new OffscreenCanvas(this.INPUT_SIZE, this.INPUT_SIZE);
+    this.preprocessCtx = this.preprocessCanvas.getContext("2d")!;
+
+    // 3. カメラストリーム取得
     this.stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: 640, height: 480 },
     });
@@ -215,65 +319,150 @@ export class WandDetector {
     return true;
   }
 
+  /** ビデオフレームをモデル入力テンソルに変換 */
+  private preprocess(): ort.Tensor {
+    const ctx = this.preprocessCtx!;
+    const video = this.videoElement!;
+    const size = this.INPUT_SIZE;
+
+    // letterbox: アスペクト比を保ちつつ640x640にリサイズ
+    const scale = Math.min(size / video.videoWidth, size / video.videoHeight);
+    const newW = Math.round(video.videoWidth * scale);
+    const newH = Math.round(video.videoHeight * scale);
+    const padX = (size - newW) / 2;
+    const padY = (size - newH) / 2;
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(video, padX, padY, newW, newH);
+
+    const imageData = ctx.getImageData(0, 0, size, size);
+    const { data } = imageData;
+
+    // NCHW形式 [1, 3, 640, 640]、0〜1正規化
+    const float32 = new Float32Array(3 * size * size);
+    for (let i = 0; i < size * size; i++) {
+      float32[i] = data[i * 4] / 255;                    // R
+      float32[size * size + i] = data[i * 4 + 1] / 255;  // G
+      float32[2 * size * size + i] = data[i * 4 + 2] / 255; // B
+    }
+
+    return new ort.Tensor("float32", float32, [1, 3, size, size]);
+  }
+
+  /** モデル出力をパースしてキーポイント座標を取得 */
+  private postprocess(output: ort.Tensor): WandDetectionResult | null {
+    const data = output.data as Float32Array;
+    const video = this.videoElement!;
+    const size = this.INPUT_SIZE;
+
+    // YOLOv8-pose出力: [1, 11, 8400] → 転置して [8400, 11]
+    // 各行: [cx, cy, w, h, conf, tip_x, tip_y, tip_conf, grip_x, grip_y, grip_conf]
+    const numDetections = 8400;
+    const numValues = 11; // 4(bbox) + 1(conf) + 3(tip) + 3(grip)
+
+    let bestIdx = -1;
+    let bestConf = 0;
+
+    for (let i = 0; i < numDetections; i++) {
+      const conf = data[4 * numDetections + i]; // conf は5番目の行
+      if (conf > bestConf) {
+        bestConf = conf;
+        bestIdx = i;
+      }
+    }
+
+    if (bestIdx === -1 || bestConf < 0.5) return null;
+
+    // bbox (letterbox座標系)
+    const cx = data[0 * numDetections + bestIdx];
+    const cy = data[1 * numDetections + bestIdx];
+    const w = data[2 * numDetections + bestIdx];
+    const h = data[3 * numDetections + bestIdx];
+
+    // キーポイント (letterbox座標系)
+    const tipX = data[5 * numDetections + bestIdx];
+    const tipY = data[6 * numDetections + bestIdx];
+    const tipConf = data[7 * numDetections + bestIdx];
+    const gripX = data[8 * numDetections + bestIdx];
+    const gripY = data[9 * numDetections + bestIdx];
+    // const gripConf = data[10 * numDetections + bestIdx];
+
+    // letterbox座標 → 元の映像座標に変換
+    const scale = Math.min(size / video.videoWidth, size / video.videoHeight);
+    const padX = (size - video.videoWidth * scale) / 2;
+    const padY = (size - video.videoHeight * scale) / 2;
+
+    const toVideoX = (x: number) => (x - padX) / scale;
+    const toVideoY = (y: number) => (y - padY) / scale;
+
+    // フロントカメラのX軸ミラー反転
+    const mirrorX = (x: number) => video.videoWidth - x;
+
+    return {
+      tipX: mirrorX(toVideoX(tipX)),
+      tipY: toVideoY(tipY),
+      gripX: mirrorX(toVideoX(gripX)),
+      gripY: toVideoY(gripY),
+      confidence: bestConf,
+      tipConfidence: tipConf,
+      detected: true,
+      boundingBox: {
+        x: mirrorX(toVideoX(cx + w / 2)),
+        y: toVideoY(cy - h / 2),
+        width: w / scale,
+        height: h / scale,
+      },
+      timestamp: performance.now(),
+    };
+  }
+
   /** 検出ループ開始 */
   start(): void {
-    const detect = () => {
-      if (!this.detector || !this.videoElement) return;
+    const detect = async () => {
+      if (!this.session || !this.videoElement) return;
 
-      const now = performance.now();
-      if (now === this.lastTimestamp) {
-        this.animFrameId = requestAnimationFrame(detect);
-        return;
-      }
-      this.lastTimestamp = now;
+      // 前処理 → 推論 → 後処理
+      const inputTensor = this.preprocess();
+      const feeds = { images: inputTensor };
+      const results = await this.session.run(feeds);
+      const outputTensor = Object.values(results)[0];
+      const detection = this.postprocess(outputTensor);
 
-      const results = this.detector.detectForVideo(this.videoElement, now);
-      const videoWidth = this.videoElement.videoWidth;
-
-      if (results.detections.length > 0) {
-        const det = results.detections[0];
-        const bbox = det.boundingBox!;
-        const confidence = det.categories[0]?.score ?? 0;
-
-        // 杖先 = バウンディングボックスの上端中央
-        let rawTipX = bbox.originX + bbox.width / 2;
-        let rawTipY = bbox.originY; // 上端
-
-        // フロントカメラのX軸ミラー反転
-        rawTipX = videoWidth - rawTipX;
-
+      if (detection) {
         // EMAスムージング（α=0.4）
         const alpha = 0.4;
         if (this.isFirstDetection) {
-          this.smoothX = rawTipX;
-          this.smoothY = rawTipY;
+          this.smoothTipX = detection.tipX;
+          this.smoothTipY = detection.tipY;
+          this.smoothGripX = detection.gripX;
+          this.smoothGripY = detection.gripY;
           this.isFirstDetection = false;
         } else {
-          this.smoothX = alpha * rawTipX + (1 - alpha) * this.smoothX;
-          this.smoothY = alpha * rawTipY + (1 - alpha) * this.smoothY;
+          this.smoothTipX = alpha * detection.tipX + (1 - alpha) * this.smoothTipX;
+          this.smoothTipY = alpha * detection.tipY + (1 - alpha) * this.smoothTipY;
+          this.smoothGripX = alpha * detection.gripX + (1 - alpha) * this.smoothGripX;
+          this.smoothGripY = alpha * detection.gripY + (1 - alpha) * this.smoothGripY;
         }
 
         this.onWandDetection?.({
-          tipX: this.smoothX,
-          tipY: this.smoothY,
-          confidence,
-          detected: true,
-          boundingBox: {
-            x: videoWidth - (bbox.originX + bbox.width), // ミラー反転
-            y: bbox.originY,
-            width: bbox.width,
-            height: bbox.height,
-          },
-          timestamp: now,
+          ...detection,
+          tipX: this.smoothTipX,
+          tipY: this.smoothTipY,
+          gripX: this.smoothGripX,
+          gripY: this.smoothGripY,
         });
       } else {
         this.onWandDetection?.({
-          tipX: this.smoothX,
-          tipY: this.smoothY,
+          tipX: this.smoothTipX,
+          tipY: this.smoothTipY,
+          gripX: this.smoothGripX,
+          gripY: this.smoothGripY,
           confidence: 0,
+          tipConfidence: 0,
           detected: false,
           boundingBox: { x: 0, y: 0, width: 0, height: 0 },
-          timestamp: now,
+          timestamp: performance.now(),
         });
       }
 
@@ -298,25 +487,26 @@ export class WandDetector {
       this.stream.getTracks().forEach((t) => t.stop());
       this.stream = null;
     }
-    if (this.detector) {
-      this.detector.close();
-      this.detector = null;
+    if (this.session) {
+      this.session.release();
+      this.session = null;
     }
     this.videoElement = null;
+    this.preprocessCanvas = null;
+    this.preprocessCtx = null;
     this.isFirstDetection = true;
   }
 }
 ```
 
-#### 杖先の推定ロジック
+#### 推論パイプラインの流れ
 
 ```text
-バウンディングボックスの上端中央 = 杖先
-tipX = bbox.x + bbox.width / 2
-tipY = bbox.y  （上端 = 杖先と仮定）
+カメラフレーム → letterboxリサイズ(640x640) → NCHW正規化
+     → ONNX推論 → [1, 11, 8400] 出力パース
+     → 最高信頼度の検出を選択 → letterbox→映像座標変換
+     → X軸ミラー反転 → EMAスムージング → コールバック発火
 ```
-
-> **注意**: アノテーション時に杖先が上に来るように統一すると精度向上。
 
 ### Step 3-4: Reactフック — `src/features/camera/api/useWandDetector.ts`（新規, ~80行）
 
@@ -383,10 +573,11 @@ export function useWandDetector() {
 #### 機能一覧
 
 - ウェブカメラプレビュー（video要素、CSSで `scaleX(-1)` による左右反転）
-- バウンディングボックスのオーバーレイ描画（Canvas）
+- バウンディングボックス + キーポイント2点のオーバーレイ描画（Canvas）
 - Canvas上に杖先のトレイル描画（`adjustViewBounds` + `toCanvasCoords` を流用）
+- 杖先(tip)と手元(grip)を結ぶ線を描画
 - 接続/切断ボタン + ステータスバッジ
-- サイドパネル: 杖先座標、検出信頼度、バウンディングボックス情報
+- サイドパネル: 杖先座標、手元座標、検出信頼度、キーポイント信頼度
 - 軌跡クリアボタン
 - トレイルポイント形式: `{ rawX, rawY, t }`（既存 `test/wand` と同一）
 
@@ -398,16 +589,16 @@ export function useWandDetector() {
 │  [カメラを接続] [CONNECTED]                        │
 │                                                  │
 │  ┌─────────────────────┐  ┌────────────────────┐ │
-│  │  カメラプレビュー      │  │ 杖先の座標          │ │
-│  │  (video + Canvas)    │  │  X: 320            │ │
-│  │                     │  │  Y: 120            │ │
-│  │  BBox: 緑枠          │  │ 信頼度: 0.85       │ │
-│  │  トレイル: 緑の軌跡    │  │                    │ │
-│  │  杖先: ドット         │  │ BBox               │ │
-│  │                     │  │  x:280 y:80        │ │
-│  │                     │  │  w:80  h:200       │ │
+│  │  カメラプレビュー      │  │ 杖先 (tip)         │ │
+│  │  (video + Canvas)    │  │  X: 320  Y: 80     │ │
+│  │                     │  │  信頼度: 0.92       │ │
+│  │  ● tip              │  │                    │ │
+│  │  │                  │  │ 手元 (grip)        │ │
+│  │  │ bbox: 緑枠       │  │  X: 315  Y: 350    │ │
+│  │  │                  │  │                    │ │
+│  │  ● grip             │  │ 検出信頼度: 0.85    │ │
 │  │                     │  │                    │ │
-│  │                     │  │ [軌跡をクリア]       │ │
+│  │  トレイル: 緑の軌跡    │  │ [軌跡をクリア]       │ │
 │  └─────────────────────┘  └────────────────────┘ │
 └──────────────────────────────────────────────────┘
 ```
@@ -416,7 +607,8 @@ export function useWandDetector() {
 
 - video要素の上にCanvasを重ねて配置（`position: absolute`）
 - 検出結果のバウンディングボックスを緑枠で描画
-- 杖先位置にドットを描画（既存の `drawDot` と同パターン）
+- tip: 緑ドット、grip: 黄ドット、2点間を白線で結ぶ
+- 杖先(tip)位置のトレイルを描画（既存の `drawDot` と同パターン）
 - トレイルは3秒間フェードアウト
 - 色テーマ: `"34, 197, 94"`（green）— IR(blue), IMU(purple) と区別
 
@@ -427,7 +619,7 @@ export function useWandDetector() {
 | ファイル | 操作 | 工程 |
 |---------|------|------|
 | Colabノートブック（外部） | 新規 | Phase 2 |
-| `public/models/wand_detector.tflite` | 新規（学習済みモデル配置） | Phase 2 |
+| `public/models/wand_pose.onnx` | 新規（学習済みモデル配置） | Phase 2 |
 | `src/features/camera/types/camera.ts` | 新規 | Phase 3 Step 3-2 |
 | `src/features/camera/api/wand-detector.ts` | 新規 | Phase 3 Step 3-3 |
 | `src/features/camera/api/useWandDetector.ts` | 新規 | Phase 3 Step 3-4 |
@@ -442,22 +634,24 @@ export function useWandDetector() {
 
 ### Phase 2 検証（モデル）
 
-- Colab上で `model.evaluate()` の mAP（平均適合率）が **0.5以上**であること
-- テスト画像で杖のバウンディングボックスが正しく出ること
+- Colab上で `model.val()` の mAP50 が **0.5以上**であること
+- テスト画像でキーポイント2点（tip / grip）が正しい位置に出ること
+- `model.predict()` で `r.keypoints.xy` に2点の座標が出力されることを確認
 
 ### Phase 3 検証（ブラウザ）
 
 | # | 検証項目 | 確認方法 |
 |---|---------|---------|
-| 1 | カメラプレビュー + BBox表示 | `/test/camera` を開き、杖を映す |
-| 2 | トレイルの滑らかな追従 | 杖をゆっくり振って軌跡を確認 |
-| 3 | フレームアウト時の安定性 | 杖をフレーム外に出してクラッシュしないことを確認 |
-| 4 | パフォーマンス | DevTools Performance タブで **15fps以上**出ていること |
+| 1 | カメラプレビュー + キーポイント表示 | `/test/camera` を開き、杖を映す。tip(緑)とgrip(黄)が正しい位置に出ること |
+| 2 | トレイルの滑らかな追従 | 杖をゆっくり振って、杖先の軌跡が滑らかに追従すること |
+| 3 | 杖の角度対応 | 縦・横・斜めに持ち替えても tip が杖先を追跡すること |
+| 4 | フレームアウト時の安定性 | 杖をフレーム外に出してクラッシュしないこと |
+| 5 | パフォーマンス | DevTools Performance タブで **15fps以上**出ていること |
 
 ### 実装順序
 
-1. **Phase 1**: 画像収集・アノテーション（Roboflow）
-2. **Phase 2**: Colabでモデル学習 → `.tflite` を `public/models/` に配置
+1. **Phase 1**: 画像収集・キーポイントアノテーション（CVAT / Roboflow）
+2. **Phase 2**: Colabで YOLOv8-pose 学習 → `.onnx` を `public/models/` に配置
 3. **Phase 3 Step 3-1〜3-2**: パッケージ追加 + 型定義
 4. **Phase 3 Step 3-3〜3-4**: WandDetectorクラス + Reactフック
 5. **Phase 3 Step 3-5**: カメラテストページ `/test/camera` で動作確認
@@ -466,7 +660,8 @@ export function useWandDetector() {
 
 ## 参考資料
 
-- [MediaPipe Object Detection (Web)](https://developers.google.com/mediapipe/solutions/vision/object_detector/web_js)
-- [MediaPipe Model Maker](https://developers.google.com/mediapipe/solutions/model_maker)
-- [Roboflow Annotate](https://roboflow.com/)
+- [Ultralytics YOLOv8 Pose Estimation](https://docs.ultralytics.com/tasks/pose/)
+- [YOLOv8 Custom Keypoint Training](https://docs.ultralytics.com/datasets/pose/)
+- [ONNX Runtime Web](https://onnxruntime.ai/docs/get-started/with-javascript/web.html)
+- [CVAT Annotation Tool](https://www.cvat.ai/)
 - 既存実装: `src/features/device/api/joycon-webhid.ts`（同パターンの参考）
