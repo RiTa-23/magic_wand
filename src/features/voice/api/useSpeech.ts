@@ -19,6 +19,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
   const [spellMatch, setSpellMatch] = useState<SpellMatchResult | null>(null);
   const [transcript, setTranscript] = useState<string>("");
   const removeListenerRef = useRef<(() => void) | null>(null);
+  const hasDispatchedMatchRef = useRef(false);
 
   /**
    * 音声認識の開始
@@ -31,6 +32,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
 
     setSpellMatch(null);
     setTranscript("");
+    hasDispatchedMatchRef.current = false;
     setStatus("LISTENING");
 
     // 既存リスナーが残っていれば先に解除（多重登録を防止）
@@ -43,13 +45,15 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     const removeListener = speechRecognitionAPI.addListener({
       onResult: (res) => {
         setResult(res);
-        if (res.isFinal) {
-          setTranscript(res.transcript);
-        }
+        setTranscript(res.transcript);
 
-        if (res.isFinal) {
+        // interim結果でも先にマッチすれば即時確定し、認識待ち時間を短縮する
+        if (!hasDispatchedMatchRef.current) {
           const match = matchSpell(res.transcript, spells);
-          setSpellMatch(match);
+          if (match.matched) {
+            hasDispatchedMatchRef.current = true;
+            setSpellMatch(match);
+          }
         }
       },
       onError: (err) => {
@@ -71,6 +75,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
    */
   const stop = useCallback(() => {
     speechRecognitionAPI.stop();
+    hasDispatchedMatchRef.current = false;
     if (removeListenerRef.current) {
       removeListenerRef.current();
       removeListenerRef.current = null;
