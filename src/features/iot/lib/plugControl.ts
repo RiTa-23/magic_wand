@@ -1,6 +1,6 @@
 "use server";
 
-import { getTapoClient } from "../api/tapoClient";
+import { getTapoClient, resetTapoClientCache } from "../api/tapoClient";
 
 // ========================================
 // 簡易ジョブスケジューラー（自動OFFタイマー管理）
@@ -107,6 +107,16 @@ async function getCachedChildDevices(
   return items;
 }
 
+function clearChildDevicesCache() {
+  childDevicesCache = null;
+}
+
+function isAuthError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybeResponse = (error as { response?: { status?: number } }).response;
+  return maybeResponse?.status === 401 || maybeResponse?.status === 403;
+}
+
 // ========================================
 // 内部ヘルパー関数
 // ========================================
@@ -124,7 +134,7 @@ async function togglePort(
   spellName: string,
   emoji: string,
 ) {
-  try {
+  const runOnce = async () => {
     if (!turnOn) {
       cancelScheduledJob(portIndex);
     }
@@ -170,7 +180,31 @@ async function togglePort(
       success: true,
       message: `${spellName}成功！ポート${portIndex}を${turnOn ? "ON" : "OFF"}にしました${emoji}`,
     };
+  };
+
+  try {
+    return await runOnce();
   } catch (error) {
+    if (!IS_TEST_ENV && isAuthError(error)) {
+      console.warn(
+        "⚠️ 認証エラーを検知。Tapoセッションを再取得して再試行します",
+      );
+      resetTapoClientCache();
+      clearChildDevicesCache();
+
+      try {
+        return await runOnce();
+      } catch (retryError) {
+        console.error(`❌ ${spellName}再試行失敗:`, retryError);
+        const retryMessage =
+          retryError instanceof Error ? retryError.message : String(retryError);
+        return {
+          success: false,
+          message: `${spellName}失敗: ${retryMessage}`,
+        };
+      }
+    }
+
     console.error(`❌ ${spellName}失敗:`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return { success: false, message: `${spellName}失敗: ${errorMessage}` };

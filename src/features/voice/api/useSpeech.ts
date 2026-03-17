@@ -17,7 +17,10 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
   const [status, setStatus] = useState<SpeechStatus>("IDLE");
   const [result, setResult] = useState<SpeechResult | null>(null);
   const [spellMatch, setSpellMatch] = useState<SpellMatchResult | null>(null);
+  const [finalSpellMatch, setFinalSpellMatch] =
+    useState<SpellMatchResult | null>(null);
   const [transcript, setTranscript] = useState<string>("");
+  const [isSupported, setIsSupported] = useState(false);
   const removeListenerRef = useRef<(() => void) | null>(null);
   const hasDispatchedMatchRef = useRef(false);
 
@@ -31,6 +34,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     }
 
     setSpellMatch(null);
+    setFinalSpellMatch(null);
     setTranscript("");
     hasDispatchedMatchRef.current = false;
     setStatus("LISTENING");
@@ -53,6 +57,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
           if (res.isFinal) {
             // final結果: 信頼度を問わず確定させ、ロック
             setSpellMatch(match);
+            setFinalSpellMatch(match);
             hasDispatchedMatchRef.current = true;
           } else if (
             !hasDispatchedMatchRef.current &&
@@ -83,6 +88,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
   const stop = useCallback(() => {
     speechRecognitionAPI.stop();
     hasDispatchedMatchRef.current = false;
+    setFinalSpellMatch(null);
     if (removeListenerRef.current) {
       removeListenerRef.current();
       removeListenerRef.current = null;
@@ -92,6 +98,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
 
   // コンポーネントのアンマウント時に停止
   useEffect(() => {
+    setIsSupported(speechRecognitionAPI.isSupported());
     return () => {
       if (removeListenerRef.current) {
         removeListenerRef.current();
@@ -105,9 +112,10 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     status,
     result,
     spellMatch,
+    finalSpellMatch,
     transcript,
     start,
     stop,
-    isSupported: speechRecognitionAPI.isSupported(),
+    isSupported,
   };
 }

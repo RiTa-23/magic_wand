@@ -37,6 +37,19 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     action: "fan_on",
   },
   {
+    id: "kyua_uppu_rapa_pa",
+    name: "キュアップラパパ",
+    keywords: [
+      "キュアップラパパ",
+      "きゅあっぷらぱぱ",
+      "キュアップラパパ今日のおみくじ",
+      "きゅあっぷらぱぱきょうのおみくじ",
+      "キュアップラパパ今日のおみくじお願いします",
+      "きゅあっぷらぱぱきょうのおみくじおねがいします",
+    ],
+    action: "print_omikuji",
+  },
+  {
     id: "incendio",
     name: "インセンディオ",
     keywords: [
@@ -127,11 +140,12 @@ export function matchSpell(
   for (const spell of dictionary) {
     for (const keyword of spell.keywords) {
       const normalizedKeyword = normalizeForMatch(keyword);
+      const allowReversePartial = spell.id !== "kyua_uppu_rapa_pa";
 
       // キーワードが3文字以上、または特定の重要な呪文の場合にのみ部分一致を許容するなどの工夫も可能
       if (
         normalized.includes(normalizedKeyword) ||
-        normalizedKeyword.includes(normalized)
+        (allowReversePartial && normalizedKeyword.includes(normalized))
       ) {
         return {
           matched: true,
