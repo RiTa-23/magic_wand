@@ -1,4 +1,6 @@
 .theme {
+  height: 100svh;
+  overflow: hidden;
   color-scheme: dark;
 
   /* Dark medieval palette (scoped to /tutorial) */

@@ -161,7 +161,7 @@ export default function TutorialPage() {
   }, [phase]);
 
   return (
-    <main className="relative min-h-svh w-full overflow-hidden bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <main className="relative h-svh w-full overflow-hidden overscroll-none bg-[color:var(--background)] text-[color:var(--foreground)]">
       {/* Background layers (match Home ambience) */}
       <div
         className="fixed inset-0"
@@ -183,7 +183,7 @@ export default function TutorialPage() {
 
       <FloatingParticles />
 
-      <div className="relative z-20 min-h-svh px-10 py-8">
+      <div className="relative z-20 h-full overflow-hidden px-10">
         {/* Back link (match Play/Settings style) */}
         <Link
           href="/home"
@@ -204,7 +204,7 @@ export default function TutorialPage() {
         </header>
 
         {/* Center area (carousel) */}
-        <div className="min-h-svh flex items-center justify-center">
+        <div className="h-full flex items-center justify-center">
           <div className="w-full max-w-sm">
             <div className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/15 bg-black/20 backdrop-blur-sm">
               <div className="relative h-[360px]">
