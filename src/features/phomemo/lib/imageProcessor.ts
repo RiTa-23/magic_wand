@@ -69,20 +69,37 @@ export function renderCanvasImage(options: RenderCanvasOptions): ImageData {
     ctx.textBaseline = "middle";
 
     const maxLineWidth = canvas.width - padding * 2;
+    const CJK_RE = /[\p{Script=Hani}\p{Script=Hiragana}\p{Script=Katakana}]/u;
     const wrappedLines: string[] = [];
     for (const paragraph of text.split("\n")) {
       const words = paragraph.split(" ");
-      let current = "";
-      for (const word of words) {
-        const candidate = current ? `${current} ${word}` : word;
-        if (ctx.measureText(candidate).width > maxLineWidth && current) {
-          wrappedLines.push(current);
-          current = word;
-        } else {
-          current = candidate;
+      if (CJK_RE.test(paragraph) || words.length === 1) {
+        // Character-level wrapping for CJK or single-token paragraphs
+        let current = "";
+        for (const char of paragraph) {
+          const candidate = current + char;
+          if (ctx.measureText(candidate).width > maxLineWidth && current) {
+            wrappedLines.push(current);
+            current = char;
+          } else {
+            current = candidate;
+          }
         }
+        if (current) wrappedLines.push(current);
+      } else {
+        // Word-level wrapping for space-delimited text
+        let current = "";
+        for (const word of words) {
+          const candidate = current ? `${current} ${word}` : word;
+          if (ctx.measureText(candidate).width > maxLineWidth && current) {
+            wrappedLines.push(current);
+            current = word;
+          } else {
+            current = candidate;
+          }
+        }
+        if (current) wrappedLines.push(current);
       }
-      wrappedLines.push(current);
     }
 
     const lineHeight = Math.max(
