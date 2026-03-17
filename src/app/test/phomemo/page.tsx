@@ -42,11 +42,17 @@ const STATUS_LABEL: Record<string, string> = {
   ERROR: "エラー",
 };
 
+const CHANT_TIMEOUT_MS = 10000;
+
 export default function PhomemoTestPage() {
   const [printMessage, setPrintMessage] = useState("今日の運勢は大吉");
   const [voiceStatus, setVoiceStatus] = useState("待機中");
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showChantFailModal, setShowChantFailModal] = useState(false);
+  const [chantFailMessage, setChantFailMessage] = useState("");
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
   const lastVoiceKeyRef = useRef<string>("");
+  const chantTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const {
     status,
     deviceName,
@@ -62,8 +68,26 @@ export default function PhomemoTestPage() {
   const omikujiSpells = SPELL_DICTIONARY.filter(
     (s) => s.id === "kyua_uppu_rapa_pa",
   );
-  const { transcript, finalSpellMatch, start, stop, isSupported } =
-    useSpeech(omikujiSpells);
+  const {
+    transcript,
+    finalSpellMatch,
+    start,
+    stop,
+    isSupported,
+    status: speechStatus,
+  } = useSpeech(omikujiSpells);
+
+  const clearChantTimeout = () => {
+    if (chantTimeoutRef.current) {
+      clearTimeout(chantTimeoutRef.current);
+      chantTimeoutRef.current = null;
+    }
+  };
+
+  const showChantFailed = (message: string) => {
+    setChantFailMessage(message);
+    setShowChantFailModal(true);
+  };
 
   useEffect(() => {
     if (!finalSpellMatch?.matched || !finalSpellMatch.spell) return;
@@ -73,6 +97,8 @@ export default function PhomemoTestPage() {
     if (lastVoiceKeyRef.current === key) return;
     lastVoiceKeyRef.current = key;
 
+    clearChantTimeout();
+    setIsVoiceListening(false);
     stop();
     setVoiceStatus(`✨ 認識: ${finalSpellMatch.spell.name}`);
 
@@ -92,10 +118,27 @@ export default function PhomemoTestPage() {
       });
   }, [finalSpellMatch, isConnected, printTestPage, stop]);
 
+  useEffect(() => {
+    if (speechStatus !== "ERROR" || !isVoiceListening) return;
+
+    clearChantTimeout();
+    setIsVoiceListening(false);
+    setVoiceStatus("❌ 音声認識エラー");
+    showChantFailed(
+      "詠唱の認識中にエラーが発生しました。マイク権限や周囲の騒音を確認して、もう一度お試しください。",
+    );
+  }, [speechStatus, isVoiceListening]);
+
   // 接続完了でモーダルを自動クローズ
   useEffect(() => {
     if (isConnected) setShowConnectModal(false);
   }, [isConnected]);
+
+  useEffect(() => {
+    return () => {
+      clearChantTimeout();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8">
@@ -200,8 +243,19 @@ export default function PhomemoTestPage() {
                   return;
                 }
                 lastVoiceKeyRef.current = "";
+                setShowChantFailModal(false);
+                setIsVoiceListening(true);
                 start();
                 setVoiceStatus("🎙️ 認識中...");
+                clearChantTimeout();
+                chantTimeoutRef.current = setTimeout(() => {
+                  stop();
+                  setIsVoiceListening(false);
+                  setVoiceStatus("❌ 呪文を認識できませんでした");
+                  showChantFailed(
+                    "詠唱が確認できませんでした。『キュアップラパパ、今日のおみくじ』と、はっきり続けて唱えてみてください。",
+                  );
+                }, CHANT_TIMEOUT_MS);
               }}
               disabled={!isSupported}
               className="flex-1 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:transform-none"
@@ -210,8 +264,16 @@ export default function PhomemoTestPage() {
             </button>
             <button
               onClick={() => {
+                const wasListening = isVoiceListening;
                 stop();
+                clearChantTimeout();
+                setIsVoiceListening(false);
                 setVoiceStatus("停止中");
+                if (wasListening) {
+                  showChantFailed(
+                    "詠唱が途中で停止されました。もう一度、最後まで呪文を唱えてください。",
+                  );
+                }
               }}
               className="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-105 active:scale-95"
             >
@@ -277,6 +339,57 @@ export default function PhomemoTestPage() {
               </button>
               <button
                 onClick={() => setShowConnectModal(false)}
+                className="w-full bg-white/10 hover:bg-white/20 text-gray-300 font-medium py-3 px-6 rounded-xl transition-all"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 詠唱失敗モーダル */}
+      {showChantFailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-rose-900 to-orange-900 border border-white/20 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <p className="text-5xl mb-4">🪄</p>
+              <h3 className="text-xl font-bold text-white mb-2">
+                詠唱に失敗しました
+              </h3>
+              <p className="text-orange-100 text-sm whitespace-pre-line">
+                {chantFailMessage}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowChantFailModal(false);
+                  if (!isConnected) {
+                    setShowConnectModal(true);
+                    return;
+                  }
+                  lastVoiceKeyRef.current = "";
+                  setIsVoiceListening(true);
+                  start();
+                  setVoiceStatus("🎙️ 認識中...");
+                  clearChantTimeout();
+                  chantTimeoutRef.current = setTimeout(() => {
+                    stop();
+                    setIsVoiceListening(false);
+                    setVoiceStatus("❌ 呪文を認識できませんでした");
+                    showChantFailed(
+                      "詠唱が確認できませんでした。『キュアップラパパ、今日のおみくじ』と、はっきり続けて唱えてみてください。",
+                    );
+                  }, CHANT_TIMEOUT_MS);
+                }}
+                disabled={!isSupported}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all"
+              >
+                🎤 もう一度 詠唱する
+              </button>
+              <button
+                onClick={() => setShowChantFailModal(false)}
                 className="w-full bg-white/10 hover:bg-white/20 text-gray-300 font-medium py-3 px-6 rounded-xl transition-all"
               >
                 閉じる
