@@ -54,9 +54,9 @@ const MAGIC_THEMES = {
 /**風魔法のエフェクト：中心コアを排した3Dボルテックス（竜巻） */
 function WindEffect() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
-      {/* 1. Bloom Base (空間の光のベール) */}
-      <div className="absolute w-[500px] h-[700px] bg-[radial-gradient(circle,_rgba(8,145,178,0.2)_0%,_rgba(16,185,129,0.05)_40%,_transparent_70%)] rounded-full blur-[100px] animate-pulse" />
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d] translate-y-32">
+      {/* 1. Bloom Base (空間の光のベール) - 輝度強化 */}
+      <div className="absolute w-[500px] h-[700px] bg-[radial-gradient(circle,_rgba(8,145,178,0.4)_0%,_rgba(16,185,129,0.15)_40%,_transparent_70%)] rounded-full blur-[100px] animate-pulse" />
 
       {/* 2. 3D Vortex Structure (竜巻の形をした光の筋) */}
       <div className="relative w-full h-full flex items-center justify-center [transform-style:preserve-3d]">
@@ -81,7 +81,7 @@ function WindEffect() {
                 animationDuration: `${2 + i * 0.05}s`
               } as any}
             >
-              <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_10px_var(--glow-color)]" 
+              <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_25px_var(--glow-color)]" 
                 style={{ '--glow-color': color } as any}>
                 <path
                   d="M10,50 A40,40 0 0,1 90,50"
@@ -89,18 +89,18 @@ function WindEffect() {
                   stroke={color}
                   strokeWidth={2}
                   strokeLinecap="round"
-                  className="opacity-60 animate-wind-flow"
+                  className="opacity-85 animate-wind-flow"
                   strokeDasharray="10 50"
                   style={{ filter: 'blur(1px)' }}
                 />
-                {/* Bloom layer per ring */}
+                {/* Bloom layer per ring - 輝度点灯 */}
                 <path
                   d="M20,50 A30,30 0 0,1 80,50"
                   fill="none"
                   stroke={color}
                   strokeWidth={6}
                   strokeLinecap="round"
-                  className="opacity-20 animate-wind-flow"
+                  className="opacity-45 animate-wind-flow"
                   style={{ filter: 'blur(6px)' }}
                 />
               </svg>
@@ -109,12 +109,12 @@ function WindEffect() {
         })}
       </div>
 
-      {/* 3. Rising Particles (竜巻に巻き込まれる粒子) */}
+      {/* 3. Rising Particles (竜巻に巻き込まれる粒子) - 輝度強化 */}
       <div className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]">
         {[...Array(30)].map((_, i) => (
           <div
             key={`vortex-p-${i}`}
-            className="absolute bg-white/60 rounded-full blur-[1px] animate-wind-particle-tornado"
+            className="absolute bg-white/90 rounded-full blur-[1px] animate-wind-particle-tornado"
             style={{
               width: `${1 + Math.random() * 2}px`,
               height: `${2 + Math.random() * 8}px`,
