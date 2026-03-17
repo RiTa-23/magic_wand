@@ -54,15 +54,15 @@ const MAGIC_THEMES = {
 /**風魔法のエフェクト：中心コアを排した3Dボルテックス（竜巻） */
 function WindEffect() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d] translate-y-32">
-      {/* 1. Bloom Base (空間の光のベール) - 輝度強化 */}
-      <div className="absolute w-[500px] h-[700px] bg-[radial-gradient(circle,_rgba(8,145,178,0.4)_0%,_rgba(16,185,129,0.15)_40%,_transparent_70%)] rounded-full blur-[100px] animate-pulse" />
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
+      {/* 1. Bloom Base (空間の光のベール) - サイズ調整 */}
+      <div className="absolute w-[400px] h-[560px] bg-[radial-gradient(circle,_rgba(8,145,178,0.4)_0%,_rgba(16,185,129,0.15)_40%,_transparent_70%)] rounded-full blur-[90px] animate-pulse" />
 
       {/* 2. 3D Vortex Structure (竜巻の形をした光の筋) */}
       <div className="relative w-full h-full flex items-center justify-center [transform-style:preserve-3d]">
         {[...Array(20)].map((_, i) => {
-          const size = 100 + i * 25;
-          const zPos = i * 25 - 200;
+          const size = 80 + i * 20;
+          const zPos = i * 20 - 150;
           const opacity = 0.1 + (i * 0.04);
           // 高さ（i）に応じて色を変える (Aqua -> Neon Green)
           const color = i < 10 ? '#0891b2' : '#4ade80';
@@ -109,7 +109,7 @@ function WindEffect() {
         })}
       </div>
 
-      {/* 3. Rising Particles (竜巻に巻き込まれる粒子) - 輝度強化 */}
+      {/* 3. Rising Particles (竜巻に巻き込まれる粒子) */}
       <div className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]">
         {[...Array(30)].map((_, i) => (
           <div
@@ -120,8 +120,8 @@ function WindEffect() {
               height: `${2 + Math.random() * 8}px`,
               left: `${45 + Math.random() * 10}%`,
               // @ts-ignore
-              "--tx": `${(Math.random() - 0.5) * 300}px`,
-              "--ty": `${-300 - Math.random() * 400}px`,
+              "--tx": `${(Math.random() - 0.5) * 240}px`,
+              "--ty": `${-250 - Math.random() * 300}px`,
               "--rz": `${Math.random() * 720}deg`,
               animationDelay: `${Math.random() * -5}s`,
               animationDuration: `${1 + Math.random() * 1.5}s`
@@ -140,22 +140,22 @@ function WaterEffect() {
       {[...Array(20)].map((_, i) => (
         <div
           key={i}
-          className="absolute bottom-1/4 w-3 h-3 border border-blue-300/40 rounded-full animate-bubble-rise"
+          className="absolute bottom-1/4 w-2 h-2 border border-blue-300/40 rounded-full animate-bubble-rise"
           style={{
-            left: `${40 + Math.random() * 20}%`,
+            left: `${42 + Math.random() * 16}%`,
             animationDelay: `${i * 0.15}s`,
             animationDuration: `${1.5 + Math.random() * 1.5}s`,
-            width: `${4 + Math.random() * 6}px`,
-            height: `${4 + Math.random() * 6}px`,
+            width: `${3 + Math.random() * 5}px`,
+            height: `${3 + Math.random() * 5}px`,
           }}
         />
       ))}
       {/* Swirling water ring */}
-      <div className="absolute w-72 h-16 border-2 border-cyan-400/30 rounded-[100%] animate-water-rotate blur-[1px]" />
-      <div className="absolute w-64 h-12 border-2 border-blue-300/20 rounded-[100%] animate-water-rotate-reverse blur-[2px]" />
+      <div className="absolute w-56 h-12 border-2 border-cyan-400/30 rounded-[100%] animate-water-rotate blur-[1px]" />
+      <div className="absolute w-48 h-9 border-2 border-blue-300/20 rounded-[100%] animate-water-rotate-reverse blur-[2px]" />
       
-      <div className="w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] animate-pulse" />
-      <div className="absolute w-48 h-48 border-2 border-blue-400/30 rounded-full animate-ripple" />
+      <div className="w-64 h-64 bg-blue-500/10 rounded-full blur-[70px] animate-pulse" />
+      <div className="absolute w-36 h-36 border-2 border-blue-400/30 rounded-full animate-ripple" />
     </div>
   );
 }
@@ -169,24 +169,85 @@ function FireEffect() {
           key={i}
           className="absolute bottom-1/3 w-1 h-1 bg-orange-500 rounded-full animate-ember-fly"
           style={{
-            left: `${45 + Math.random() * 10}%`,
+            left: `${46 + Math.random() * 8}%`,
             boxShadow: '0 0 10px #ff4500',
             animationDelay: `${i * 0.1}s`,
           }}
         />
       ))}
-      <div className="w-40 h-64 bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-full blur-[40px] animate-fire-dance" />
+      <div className="w-32 h-52 bg-gradient-to-t from-red-600 via-orange-500 to-transparent rounded-full blur-[35px] animate-fire-dance" />
     </div>
   );
 }
 
-/** 光魔法のエフェクト：中央からの強い輝き */
+/** 光魔法のエフェクト：画像イメージに基づく無数の黄金フィラメントの渦 */
 function LightEffect() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className="w-1 h-full bg-white/40 blur-[20px] animate-light-beam" />
-      <div className="absolute w-64 h-64 bg-white rounded-full blur-[100px] animate-ping opacity-20" />
-      <div className="absolute w-32 h-32 bg-yellow-200 rounded-full blur-[40px] animate-pulse" />
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible [perspective:1200px] [transform-style:preserve-3d]">
+      {/* 1. Supernova Core (中心の強烈な輝き) */}
+      <div className="absolute w-24 h-24 bg-white rounded-full blur-[20px] shadow-[0_0_50px_#fff,0_0_100px_#fde047,0_0_130px_#f59e0b] z-20 animate-pulse" />
+      <div className="absolute w-[400px] h-[400px] bg-[radial-gradient(circle,_rgba(251,191,36,0.3)_0%,_transparent_70%)] rounded-full blur-[70px]" />
+
+      {/* 2. Swirling Filaments (画像のような光の筋の渦) */}
+      <div className="absolute inset-0 flex items-center justify-center animate-reverse-spin [animation-duration:15s]">
+        <svg viewBox="0 0 400 400" className="w-[450px] h-[450px] overflow-visible">
+          {[...Array(120)].map((_, i) => {
+            const angle = Math.random() * 360;
+            const radius = 30 + Math.random() * 120;
+            const length = 30 + Math.random() * 60;
+            const strokeWidth = 0.4 + Math.random() * 1.2;
+            const opacity = 0.3 + Math.random() * 0.7;
+            const duration = 2 + Math.random() * 4;
+            const delay = Math.random() * -10;
+            
+            // 弧のパスを計算
+            const startX = 200 + Math.cos(angle * Math.PI / 180) * radius;
+            const startY = 200 + Math.sin(angle * Math.PI / 180) * radius;
+            const endAngle = angle + (length / radius) * 180 / Math.PI;
+            const endX = 200 + Math.cos(endAngle * Math.PI / 180) * radius;
+            const endY = 200 + Math.sin(endAngle * Math.PI / 180) * radius;
+            
+            return (
+              <path
+                key={i}
+                d={`M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`}
+                fill="none"
+                stroke={i % 2 === 0 ? "#fef3c7" : "#fbbf24"}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                className="animate-lumos-filament"
+                style={{
+                  opacity,
+                  // @ts-ignore
+                  "--dash": length,
+                  animationDelay: `${delay}s`,
+                  animationDuration: `${duration}s`
+                } as any}
+              />
+            );
+          })}
+        </svg>
+      </div>
+      
+      {/* 3. Radiant Glitter (周囲に飛び散る光子) */}
+      <div className="absolute inset-0">
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={`glitter-${i}`}
+            className="absolute w-1 h-1 bg-yellow-100 rounded-full blur-[1px] animate-light-particle-fly"
+            style={{
+              left: '50%',
+              top: '50%',
+              // @ts-ignore
+              "--tx": `${(Math.random() - 0.5) * 450}px`,
+              // @ts-ignore
+              "--ty": `${(Math.random() - 0.5) * 450}px`,
+              animationDelay: `${Math.random() * -5}s`,
+              animationDuration: `${2.5 + Math.random() * 2}s`
+            } as any}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -228,11 +289,11 @@ function EffectContent() {
 
       <div className="z-20 flex flex-col items-center justify-start pt-8 gap-12 w-full max-w-2xl text-center h-[600px]">
         {/* Spell Name Overlay - 上部中央に配置し、左から入って右に消える */}
-        <div className="relative w-full flex justify-center h-24">
+        <div className="relative w-full flex justify-center h-16">
           {castState === "cast" && (
             <div className="absolute transform animate-slide-in">
               <p 
-                className={`${cinzel.className} text-6xl md:text-8xl font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]`}
+                className={`${cinzel.className} text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]`}
                 style={{ filter: `drop-shadow(0 0 30px ${theme.glow})` }}
               >
                 {theme.name}
@@ -326,12 +387,23 @@ function EffectContent() {
         .animate-ember-fly { animation: ember-fly 1.5s infinite ease-in; }
         .animate-fire-dance { animation: fire-dance 0.5s infinite alternate; }
 
-        /* Light Animations */
         @keyframes light-beam {
           0%, 100% { transform: scaleX(1); opacity: 0.2; }
           50% { transform: scaleX(2.5); opacity: 0.5; }
         }
         .animate-light-beam { animation: light-beam 0.3s infinite; }
+
+        @keyframes lumos-filament {
+          0% { stroke-dasharray: 0 var(--dash); stroke-dashoffset: 0; opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { stroke-dasharray: var(--dash) var(--dash); stroke-dashoffset: calc(var(--dash) * -1); opacity: 0; }
+        }
+
+        @keyframes light-particle-fly {
+          0% { transform: translate(0, 0) scale(1.5); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
 
         @keyframes reverse-spin {
           from { transform: rotate(360deg); }
