@@ -133,6 +133,7 @@ export default function CameraWandTestPage() {
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
   const animFrameRef = useRef<number>(0);
   const lastTimestampRef = useRef<number>(0);
+  const wandPointRef = useRef(wandPoint);
 
   const viewBoundsRef = useRef<{
     minX: number;
@@ -140,6 +141,11 @@ export default function CameraWandTestPage() {
     minY: number;
     maxY: number;
   } | null>(null);
+
+  // wandPointの最新値をrefに反映
+  useEffect(() => {
+    wandPointRef.current = wandPoint;
+  }, [wandPoint]);
 
   // 座標変換
   const toCanvasCoords = (
@@ -232,19 +238,20 @@ export default function CameraWandTestPage() {
       }
 
       // 検出結果をトレイルに追加
-      if (wandPoint && wandPoint.detected) {
-        if (wandPoint.timestamp !== lastTimestampRef.current) {
-          trail.push({ rawX: wandPoint.tipX, rawY: wandPoint.tipY, t: now });
-          lastTimestampRef.current = wandPoint.timestamp;
+      const wp = wandPointRef.current;
+      if (wp && wp.detected) {
+        if (wp.timestamp !== lastTimestampRef.current) {
+          trail.push({ rawX: wp.tipX, rawY: wp.tipY, t: now });
+          lastTimestampRef.current = wp.timestamp;
           if (trail.length > 200) trail.shift();
         }
       }
 
       // ビューポート計算
       const extraPoints: { rawX: number; rawY: number }[] = [];
-      if (wandPoint && wandPoint.detected) {
-        extraPoints.push({ rawX: wandPoint.tipX, rawY: wandPoint.tipY });
-        extraPoints.push({ rawX: wandPoint.gripX, rawY: wandPoint.gripY });
+      if (wp && wp.detected) {
+        extraPoints.push({ rawX: wp.tipX, rawY: wp.tipY });
+        extraPoints.push({ rawX: wp.gripX, rawY: wp.gripY });
       }
 
       const { minX, maxX, minY, maxY } = adjustViewBounds(
@@ -286,18 +293,18 @@ export default function CameraWandTestPage() {
       }
 
       // 杖先 + 手元の描画
-      if (wandPoint && wandPoint.detected) {
+      if (wp && wp.detected) {
         const tip = toCanvasCoords(
-          wandPoint.tipX,
-          wandPoint.tipY,
+          wp.tipX,
+          wp.tipY,
           minX,
           maxX,
           minY,
           maxY,
         );
         const grip = toCanvasCoords(
-          wandPoint.gripX,
-          wandPoint.gripY,
+          wp.gripX,
+          wp.gripY,
           minX,
           maxX,
           minY,
@@ -322,7 +329,7 @@ export default function CameraWandTestPage() {
         ctx.fillStyle = "rgba(255,255,255,0.8)";
         ctx.font = "11px monospace";
         ctx.fillText(
-          `tip (${Math.round(wandPoint.tipX)}, ${Math.round(wandPoint.tipY)})`,
+          `tip (${Math.round(wp.tipX)}, ${Math.round(wp.tipY)})`,
           tip.cx + 14,
           tip.cy - 8,
         );
@@ -349,7 +356,8 @@ export default function CameraWandTestPage() {
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [wandPoint]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isConnected = status === "CONNECTED";
 
