@@ -16,6 +16,7 @@ export interface PhomemoState {
   deviceName?: string;
   batteryLevel?: number;
   errorMessage?: string;
+  transportInfo?: string;
 }
 
 /**
@@ -25,4 +26,13 @@ export interface BluetoothConnectionResult {
   success: boolean;
   message: string;
   deviceName?: string;
+}
+
+/**
+ * 印刷処理結果
+ */
+export interface PhomemoPrintResult {
+  success: boolean;
+  message: string;
+  bytesWritten?: number;
 }

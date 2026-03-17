@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { PhomemoBluetooth } from "./phomemo-bluetooth";
 import { PhomemoStatus, PhomemoState } from "../types/phomemo";
+import { renderCanvasImage } from "@/features/phomemo/lib/imageProcessor";
+import { encodeImageDataToPhomemo } from "@/features/phomemo/lib/phomemoEncoder";
 
 /**
  * Phomemoプリンター制御用のReactカスタムフック
@@ -10,6 +12,9 @@ export function usePhomemo() {
   const [status, setStatus] = useState<PhomemoStatus>("DISCONNECTED");
   const [deviceName, setDeviceName] = useState<string | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
+    undefined,
+  );
+  const [transportInfo, setTransportInfo] = useState<string | undefined>(
     undefined,
   );
 
@@ -24,6 +29,7 @@ export function usePhomemo() {
         setStatus(state.status);
         setDeviceName(state.deviceName);
         setErrorMessage(state.errorMessage);
+        setTransportInfo(state.transportInfo);
       };
     }
     return () => {
@@ -58,12 +64,41 @@ export function usePhomemo() {
     await phomemoRef.current.disconnect();
   }, []);
 
+  /**
+   * テスト用の簡易ラベルを生成して印刷する
+   */
+  const printTestPage = useCallback(async (message: string) => {
+    if (!phomemoRef.current) return;
+
+    const imageData = renderCanvasImage({
+      width: 576,
+      height: 320,
+      text: ["Mofurun Omikuji", message].join("\n"),
+      font: "bold 36px sans-serif",
+      padding: 24,
+    });
+
+    const encoded = encodeImageDataToPhomemo(imageData, { threshold: 170 });
+    const result = await phomemoRef.current.print(encoded);
+    if (!result.success) {
+      console.error("印刷失敗:", result.message);
+      return;
+    }
+
+    console.log("印刷データ送信完了:", {
+      bytesWritten: result.bytesWritten,
+      preview: Array.from(encoded.slice(0, 24)),
+    });
+  }, []);
+
   return {
     status,
     deviceName,
     errorMessage,
+    transportInfo,
     connect,
     disconnect,
-    isConnected: status === "CONNECTED",
+    printTestPage,
+    isConnected: phomemoRef.current?.isConnected() ?? false,
   };
 }
