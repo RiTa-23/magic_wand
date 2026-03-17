@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# next.js (generated typed routes in this repo)
+/types/routes.d.ts
+/types/validator.ts

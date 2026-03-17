@@ -1,9 +1,10 @@
 "use client";
 
+import type { Route } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { Cinzel, Cormorant_Garamond } from "next/font/google";
-import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const cinzel = Cinzel({
   subsets: ["latin"],
@@ -17,6 +18,8 @@ const cormorant = Cormorant_Garamond({
   style: ["normal", "italic"],
   variable: "--font-cormorant",
 });
+
+const HOME_ROUTE: Route = "/home";
 
 type Particle = {
   x: number;
@@ -198,6 +201,61 @@ function MagicParticles() {
 }
 
 function StartScreen() {
+  const router = useRouter();
+  const [isWinding, setIsWinding] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const WIND_MS = 1200;
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isWinding) return;
+
+    // Ensure the overlay is mounted and gets at least one paint.
+    rafRef.current = window.requestAnimationFrame(() => {
+      timeoutRef.current = window.setTimeout(() => {
+        router.push(HOME_ROUTE);
+      }, WIND_MS);
+    });
+
+    return () => {
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [WIND_MS, isWinding, router]);
+
+  const startWindToHome = () => {
+    if (isWinding) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion) {
+      router.push(HOME_ROUTE);
+      return;
+    }
+
+    setIsWinding(true);
+  };
+
   return (
     <div
       className={
@@ -225,7 +283,11 @@ function StartScreen() {
         <div className="absolute bottom-6 right-6 h-16 w-16 border-b border-r border-amber-700/70" />
       </div>
 
-      <main className="relative z-40 flex min-h-screen items-center justify-center px-6">
+      <main
+        className={`relative z-40 flex min-h-screen items-center justify-center px-6 ${
+          isWinding ? "mag-wind-under" : ""
+        }`}
+      >
         <section className="w-full max-w-3xl text-center">
           <p
             className="mag-subtitle mb-4 font-[var(--font-cormorant)] text-lg tracking-[0.35em] text-amber-200/80"
@@ -249,14 +311,16 @@ function StartScreen() {
           </p>
 
           <div className="mag-enter-wrap mt-12 flex items-center justify-center">
-            <Link
-              href="/home"
+            <button
+              type="button"
+              onClick={startWindToHome}
+              disabled={isWinding}
               className="mag-enter relative overflow-hidden rounded-md border border-amber-700/70 bg-slate-950/40 px-10 py-4 font-[var(--font-cinzel)] text-base tracking-[0.35em] text-amber-100 backdrop-blur-sm transition-colors hover:bg-slate-950/55 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               <span className="relative z-10">ENTER</span>
               <span className="mag-shimmer absolute inset-y-0 left-[-40%] w-[40%] bg-gradient-to-r from-transparent via-amber-200/35 to-transparent" />
-            </Link>
+            </button>
           </div>
 
           <p
@@ -267,6 +331,22 @@ function StartScreen() {
           </p>
         </section>
       </main>
+
+      {/* Transition overlay (mount on demand so animation starts on ENTER) */}
+      {isWinding && (
+        <div
+          className="pointer-events-none fixed inset-0 z-[999]"
+          aria-hidden="true"
+        >
+          <div className="mag-wave-dim absolute inset-0" />
+
+          <div className="mag-wave-ring mag-wave-ring-1" />
+          <div className="mag-wave-ring mag-wave-ring-2" />
+          <div className="mag-wave-ring mag-wave-ring-3" />
+
+          <div className="mag-magic-circle" />
+        </div>
+      )}
 
       <style>{`
         @keyframes mag-fade-slide {
@@ -311,6 +391,182 @@ function StartScreen() {
           animation: mag-shimmer 1100ms linear infinite;
         }
 
+        @keyframes mag-transition-push {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          18% {
+            transform: scale(0.992) translateY(1px);
+            opacity: 0.94;
+          }
+          100% {
+            transform: scale(0.985) translateY(3px);
+            opacity: 0.86;
+          }
+        }
+
+        @keyframes mag-wave-dim {
+          0% {
+            opacity: 0;
+          }
+          20% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+
+        @keyframes mag-wave-ring {
+          0% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(0.12);
+          }
+          12% {
+            opacity: 1;
+          }
+          55% {
+            opacity: 0.42;
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(2.4);
+          }
+        }
+
+        @keyframes mag-magic-circle {
+          0% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(0.78) rotate(-12deg);
+            filter: blur(10px);
+          }
+          18% {
+            opacity: 0.95;
+            filter: blur(1.5px);
+          }
+          70% {
+            opacity: 0.6;
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(1.22) rotate(24deg);
+            filter: blur(8px);
+          }
+        }
+
+        .mag-wind-under {
+          animation: mag-transition-push 1200ms ease-out both;
+          will-change: transform, opacity;
+        }
+
+        .mag-wave-dim {
+          background: radial-gradient(
+            circle at 50% 50%,
+            rgba(0, 0, 0, 0.25),
+            rgba(0, 0, 0, 0.82)
+          );
+          animation: mag-wave-dim 1200ms ease-out both;
+          will-change: opacity;
+        }
+
+        .mag-wave-ring {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: min(62vmin, 640px);
+          height: min(62vmin, 640px);
+          border-radius: 9999px;
+          transform: translate3d(-50%, -50%, 0) scale(0.12);
+          mix-blend-mode: screen;
+          will-change: transform, opacity;
+          animation: mag-wave-ring 1200ms cubic-bezier(0.16, 1, 0.2, 1) both;
+
+          background-image:
+            radial-gradient(
+              closest-side,
+              rgba(255, 190, 120, 0) 58%,
+              rgba(255, 190, 120, 0.55) 62%,
+              rgba(255, 190, 120, 0) 66%
+            ),
+            radial-gradient(
+              closest-side,
+              rgba(255, 230, 200, 0) 70%,
+              rgba(255, 230, 200, 0.28) 73%,
+              rgba(255, 230, 200, 0) 77%
+            );
+          filter: blur(0.2px);
+        }
+
+        .mag-wave-ring-2 {
+          animation-delay: 80ms;
+          opacity: 0.85;
+          width: min(68vmin, 720px);
+          height: min(68vmin, 720px);
+        }
+
+        .mag-wave-ring-3 {
+          animation-delay: 160ms;
+          opacity: 0.7;
+          width: min(74vmin, 800px);
+          height: min(74vmin, 800px);
+        }
+
+        .mag-magic-circle {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: min(72vmin, 760px);
+          height: min(72vmin, 760px);
+          border-radius: 9999px;
+          transform: translate3d(-50%, -50%, 0) scale(0.78) rotate(-12deg);
+          opacity: 0;
+          animation: mag-magic-circle 1200ms cubic-bezier(0.16, 1, 0.2, 1) both;
+          mix-blend-mode: screen;
+          will-change: transform, opacity, filter;
+
+          background-image:
+            radial-gradient(
+              closest-side,
+              rgba(255, 220, 190, 0) 64%,
+              rgba(255, 220, 190, 0.22) 66%,
+              rgba(255, 220, 190, 0) 68%
+            ),
+            radial-gradient(
+              closest-side,
+              rgba(255, 170, 110, 0) 78%,
+              rgba(255, 170, 110, 0.18) 80%,
+              rgba(255, 170, 110, 0) 82%
+            ),
+            conic-gradient(
+              from 240deg,
+              rgba(255, 220, 190, 0) 0deg,
+              rgba(255, 220, 190, 0.18) 18deg,
+              rgba(255, 220, 190, 0) 40deg,
+              rgba(255, 220, 190, 0.12) 68deg,
+              rgba(255, 220, 190, 0) 104deg,
+              rgba(255, 220, 190, 0.16) 140deg,
+              rgba(255, 220, 190, 0) 220deg,
+              rgba(255, 220, 190, 0.14) 260deg,
+              rgba(255, 220, 190, 0) 360deg
+            );
+
+          -webkit-mask-image: radial-gradient(
+            circle,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 1) 38%,
+            rgba(0, 0, 0, 1) 68%,
+            rgba(0, 0, 0, 0) 74%
+          );
+          mask-image: radial-gradient(
+            circle,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 1) 38%,
+            rgba(0, 0, 0, 1) 68%,
+            rgba(0, 0, 0, 0) 74%
+          );
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .mag-title,
           .mag-subtitle {
@@ -319,6 +575,18 @@ function StartScreen() {
           }
 
           .mag-enter:hover .mag-shimmer {
+            animation: none !important;
+          }
+
+          .mag-wind-under {
+            transition: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+          }
+
+          .mag-wave-ring,
+          .mag-wave-dim,
+          .mag-magic-circle {
             animation: none !important;
           }
         }
