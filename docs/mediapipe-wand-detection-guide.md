@@ -7,11 +7,12 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
 ## 目次
 
 1. [全体アーキテクチャ](#1-全体アーキテクチャ)
-2. [Phase 1: 学習データ準備](#2-phase-1-学習データ準備)
-3. [Phase 2: モデル学習（Python / Google Colab）](#3-phase-2-モデル学習python--google-colab)
-4. [Phase 3: Next.js実装（TypeScript / ブラウザ）](#4-phase-3-nextjs実装typescript--ブラウザ)
-5. [ファイル一覧](#5-ファイル一覧)
-6. [検証方法](#6-検証方法)
+2. [使用技術](#2-使用技術)
+3. [Phase 1: 学習データ準備](#3-phase-1-学習データ準備)
+4. [Phase 2: モデル学習（Python / Google Colab）](#4-phase-2-モデル学習python--google-colab)
+5. [Phase 3: Next.js実装（TypeScript / ブラウザ）](#5-phase-3-nextjs実装typescript--ブラウザ)
+6. [ファイル一覧](#6-ファイル一覧)
+7. [検証方法](#7-検証方法)
 
 ---
 
@@ -71,7 +72,157 @@ Joy-Conでの杖振り検知に加え、ウェブカメラ前で実際の杖を�
 
 ---
 
-## 2. Phase 1: 学習データ準備
+## 2. 使用技術
+
+本実装で使用する主要な技術要素を解説する。
+
+### YOLOv8-pose（モデル学習）
+
+**YOLOv8** は Ultralytics が開発するリアルタイム物体検出フレームワーク。その **pose** バリアントはキーポイント検出（姿勢推定）に特化しており、バウンディングボックスとキーポイント座標を同時に出力する。
+
+| 項目 | 内容 |
+|------|------|
+| 開発元 | Ultralytics |
+| ベースタスク | 物体検出 + キーポイント推定 |
+| 入力 | RGB画像（640x640にリサイズ） |
+| 出力 | バウンディングボックス + N個のキーポイント座標 |
+| 本実装の設定 | 1クラス (`wand`)、2キーポイント (`tip`, `grip`) |
+| モデルサイズ | YOLOv8n-pose（nano）: ~6MB — ブラウザ推論向き |
+
+**カスタムキーポイント検出の仕組み:**
+
+```text
+事前学習済みYOLOv8n-pose（人体17キーポイント）
+    ↓ Transfer Learning
+カスタムデータセット（杖1クラス・2キーポイント）で再学習
+    ↓
+杖専用キーポイント検出モデル
+```
+
+既存の人体ポーズ推定の重みをベースに転移学習するため、少量のデータ（100〜300枚）でも十分な精度が得られる。
+
+### ONNX / ONNX Runtime Web（ブラウザ推論）
+
+**ONNX (Open Neural Network Exchange)** は、異なる機械学習フレームワーク間でモデルを共有するためのオープンフォーマット。
+
+**ONNX Runtime Web** はそのブラウザ向け実装で、以下のバックエンドで推論を実行できる:
+
+| バックエンド | 速度 | 対応環境 |
+|-------------|------|---------|
+| **WebGL** | 高速（GPU利用） | 大半のブラウザ |
+| **WASM** | 中速（CPU） | 全ブラウザ |
+| **WebGPU** | 最速（次世代GPU API） | Chrome 113+ |
+
+本実装では **WebGL** をプライマリ、**WASM** をフォールバックとして使用する。
+
+```typescript
+// セッション初期化
+const session = await ort.InferenceSession.create("/models/wand_pose.onnx", {
+  executionProviders: ["webgl"],  // WebGLで高速推論
+});
+
+// 推論実行
+const inputTensor = new ort.Tensor("float32", preprocessedData, [1, 3, 640, 640]);
+const results = await session.run({ images: inputTensor });
+```
+
+**なぜ MediaPipe ではなく ONNX Runtime か:**
+
+MediaPipe Model Maker にはキーポイント検出の学習機能がない。YOLOv8-pose で学習したモデルを `.onnx` にエクスポートし、ONNX Runtime Web で推論するのが最もスムーズなパイプラインとなる。
+
+### getUserMedia API（カメラアクセス）
+
+**getUserMedia** は、Webブラウザからカメラ・マイクにアクセスするための Web 標準 API。
+
+```typescript
+const stream = await navigator.mediaDevices.getUserMedia({
+  video: {
+    facingMode: "user",   // フロントカメラ優先
+    width: 640,
+    height: 480,
+  },
+});
+videoElement.srcObject = stream;
+```
+
+| 項目 | 内容 |
+|------|------|
+| 対応ブラウザ | Chrome, Firefox, Safari, Edge（全メジャーブラウザ） |
+| HTTPS | 必須（localhost は例外） |
+| 許可 | ユーザーにカメラアクセス許可ダイアログが表示される |
+
+### YOLOv8-pose の入出力フォーマット
+
+#### 入力
+
+| 項目 | 値 |
+|------|------|
+| 形状 | `[1, 3, 640, 640]` (NCHW) |
+| 値域 | `0.0 〜 1.0`（RGB各チャンネルを255で除算） |
+| 前処理 | letterbox（アスペクト比保持リサイズ + 黒パディング） |
+
+```text
+元映像 (640x480)          letterbox (640x640)
+┌──────────────┐          ┌──────────────┐
+│              │          │  黒パディング  │
+│    映像      │    →     ├──────────────┤
+│              │          │    映像       │
+└──────────────┘          ├──────────────┤
+                          │  黒パディング  │
+                          └──────────────┘
+```
+
+#### 出力
+
+モデル出力テンソル: `[1, 11, 8400]`
+
+```text
+8400個の候補検出に対して、各11個の値:
+  [0] cx        - バウンディングボックス中心X
+  [1] cy        - バウンディングボックス中心Y
+  [2] w         - バウンディングボックス幅
+  [3] h         - バウンディングボックス高さ
+  [4] conf      - 検出信頼度
+  [5] tip_x     - 杖先X座標
+  [6] tip_y     - 杖先Y座標
+  [7] tip_conf  - 杖先キーポイント信頼度
+  [8] grip_x    - 手元X座標
+  [9] grip_y    - 手元Y座標
+  [10] grip_conf - 手元キーポイント信頼度
+```
+
+座標はすべてletterbox座標系（640x640）で出力されるため、元の映像座標に戻す逆変換が必要。
+
+#### 後処理の流れ
+
+```text
+[1, 11, 8400] テンソル
+    ↓ 8400候補から最高信頼度を選択（conf > 0.5）
+    ↓ letterbox座標 → 元映像座標に逆変換
+    ↓ フロントカメラのX軸ミラー反転
+    ↓ EMAスムージング（α=0.4）
+    ↓ WandDetectionResult として出力
+```
+
+### EMAスムージング（指数移動平均）
+
+キーポイント座標のフレーム間のブレを抑えるため、**EMA (Exponential Moving Average)** を適用する。
+
+```
+smoothed = α × current + (1 - α) × previous
+```
+
+| パラメータ | 値 | 効果 |
+|-----------|------|------|
+| α = 0.4 | 現在値40% + 前回値60% | 滑らかさと応答性のバランス |
+| α → 1.0 | 生の値に近い | 応答は速いがブレが大きい |
+| α → 0.0 | ほぼ動かない | 滑らかだが遅延が大きい |
+
+tip (杖先) と grip (手元) の両方に独立して適用する。
+
+---
+
+## 3. Phase 1: 学習データ準備
 
 ### Step 1-1: 杖の画像収集（100〜300枚推奨）
 
@@ -160,7 +311,7 @@ names:
 
 ---
 
-## 3. Phase 2: モデル学習（Python / Google Colab）
+## 4. Phase 2: モデル学習（Python / Google Colab）
 
 ### Step 2-1: Google Colabでモデル学習
 
@@ -218,7 +369,7 @@ public/models/wand_pose.onnx
 
 ---
 
-## 4. Phase 3: Next.js実装（TypeScript / ブラウザ）
+## 5. Phase 3: Next.js実装（TypeScript / ブラウザ）
 
 ### Step 3-1: 依存パッケージ追加
 
@@ -614,7 +765,7 @@ export function useWandDetector() {
 
 ---
 
-## 5. ファイル一覧
+## 6. ファイル一覧
 
 | ファイル | 操作 | 工程 |
 |---------|------|------|
@@ -630,7 +781,7 @@ export function useWandDetector() {
 
 ---
 
-## 6. 検証方法
+## 7. 検証方法
 
 ### Phase 2 検証（モデル）
 
