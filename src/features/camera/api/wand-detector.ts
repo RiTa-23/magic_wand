@@ -274,7 +274,9 @@ export class WandDetector {
       this.stream = null;
     }
     if (this.session) {
-      this.session.release();
+      this.session.release().catch((e) => {
+        console.error("Failed to release ONNX session:", e);
+      });
       this.session = null;
     }
     this.videoElement = null;
