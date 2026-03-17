@@ -48,6 +48,10 @@ export function FloatingParticles({
     let animationId: number;
 
     const animate = () => {
+      // Check for reduced motion preference
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        return;
+      }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (const p of particles) {

@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
 import { FloatingParticles } from "@/components/floating-particles";
 import { useSearchParams } from "next/navigation";
 import { Cinzel } from "next/font/google";
@@ -410,10 +417,16 @@ function EffectContent() {
   const currentMagic = MAGIC_THEMES[magicParam] ? magicParam : "LUMOS";
   const theme = MAGIC_THEMES[currentMagic];
 
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleCast = useCallback(() => {
+    // 既存のタイマーがあればクリア
+    if (timerRef.current) clearTimeout(timerRef.current);
+
     setCastState("charging");
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setCastState("cast");
+      timerRef.current = null;
     }, 1000);
   }, []);
 
@@ -424,6 +437,11 @@ function EffectContent() {
     if (magicParam) {
       handleCast();
     }
+
+    // クリーンアップ関数でタイマーを破棄
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [handleCast, magicParam]);
 
   if (!mounted) return <div className="min-h-screen bg-[#0a0815]" />;
@@ -473,7 +491,8 @@ function EffectContent() {
 
         {/* Instructions */}
         <div className="text-white/20 text-[10px] tracking-[0.3em] uppercase mt-12">
-          URL Parameter: ?magic=ventus | lumos | aguamenti | incendio
+          URL Parameter: ?magic=ventus | lumos | aguamenti | incendio |
+          excalibur
         </div>
       </div>
 
@@ -793,6 +812,18 @@ function EffectContent() {
         }
         .animate-fade-in {
           animation: fade-in 1s ease-out forwards;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          ::before,
+          ::after {
+            animation-delay: -1ms !important;
+            animation-duration: 1ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0s !important;
+            transition-delay: 0s !important;
+          }
         }
       `}</style>
     </main>
