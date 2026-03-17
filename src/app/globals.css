@@ -1,8 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Default to the app's dark medieval palette to avoid flash on reload */
+  --background: oklch(0.13 0.02 250);
+  --foreground: oklch(0.88 0.08 85);
+
+  --card: oklch(0.18 0.015 250);
+  --card-foreground: oklch(0.88 0.08 85);
+  --popover: oklch(0.16 0.02 250);
+  --popover-foreground: oklch(0.88 0.08 85);
+
+  --primary: oklch(0.78 0.12 85);
+  --primary-foreground: oklch(0.15 0.02 250);
+  --secondary: oklch(0.22 0.02 250);
+  --secondary-foreground: oklch(0.86 0.08 85);
+
+  --muted: oklch(0.2 0.015 250);
+  --muted-foreground: oklch(0.65 0.04 85);
+
+  --accent: oklch(0.6 0.15 180);
+  --accent-foreground: oklch(0.95 0.01 85);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.98 0.01 85);
+
+  --border: oklch(0.32 0.04 85);
+  --input: oklch(0.25 0.02 250);
+  --ring: oklch(0.78 0.12 85);
 
   /* Shared magical tokens (used across routes) */
   --gold: oklch(0.78 0.12 85);
@@ -21,6 +45,24 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   /* Magical palette */
   --color-gold: var(--gold);
   --color-gold-dim: var(--gold-dim);
@@ -30,13 +72,6 @@
   --color-parchment-dark: var(--parchment-dark);
   --color-stone: var(--stone);
   --color-stone-light: var(--stone-light);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

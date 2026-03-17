@@ -7,7 +7,7 @@ import { HeroMagicCircle } from "@/components/hero-magic-circle";
 
 export default function PlayPage() {
   return (
-    <main className="relative min-h-svh w-full overflow-hidden bg-background">
+    <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
       {/* Background image layer (match Home's darker ambience) */}
       <div
         className="fixed inset-0 bg-background opacity-30"
