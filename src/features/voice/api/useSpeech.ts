@@ -34,7 +34,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     }
 
     setSpellMatch(null);
-  setFinalSpellMatch(null);
+    setFinalSpellMatch(null);
     setTranscript("");
     hasDispatchedMatchRef.current = false;
     setStatus("LISTENING");
