@@ -538,7 +538,7 @@ export default function WandTrackingPage() {
       }
       // Rボタンが「離された」瞬間に、押していた間に描かれた軌跡で判定
       else if (!isRPressed && prevRButtonRef.current) {
-        if (trail.length > 10) {
+        if (trail.length >= 20) {
           const result = recognizeGesture(trail);
           console.log(
             "🪄 [Gesture Recognize Result (R Button Released)]:",
