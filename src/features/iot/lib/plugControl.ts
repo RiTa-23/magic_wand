@@ -186,7 +186,9 @@ async function togglePort(
     return await runOnce();
   } catch (error) {
     if (!IS_TEST_ENV && isAuthError(error)) {
-      console.warn("⚠️ 認証エラーを検知。Tapoセッションを再取得して再試行します");
+      console.warn(
+        "⚠️ 認証エラーを検知。Tapoセッションを再取得して再試行します",
+      );
       resetTapoClientCache();
       clearChildDevicesCache();
 
