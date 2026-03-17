@@ -54,7 +54,10 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
             // final結果: 信頼度を問わず確定させ、ロック
             setSpellMatch(match);
             hasDispatchedMatchRef.current = true;
-          } else if (!hasDispatchedMatchRef.current && match.confidence >= 0.8) {
+          } else if (
+            !hasDispatchedMatchRef.current &&
+            match.confidence >= 0.8
+          ) {
             // interim結果: 高信頼度(0.8以上)のみ表示、finalで上書き可能に保つ
             setSpellMatch(match);
           }
