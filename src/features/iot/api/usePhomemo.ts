@@ -99,6 +99,6 @@ export function usePhomemo() {
     connect,
     disconnect,
     printTestPage,
-    isConnected: status === "CONNECTED",
+    isConnected: phomemoRef.current?.isConnected() ?? false,
   };
 }
