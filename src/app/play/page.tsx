@@ -34,6 +34,7 @@ export default function PlayPage() {
   const handleMicToggle = () => {
     if (status === "LISTENING") {
       stop();
+      gate.current.clear();
       setGateResult(null);
     } else {
       setGateResult(null);
