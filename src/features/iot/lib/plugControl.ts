@@ -20,17 +20,22 @@ const SPELL_PORT = {
 /** オートOFFのデフォルト待機時間（ミリ秒） */
 const DEFAULT_AUTO_OFF_MS = 5000;
 const CHILD_DEVICES_CACHE_TTL_MS = 15000;
+const IS_TEST_ENV = process.env.NODE_ENV === "test";
 
-let childDevicesCache:
-  | {
-      fetchedAt: number;
-      items: Awaited<ReturnType<Awaited<ReturnType<typeof getTapoClient>>["getChildDevicesInfo"]>>;
-    }
-  | null = null;
+let childDevicesCache: {
+  fetchedAt: number;
+  items: Awaited<
+    ReturnType<Awaited<ReturnType<typeof getTapoClient>>["getChildDevicesInfo"]>
+  >;
+} | null = null;
 
 async function getCachedChildDevices(
   p300: Awaited<ReturnType<typeof getTapoClient>>,
 ) {
+  if (IS_TEST_ENV) {
+    return await p300.getChildDevicesInfo();
+  }
+
   const now = Date.now();
   if (
     childDevicesCache &&

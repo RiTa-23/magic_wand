@@ -1,5 +1,7 @@
 import { loginDeviceByIp } from "tp-link-tapo-connect";
 
+const IS_TEST_ENV = process.env.NODE_ENV === "test";
+
 let cachedClient: Awaited<ReturnType<typeof loginDeviceByIp>> | null = null;
 let cachedClientKey: string | null = null;
 
@@ -15,12 +17,16 @@ export async function getTapoClient(): Promise<
   }
 
   const clientKey = `${email}|${ip}`;
-  if (cachedClient && cachedClientKey === clientKey) {
+  if (!IS_TEST_ENV && cachedClient && cachedClientKey === clientKey) {
     return cachedClient;
   }
 
   const device = await loginDeviceByIp(email, password, ip);
-  cachedClient = device;
-  cachedClientKey = clientKey;
+
+  if (!IS_TEST_ENV) {
+    cachedClient = device;
+    cachedClientKey = clientKey;
+  }
+
   return device;
 }

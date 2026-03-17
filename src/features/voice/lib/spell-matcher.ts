@@ -150,7 +150,9 @@ export function matchSpell(
         const normalizedKeyword = normalizeForMatch(keyword);
         if (!normalizedKeyword) continue;
 
-        const lengthDiff = Math.abs(normalized.length - normalizedKeyword.length);
+        const lengthDiff = Math.abs(
+          normalized.length - normalizedKeyword.length,
+        );
         if (lengthDiff > 2) continue;
 
         const distance = levenshteinDistance(normalized, normalizedKeyword);
