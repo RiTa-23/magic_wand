@@ -31,9 +31,22 @@ export class WandDetector {
 
   // コールバック
   onWandDetection: ((result: WandDetectionResult) => void) | null = null;
+  onError: ((error: unknown) => void) | null = null;
 
   /** ONNXモデルとカメラを初期化 */
   async initialize(videoElement: HTMLVideoElement): Promise<boolean> {
+    // 既存リソースのクリーンアップ（二重呼び出し対策）
+    if (this.session) {
+      await this.session.release();
+      this.session = null;
+    }
+    if (this.stream) {
+      this.stream.getTracks().forEach((t) => {
+        t.stop();
+      });
+      this.stream = null;
+    }
+
     // 1. ONNX Runtime セッション初期化（webgpu → webgl → wasm の順でフォールバック）
     this.session = await ort.InferenceSession.create(
       "/models/wand_pose_v4.onnx",
@@ -45,7 +58,11 @@ export class WandDetector {
     // 2. 前処理用Canvas + バッファ
     const size = this.INPUT_SIZE;
     this.preprocessCanvas = new OffscreenCanvas(size, size);
-    this.preprocessCtx = this.preprocessCanvas.getContext("2d")!;
+    const ctx = this.preprocessCanvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Failed to get 2d context from OffscreenCanvas");
+    }
+    this.preprocessCtx = ctx;
     this.inputBuffer = new Float32Array(3 * size * size);
 
     // 3. カメラストリーム取得（解像度を下げて前処理を軽くする）
@@ -128,6 +145,7 @@ export class WandDetector {
     const tipConf = data[7 * numDetections + bestIdx];
     const gripX = data[8 * numDetections + bestIdx];
     const gripY = data[9 * numDetections + bestIdx];
+    const gripConf = data[10 * numDetections + bestIdx];
 
     // letterbox座標 → 元の映像座標に変換
     const scale = Math.min(size / video.videoWidth, size / video.videoHeight);
@@ -147,6 +165,7 @@ export class WandDetector {
       gripY: toVideoY(gripY),
       confidence: bestConf,
       tipConfidence: tipConf,
+      gripConfidence: gripConf,
       detected: true,
       boundingBox: {
         x: mirrorX(toVideoX(cx + w / 2)),
@@ -160,56 +179,71 @@ export class WandDetector {
 
   /** 検出ループ開始 */
   start(): void {
+    if (this.running) return;
     this.running = true;
 
     const detect = async () => {
       if (!this.running || !this.session || !this.videoElement) return;
 
-      // 前処理 → 推論 → 後処理
-      const inputTensor = this.preprocess();
-      const feeds: Record<string, ort.Tensor> = { images: inputTensor };
-      const results = await this.session.run(feeds);
-      const outputTensor = Object.values(results)[0];
-      const detection = this.postprocess(outputTensor);
+      try {
+        // 前処理 → 推論 → 後処理
+        const inputTensor = this.preprocess();
+        const feeds: Record<string, ort.Tensor> = { images: inputTensor };
+        const results = await this.session.run(feeds);
+        const outputTensor = Object.values(results)[0];
+        const detection = this.postprocess(outputTensor);
 
-      const now = performance.now();
+        // テンソルのメモリ解放
+        inputTensor.dispose();
+        outputTensor.dispose();
 
-      if (detection) {
-        // EMAスムージング
-        if (this.isFirstDetection) {
-          this.smoothTipX = detection.tipX;
-          this.smoothTipY = detection.tipY;
-          this.smoothGripX = detection.gripX;
-          this.smoothGripY = detection.gripY;
-          this.isFirstDetection = false;
+        const now = performance.now();
+
+        if (detection) {
+          // EMAスムージング
+          if (this.isFirstDetection) {
+            this.smoothTipX = detection.tipX;
+            this.smoothTipY = detection.tipY;
+            this.smoothGripX = detection.gripX;
+            this.smoothGripY = detection.gripY;
+            this.isFirstDetection = false;
+          } else {
+            const a = this.EMA_ALPHA;
+            this.smoothTipX = a * detection.tipX + (1 - a) * this.smoothTipX;
+            this.smoothTipY = a * detection.tipY + (1 - a) * this.smoothTipY;
+            this.smoothGripX =
+              a * detection.gripX + (1 - a) * this.smoothGripX;
+            this.smoothGripY =
+              a * detection.gripY + (1 - a) * this.smoothGripY;
+          }
+
+          this.onWandDetection?.({
+            ...detection,
+            tipX: this.smoothTipX,
+            tipY: this.smoothTipY,
+            gripX: this.smoothGripX,
+            gripY: this.smoothGripY,
+            timestamp: now,
+          });
         } else {
-          const a = this.EMA_ALPHA;
-          this.smoothTipX = a * detection.tipX + (1 - a) * this.smoothTipX;
-          this.smoothTipY = a * detection.tipY + (1 - a) * this.smoothTipY;
-          this.smoothGripX = a * detection.gripX + (1 - a) * this.smoothGripX;
-          this.smoothGripY = a * detection.gripY + (1 - a) * this.smoothGripY;
+          this.onWandDetection?.({
+            tipX: this.smoothTipX,
+            tipY: this.smoothTipY,
+            gripX: this.smoothGripX,
+            gripY: this.smoothGripY,
+            confidence: 0,
+            tipConfidence: 0,
+            gripConfidence: 0,
+            detected: false,
+            boundingBox: { x: 0, y: 0, width: 0, height: 0 },
+            timestamp: now,
+          });
         }
-
-        this.onWandDetection?.({
-          ...detection,
-          tipX: this.smoothTipX,
-          tipY: this.smoothTipY,
-          gripX: this.smoothGripX,
-          gripY: this.smoothGripY,
-          timestamp: now,
-        });
-      } else {
-        this.onWandDetection?.({
-          tipX: this.smoothTipX,
-          tipY: this.smoothTipY,
-          gripX: this.smoothGripX,
-          gripY: this.smoothGripY,
-          confidence: 0,
-          tipConfidence: 0,
-          detected: false,
-          boundingBox: { x: 0, y: 0, width: 0, height: 0 },
-          timestamp: now,
-        });
+      } catch (e) {
+        console.error("Detection loop error:", e);
+        this.running = false;
+        this.onError?.(e);
+        return;
       }
 
       // 次フレームをスケジュール（推論完了後に次を開始）
@@ -234,7 +268,9 @@ export class WandDetector {
   destroy(): void {
     this.stop();
     if (this.stream) {
-      this.stream.getTracks().forEach((t) => t.stop());
+      this.stream.getTracks().forEach((t) => {
+        t.stop();
+      });
       this.stream = null;
     }
     if (this.session) {

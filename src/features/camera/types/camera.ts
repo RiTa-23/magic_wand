@@ -19,6 +19,8 @@ export type WandDetectionResult = {
   confidence: number;
   /** 杖先キーポイントの信頼度 0〜1 */
   tipConfidence: number;
+  /** 手元キーポイントの信頼度 0〜1 */
+  gripConfidence: number;
   /** 杖が検出されたか */
   detected: boolean;
   /** バウンディングボックス */
