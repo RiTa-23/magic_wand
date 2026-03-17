@@ -114,6 +114,11 @@ export default function WandTrackingPage() {
 
   const [trackingMode, setTrackingMode] = useState<TrackingMode>("IR");
 
+  // ── ジェスチャー認識用 ──
+  const [gestureResult, setGestureResult] = useState<GestureResult | null>(null);
+  const lastTrailLengthRef = useRef(0); // 前フレームの trail 長さ
+  const stillFramesRef = useRef(0); // 静止状態が続いたフレーム数
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
   const animFrameRef = useRef<number>(0);
@@ -519,6 +524,28 @@ export default function WandTrackingPage() {
       ctx.font = "bold 12px sans-serif";
       ctx.fillText(`${trackingMode} モード`, PADDING, PADDING - 10);
 
+      // --- ジェスチャー判定: 描き終わりの検出 ---
+      const currentTrail = trail; // 現在有効な trail
+      const STILL_FRAMES_THRESHOLD = 60; // 約1秒（60fps × 1s）静止で判定
+
+      if (currentTrail.length > 0) {
+        if (currentTrail.length === lastTrailLengthRef.current) {
+          // trail が増えていない → 静止中
+          stillFramesRef.current++;
+        } else {
+          // trail が増えている → 動いている
+          stillFramesRef.current = 0;
+          setGestureResult(null); // 動き始めたら結果をリセット
+        }
+        lastTrailLengthRef.current = currentTrail.length;
+
+        // 静止時間が閾値を超えたら判定する
+        if (stillFramesRef.current === STILL_FRAMES_THRESHOLD) {
+          const result = recognizeGesture(currentTrail);
+          setGestureResult(result);
+        }
+      }
+
       animFrameRef.current = requestAnimationFrame(draw);
     };
 
@@ -637,6 +664,19 @@ export default function WandTrackingPage() {
               className="w-full rounded-xl border border-gray-800 bg-gray-900"
               style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
             />
+
+            {/* ジェスチャー判定結果 */}
+            {gestureResult && gestureResult.type !== "unknown" && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 rounded-xl px-6 py-3 shadow-lg text-center z-20">
+                <div className="text-2xl font-bold text-purple-700">
+                  {gestureResult.type === "V" && "✨ V字を描きました！"}
+                  {gestureResult.type === "M" && "✨ M字を描きました！"}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  信頼度: {Math.round(gestureResult.confidence * 100)}%
+                </div>
+              </div>
+            )}
             {/* オーバーレイ */}
             {!isConnected && (
               <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
