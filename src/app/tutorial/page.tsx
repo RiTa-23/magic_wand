@@ -207,30 +207,33 @@ export default function TutorialPage() {
 
       <FloatingParticles />
 
-      <div className="relative z-20 h-full overflow-hidden px-10">
-        {/* Back link (match Play/Settings style) */}
-        <Link
-          href="/home"
-          className="absolute top-10 left-10 group flex items-center gap-2 text-[color:var(--gold-dim)] transition-colors hover:text-[color:var(--gold-bright)]"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="text-xs uppercase tracking-widest text-shadow-glow">
-            Back
-          </span>
-        </Link>
+      <div className="relative z-20 h-full overflow-hidden px-6 sm:px-10 flex flex-col">
+        {/* Top area */}
+        <div className="relative pt-8 sm:pt-10 flex-none">
+          {/* Back link (match Play/Settings style) */}
+          <Link
+            href="/home"
+            className="absolute left-0 top-8 sm:top-10 group flex items-center gap-2 text-[color:var(--gold-dim)] transition-colors hover:text-[color:var(--gold-bright)]"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span className="text-xs uppercase tracking-widest text-shadow-glow">
+              Back
+            </span>
+          </Link>
 
-        {/* Title (top center) */}
-        <header className="absolute top-10 left-1/2 -translate-x-1/2 text-center">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 text-[color:var(--gold)] opacity-80" />
-          <h1 className="text-2xl font-bold tracking-[0.4em] text-[color:var(--gold-bright)] uppercase">
-            Tutorial
-          </h1>
-        </header>
+          {/* Title (top center) */}
+          <header className="text-center">
+            <BookOpen className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-[color:var(--gold)] opacity-80" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-[0.4em] text-[color:var(--gold-bright)] uppercase">
+              Tutorial
+            </h1>
+          </header>
+        </div>
 
         {/* Center area (carousel) */}
-        <div className="h-full flex items-start justify-center pt-32 pb-36">
-          <div className="w-full max-w-4xl">
-            <div className="relative h-[min(520px,62svh)] overflow-hidden">
+        <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-10">
+          <div className="w-full max-w-4xl h-full min-h-0">
+            <div className="relative h-full min-h-0 overflow-hidden">
               {/* Current slide */}
               <div
                 key={index}
@@ -261,54 +264,56 @@ export default function TutorialPage() {
         </div>
 
         {/* Bottom controls */}
-        <div className="absolute left-0 right-0 bottom-14 flex items-center justify-center gap-6">
-          <button
-            type="button"
-            onClick={goPrev}
-            disabled={!canPrev}
-            className="h-10 w-10 rounded-full border border-[color:var(--gold)]/25 bg-black/20 backdrop-blur-sm transition-opacity disabled:opacity-30"
-            aria-label="前のページ"
-          >
-            <ChevronLeft className="mx-auto h-5 w-5 text-[color:var(--gold-bright)]" />
-          </button>
+        <div className="flex-none pb-6 sm:pb-8">
+          <div className="flex items-center justify-center gap-6">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={!canPrev}
+              className="h-10 w-10 rounded-full border border-[color:var(--gold)]/25 bg-black/20 backdrop-blur-sm transition-opacity disabled:opacity-30"
+              aria-label="前のページ"
+            >
+              <ChevronLeft className="mx-auto h-5 w-5 text-[color:var(--gold-bright)]" />
+            </button>
 
-          <div
-            className="flex items-center gap-2"
-            aria-label="ページインジケーター"
-          >
-            {slides.map((_, i) => {
-              const isActive = i === index;
-              return (
-                <div
-                  // indicator only (no click per spec)
-                  key={i}
-                  className={
-                    isActive ? "h-2 w-8 rounded-full" : "h-2 w-2 rounded-full"
-                  }
-                  style={{
-                    backgroundColor: isActive
-                      ? "var(--gold-bright)"
-                      : "var(--gold-dim)",
-                    opacity: isActive ? 1 : 0.35,
-                  }}
-                />
-              );
-            })}
+            <div
+              className="flex items-center gap-2"
+              aria-label="ページインジケーター"
+            >
+              {slides.map((_, i) => {
+                const isActive = i === index;
+                return (
+                  <div
+                    // indicator only (no click per spec)
+                    key={i}
+                    className={
+                      isActive ? "h-2 w-8 rounded-full" : "h-2 w-2 rounded-full"
+                    }
+                    style={{
+                      backgroundColor: isActive
+                        ? "var(--gold-bright)"
+                        : "var(--gold-dim)",
+                      opacity: isActive ? 1 : 0.35,
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canNext}
+              className="h-10 w-10 rounded-full border border-[color:var(--gold)]/25 bg-black/20 backdrop-blur-sm transition-opacity disabled:opacity-30"
+              aria-label="次のページ"
+            >
+              <ChevronRight className="mx-auto h-5 w-5 text-[color:var(--gold-bright)]" />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!canNext}
-            className="h-10 w-10 rounded-full border border-[color:var(--gold)]/25 bg-black/20 backdrop-blur-sm transition-opacity disabled:opacity-30"
-            aria-label="次のページ"
-          >
-            <ChevronRight className="mx-auto h-5 w-5 text-[color:var(--gold-bright)]" />
-          </button>
-        </div>
-
-        <div className="absolute left-0 right-0 bottom-6 text-center text-xs tracking-[0.22em] text-[color:var(--gold-dim)]/80">
-          ←→キーでもページ移動できます
+          <div className="mt-3 text-center text-xs tracking-[0.22em] text-[color:var(--gold-dim)]/80">
+            ←→キーでもページ移動できます
+          </div>
         </div>
       </div>
     </main>
@@ -319,8 +324,8 @@ function SlideContent({ slide }: { slide: TutorialSlide }) {
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="h-full w-full px-6 flex flex-col items-center justify-start gap-7">
-      <div className="relative w-full max-w-3xl aspect-[16/9] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
+    <div className="h-full w-full px-2 sm:px-6 flex flex-col items-center justify-center gap-5 sm:gap-7">
+      <div className="relative w-full max-w-3xl h-[min(360px,32svh)] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
         <Image
           src={slide.imageSrc}
           alt={slide.imageAlt}
