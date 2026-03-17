@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Image from "next/image";
 import { Cinzel, Cormorant_Garamond } from "next/font/google";
 import { useRouter } from "next/navigation";
@@ -17,6 +18,8 @@ const cormorant = Cormorant_Garamond({
   style: ["normal", "italic"],
   variable: "--font-cormorant",
 });
+
+const HOME_ROUTE: Route = "/home";
 
 type Particle = {
   x: number;
@@ -223,7 +226,7 @@ function StartScreen() {
     // Ensure the overlay is mounted and gets at least one paint.
     rafRef.current = window.requestAnimationFrame(() => {
       timeoutRef.current = window.setTimeout(() => {
-        router.push("/home");
+        router.push(HOME_ROUTE);
       }, WIND_MS);
     });
 
@@ -246,7 +249,7 @@ function StartScreen() {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     if (reduceMotion) {
-      router.push("/home");
+      router.push(HOME_ROUTE);
       return;
     }
 
