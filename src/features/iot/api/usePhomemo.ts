@@ -172,7 +172,7 @@ export function usePhomemo() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("おみくじ印刷エラー:", message);
-      throw error;
+      // エラーを投げずに、呼び出し側で処理できるようにする
     }
   }, []);
 
