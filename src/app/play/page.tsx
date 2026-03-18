@@ -139,6 +139,7 @@ export default function PlayPage() {
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
       setCommitLabel("");
+      gate.current.clear();
       setGateResult(null);
       setPersistedSpellName(null);
     }, 1800);
@@ -273,6 +274,7 @@ export default function PlayPage() {
       setPersistedSpellName(null);
     } else {
       if (gateResult?.status !== "waiting_for_voice") {
+        gate.current.clear();
         setGateResult(null);
         setPersistedSpellName(null);
       }
