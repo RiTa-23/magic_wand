@@ -363,8 +363,16 @@ export default function PlayPage() {
       return;
     }
 
-    disconnectCamera();
-    resetCameraGesture();
+    Promise.resolve(disconnectCamera())
+      .catch((error) => {
+        console.error(
+          "Failed to disconnect camera while switching mode:",
+          error,
+        );
+      })
+      .finally(() => {
+        resetCameraGesture();
+      });
   }, [
     disconnect,
     disconnectCamera,
