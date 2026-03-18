@@ -159,8 +159,7 @@ export function usePhomemo() {
       const result = await phomemoRef.current.print(encoded);
 
       if (!result.success) {
-        console.error("印刷失敗:", result.message);
-        return;
+        throw new Error(`印刷失敗: ${result.message}`);
       }
 
       // 成功後に初めて直前印刷画像を更新
