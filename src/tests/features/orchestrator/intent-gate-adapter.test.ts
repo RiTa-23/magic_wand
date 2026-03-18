@@ -18,6 +18,22 @@ describe("toGestureIntentInput", () => {
     });
   });
 
+  it("LジェスチャーをGestureIntentInputへ変換する", () => {
+    const input = toGestureIntentInput(
+      {
+        type: "L",
+        confidence: 0.91,
+      },
+      3333,
+    );
+
+    expect(input).toEqual({
+      gestureType: "L",
+      confidence: 0.91,
+      timestamp: 3333,
+    });
+  });
+
   it("unknownジェスチャーは変換しない", () => {
     const input = toGestureIntentInput(
       {

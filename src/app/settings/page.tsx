@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { FloatingParticles } from "@/components/floating-particles";
+import {
+  getAutoOffEnabled,
+  setAutoOffEnabled,
+} from "@/features/settings/lib/auto-off-setting";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -11,9 +15,22 @@ export default function SettingsPage() {
     visual: true,
     energy: false,
   });
+  const [autoOffEnabled, setAutoOffEnabledState] = useState(true);
+
+  useEffect(() => {
+    setAutoOffEnabledState(getAutoOffEnabled());
+  }, []);
 
   const toggleSetting = (key: keyof typeof settings) => {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAutoOff = () => {
+    setAutoOffEnabledState((prev) => {
+      const next = !prev;
+      setAutoOffEnabled(next);
+      return next;
+    });
   };
 
   return (
@@ -38,6 +55,11 @@ export default function SettingsPage() {
         </header>
 
         <div className="w-full max-w-md space-y-4">
+          <SimpleToggle
+            label="Auto OFF (5s)"
+            active={autoOffEnabled}
+            onClick={toggleAutoOff}
+          />
           <SimpleToggle
             label="Sound Effects"
             active={settings.sound}

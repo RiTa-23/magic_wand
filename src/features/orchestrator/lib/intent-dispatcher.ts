@@ -11,7 +11,17 @@ const TAPO_SPELL_NAME_BY_ID: Record<
   incendio: "Incendio",
   aguamenti: "Aguamenti",
   nox: "Nox",
+  raiden: "Raiden",
+  wave: "Wave",
 };
+
+const AUTO_OFF_CAPABLE_SPELLS = new Set([
+  "Ventus",
+  "Lumos",
+  "Incendio",
+  "Aguamenti",
+  "Raiden",
+]);
 
 const OMIKUJI_MESSAGES = [
   "【大吉】\n魔法が最高に冴える日。新しい挑戦がうまくいきます。",
@@ -41,6 +51,18 @@ export interface IntentDispatchDeps {
   printOmikuji: (message: string) => Promise<void>;
   createOmikujiMessage?: () => string;
   timeoutMs?: number;
+  autoOffEnabled?: boolean;
+}
+
+function resolveTapoSpellName(
+  spellName: string,
+  autoOffEnabled: boolean,
+): string {
+  if (!autoOffEnabled || !AUTO_OFF_CAPABLE_SPELLS.has(spellName)) {
+    return spellName;
+  }
+
+  return `${spellName}Auto`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -97,7 +119,10 @@ export async function dispatchCommittedIntent(
       };
     }
 
-    const tapoSpellName = TAPO_SPELL_NAME_BY_ID[commit.spellId];
+    const tapoSpellName = resolveTapoSpellName(
+      TAPO_SPELL_NAME_BY_ID[commit.spellId],
+      deps.autoOffEnabled ?? false,
+    );
     const tapoResult = await withTimeout(
       deps.executeTapoSpell(tapoSpellName),
       timeoutMs,

@@ -74,10 +74,12 @@ const SPELL_PORT = {
   LUMOS: 1, // ポート2: 光
   INCENDIO: 2, // ポート3: 炎
   AGUAMENTI: 3, // ポート4: 水
+  RAIDEN: 4, // ポート5: 雷
 } as const;
 
 /** オートOFFのデフォルト待機時間（ミリ秒） */
 const DEFAULT_AUTO_OFF_MS = 5000;
+const DEFAULT_WAVE_INTERVAL_MS = 1000;
 const CHILD_DEVICES_CACHE_TTL_MS = 15000;
 
 let childDevicesCache: {
@@ -109,6 +111,15 @@ async function getCachedChildDevices(
 
 function clearChildDevicesCache() {
   childDevicesCache = null;
+}
+
+function sleep(ms: number) {
+  if (IS_TEST_ENV) {
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function isAuthError(error: unknown): boolean {
@@ -348,6 +359,28 @@ export async function castAguamentiAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
   );
 }
 
+/**
+ * 魔法: ライデイン - ポート4をON
+ */
+export async function castRaiden() {
+  return togglePort(SPELL_PORT.RAIDEN, true, "ライデイン", "⚡");
+}
+
+/**
+ * 魔法: ライデイン解除 - ポート4をOFF
+ */
+export async function releaseRaiden() {
+  return togglePort(SPELL_PORT.RAIDEN, false, "ライデイン解除", "✨");
+}
+
+/**
+ * 魔法: ライデイン（オートOFF）- ポート4をONにし、指定秒後にOFF
+ * @param durationMs - ONのままにする時間（デフォルト: 5秒）
+ */
+export async function castRaidenAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+  return castPortWithAutoOff(SPELL_PORT.RAIDEN, "ライデイン", "⚡", durationMs);
+}
+
 // ========================================
 // 全ポート制御の魔法
 // ========================================
@@ -425,6 +458,55 @@ export async function castNox() {
   }
 }
 
+/**
+ * 魔法: ウェーブ - すべてのポートを約1秒間隔で順番にONし、その後順番にOFF
+ */
+export async function castWave(intervalMs = DEFAULT_WAVE_INTERVAL_MS) {
+  try {
+    console.log("🌊 ウェーブ発動！ポートを順番にON/OFFします");
+    const p300 = await getTapoClient();
+    const childDevices = await getCachedChildDevices(p300);
+
+    if (childDevices.length === 0) {
+      console.warn("⚠️ 子デバイスが見つかりません");
+      return { success: false, message: "子デバイスが見つかりません" };
+    }
+
+    for (let i = 0; i < childDevices.length; i += 1) {
+      const child = childDevices[i];
+      console.log(
+        `🌊 [${i + 1}/${childDevices.length}] ${child.nickname || child.device_id} をON`,
+      );
+      await p300.turnOn(child.device_id);
+      if (i < childDevices.length - 1) {
+        await sleep(intervalMs);
+      }
+    }
+
+    // ONが完了したら、同じ順序でOFFして波の消灯を作る
+    await sleep(intervalMs);
+    for (let i = 0; i < childDevices.length; i += 1) {
+      const child = childDevices[i];
+      console.log(
+        `🌊 [${i + 1}/${childDevices.length}] ${child.nickname || child.device_id} をOFF`,
+      );
+      await p300.turnOff(child.device_id);
+      if (i < childDevices.length - 1) {
+        await sleep(intervalMs);
+      }
+    }
+
+    return {
+      success: true,
+      message: `ウェーブ成功！${childDevices.length}個のポートを${Math.round(intervalMs / 1000)}秒間隔で順番にON/OFFしました🌊`,
+    };
+  } catch (error) {
+    console.error("❌ ウェーブ失敗:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: `ウェーブ失敗: ${errorMessage}` };
+  }
+}
+
 // ========================================
 // デバッグ・情報取得
 // ========================================
@@ -495,6 +577,7 @@ export async function getDeviceStatus() {
  * - `"IncendioOff"` - 炎OFF
  * - `"Aguamenti"` - 水ON（ポート3）
  * - `"AguamentiOff"` - 水OFF
+ * - `"Wave"` - 全ポートを順番にON
  * - `"Maxima"` - 全ポートON
  * - `"Nox"` - 全ポートOFF
  *
@@ -530,6 +613,12 @@ export async function executeSpell(spellName: string) {
       return await castAguamenti();
     case "AguamentiOff":
       return await castAguamentiOff();
+    case "Raiden":
+      return await castRaiden();
+    case "RaidenOff":
+      return await releaseRaiden();
+    case "Wave":
+      return await castWave();
     case "Maxima":
       return await castMaxima();
     case "Nox":
@@ -542,6 +631,8 @@ export async function executeSpell(spellName: string) {
       return await castIncendioAuto();
     case "AguamentiAuto":
       return await castAguamentiAuto();
+    case "RaidenAuto":
+      return await castRaidenAuto();
     default:
       console.log("未知の魔法っす…！");
       return { success: false, message: "未知の魔法っす" };

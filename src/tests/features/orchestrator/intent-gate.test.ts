@@ -51,13 +51,32 @@ describe("IntentGate", () => {
       timestamp: 1000,
     });
     const result = gate.pushGesture({
-      gestureType: "V",
+      gestureType: "L",
       confidence: 0.9,
       timestamp: 4000,
     });
 
     expect(result.status).toBe("waiting_for_voice");
     expect(result.reasonCode).toBe("window_timeout");
+    expect(result.commit).toBeUndefined();
+  });
+
+  it("ルーモスにVジェスチャーを出すと mismatch になる", () => {
+    const gate = new IntentGate();
+
+    gate.pushVoice({
+      spellId: "lumos",
+      confidence: 0.95,
+      timestamp: 1000,
+    });
+    const result = gate.pushGesture({
+      gestureType: "V",
+      confidence: 0.9,
+      timestamp: 1200,
+    });
+
+    expect(result.status).toBe("waiting_for_voice");
+    expect(result.reasonCode).toBe("spell_gesture_mismatch");
     expect(result.commit).toBeUndefined();
   });
 

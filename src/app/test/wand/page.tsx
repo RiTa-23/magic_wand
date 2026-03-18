@@ -674,6 +674,11 @@ export default function WandTrackingPage() {
                 <div className="text-2xl font-bold text-purple-700">
                   {gestureResult.type === "V" && "✨ V字を描きました！"}
                   {gestureResult.type === "M" && "✨ M字を描きました！"}
+                  {gestureResult.type === "L" && "✨ L字を描きました！"}
+                  {gestureResult.type === "Z" && "⚡ Z字を描きました！"}
+                  {gestureResult.type === "InvV" && "🔥 逆V字を描きました！"}
+                  {gestureResult.type === "W" &&
+                    "🌊 横一直線の軌道を描きました！"}
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
                   信頼度: {Math.round(gestureResult.confidence * 100)}%

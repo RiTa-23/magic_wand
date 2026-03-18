@@ -68,6 +68,26 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     ],
     action: "fire_on",
   },
+  {
+    id: "raiden",
+    name: "ライデイン",
+    keywords: [
+      "ライデイン",
+      "らいでいん",
+      "ライデイン",
+      "ライデン",
+      "らいでん",
+      "雷",
+      "raiden",
+    ],
+    action: "lightning_on",
+  },
+  {
+    id: "wave",
+    name: "ウェーブ",
+    keywords: ["ウェーブ", "うぇーぶ", "うえーぶ", "wave", "ウェイブ"],
+    action: "wave_on",
+  },
 ];
 
 function normalizeForMatch(text: string): string {

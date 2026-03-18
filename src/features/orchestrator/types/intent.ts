@@ -4,9 +4,11 @@ export type SpellId =
   | "incendio"
   | "aguamenti"
   | "nox"
-  | "kyua_uppu_rapa_pa";
+  | "kyua_uppu_rapa_pa"
+  | "raiden"
+  | "wave";
 
-export type GestureType = "V" | "M";
+export type GestureType = "V" | "M" | "L" | "Z" | "InvV" | "W";
 
 export interface VoiceIntentInput {
   spellId: SpellId;
@@ -56,9 +58,11 @@ export interface IntentGateConfig {
 
 export const DEFAULT_SPELL_GESTURE_MAP: Record<SpellId, GestureType> = {
   ventus: "V",
-  lumos: "V",
-  incendio: "V",
+  lumos: "L",
+  incendio: "InvV",
   aguamenti: "V",
   nox: "M",
   kyua_uppu_rapa_pa: "M",
+  raiden: "Z",
+  wave: "W",
 };

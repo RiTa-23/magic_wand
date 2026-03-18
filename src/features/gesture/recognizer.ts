@@ -9,6 +9,10 @@ export type TrailPoint = {
 export type GestureResult =
   | { type: "V"; confidence: number }
   | { type: "M"; confidence: number }
+  | { type: "L"; confidence: number }
+  | { type: "Z"; confidence: number }
+  | { type: "InvV"; confidence: number }
+  | { type: "W"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -21,6 +25,18 @@ function smoothY(trail: TrailPoint[], windowSize: number): number[] {
     const end = Math.min(trail.length, i + windowSize + 1);
     const slice = trail.slice(start, end);
     return slice.reduce((sum, p) => sum + p.rawY, 0) / slice.length;
+  });
+}
+
+/**
+ * 軌跡の X 座標を移動平均でスムージングする
+ */
+function smoothX(trail: TrailPoint[], windowSize: number): number[] {
+  return trail.map((_, i) => {
+    const start = Math.max(0, i - windowSize);
+    const end = Math.min(trail.length, i + windowSize + 1);
+    const slice = trail.slice(start, end);
+    return slice.reduce((sum, p) => sum + p.rawX, 0) / slice.length;
   });
 }
 
@@ -66,6 +82,223 @@ function calcYSpan(trail: TrailPoint[]): number {
 }
 
 /**
+ * 軌跡の全体的な X 幅（横方向のスパン）を計算する
+ */
+function calcXSpan(trail: TrailPoint[]): number {
+  const xs = trail.map((p) => p.rawX);
+  return Math.max(...xs) - Math.min(...xs);
+}
+
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
+
+/**
+ * L字判定
+ * 上から下へ伸びる縦線 + 下端で横に払う線 を検出する
+ */
+function recognizeLGesture(
+  smoothedX: number[],
+  smoothedY: number[],
+  xSpan: number,
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedY.length;
+  if (n < 20) return null;
+
+  const cornerIdx = smoothedY.reduce(
+    (best, y, idx) => (y > smoothedY[best] ? idx : best),
+    0,
+  );
+
+  // 角は序盤すぎず終盤すぎない位置にあること
+  const cornerPos = cornerIdx / Math.max(1, n - 1);
+  if (cornerPos < 0.2 || cornerPos > 0.95) return null;
+
+  const startX = smoothedX[0];
+  const startY = smoothedY[0];
+  const cornerX = smoothedX[cornerIdx];
+  const cornerY = smoothedY[cornerIdx];
+  const endX = smoothedX[n - 1];
+  const endY = smoothedY[n - 1];
+
+  const verticalDy = cornerY - startY;
+  const verticalDx = Math.abs(cornerX - startX);
+  const horizontalDx = Math.abs(endX - cornerX);
+  const horizontalDy = Math.abs(endY - cornerY);
+
+  const hasStrongVertical = verticalDy > ySpan * 0.35;
+  const hasStrongHorizontal = horizontalDx > xSpan * 0.3;
+  if (!hasStrongVertical || !hasStrongHorizontal) return null;
+
+  const verticalStraight = verticalDx <= xSpan * 0.65;
+  const horizontalStraight = horizontalDy <= ySpan * 0.5;
+  if (!verticalStraight || !horizontalStraight) return null;
+
+  const verticalityScore = clamp01(1 - verticalDx / Math.max(1, verticalDy));
+  const horizontalityScore = clamp01(
+    1 - horizontalDy / Math.max(1, horizontalDx),
+  );
+  const cornerScore = clamp01(1 - Math.abs(cornerPos - 0.65) / 0.65);
+  const confidence = clamp01(
+    verticalityScore * 0.45 + horizontalityScore * 0.45 + cornerScore * 0.1,
+  );
+
+  // L字判定まで通った場合は、IntentGate閾値(0.45)を越えやすいよう最低値を底上げする
+  return { type: "L", confidence: Math.max(0.52, confidence) };
+}
+
+/**
+ * Z字判定
+ * 左から右へ → 右下へ → 右から左へ のジグザグパターンを検出する（雷マーク⚡）
+ */
+function recognizeZGesture(
+  smoothedX: number[],
+  smoothedY: number[],
+  xSpan: number,
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedX.length;
+  if (n < 20) return null;
+
+  // X方向で方向転換が1-2回起こることを確認（Z字の特徴）
+  const minChange = xSpan * 0.15; // X変化の最小値
+  const xChanges = countDirectionChanges(smoothedX, minChange);
+  if (xChanges < 1 || xChanges > 2) return null;
+
+  // Y方向での変化量がある程度ある（完全に水平ではない）
+  if (ySpan < xSpan * 0.3) return null;
+
+  // 軌跡全体でX方向の変化が大きい
+  const startX = smoothedX[0];
+  const endX = smoothedX[n - 1];
+  const xTotal = Math.abs(endX - startX);
+  if (xTotal < xSpan * 0.5) return null;
+
+  // ジグザグが起こっているか確認： 全体では左から右（または右から左）、その中で反転がある
+  // confidenceの計算
+  const xChangeFrequency = xChanges / 2; // 1-2回なら 0.5-1.0
+  const xCoverage = clamp01(xTotal / xSpan); // X全体をどれだけ使っているか
+  const yCoverage = clamp01(ySpan / xSpan); // Y方向の広さ（0.3以上が必須）
+  const confidence = clamp01(
+    xChangeFrequency * 0.4 + xCoverage * 0.35 + yCoverage * 0.25,
+  );
+
+  return confidence > 0.3 ? { type: "Z", confidence } : null;
+}
+
+/**
+ * W判定（横一直線）
+ * 横方向へまっすぐ進む軌跡を検出する
+ */
+function recognizeWaveGesture(
+  smoothedX: number[],
+  smoothedY: number[],
+  xSpan: number,
+  ySpan: number,
+  durationMs: number,
+): GestureResult | null {
+  const n = smoothedX.length;
+  if (n < 20) return null;
+
+  // ウェーブ専用: 横へ引いたかどうかを最優先で判定する
+  // ほぼ一直線の横スワイプで成立させる
+  if (xSpan < 5) return null;
+  if (ySpan > xSpan * 0.65) return null;
+  if (durationMs < 280 || durationMs > 2200) return null;
+
+  // X方向は概ね単調に進む（大きな折り返しがない）
+  let forward = 0;
+  let backward = 0;
+  for (let i = 1; i < n; i++) {
+    const dx = smoothedX[i] - smoothedX[i - 1];
+    if (Math.abs(dx) < xSpan * 0.01) continue;
+    if (dx > 0) forward++;
+    else backward++;
+  }
+
+  const total = forward + backward;
+  if (total === 0) return null;
+  const monotonicity = Math.max(forward, backward) / total;
+  if (monotonicity < 0.58) return null;
+
+  const straightness = clamp01(1 - ySpan / Math.max(1, xSpan * 0.65));
+  const horizontalScore = clamp01(xSpan / 10);
+  const monotonicScore = clamp01((monotonicity - 0.58) / 0.42);
+  const durationScore = clamp01(1 - Math.abs(durationMs - 900) / 900);
+  const confidence = clamp01(
+    straightness * 0.35 +
+      horizontalScore * 0.35 +
+      monotonicScore * 0.2 +
+      durationScore * 0.1,
+  );
+
+  return confidence > 0.35
+    ? { type: "W", confidence: Math.max(0.6, confidence) }
+    : null;
+}
+
+/**
+ * 逆V字判定（∧の形、頂点が上）
+ * 中央付近で上方向の頂点を作り、始点/終点が下側にある形を検出する
+ */
+function recognizeInvVGesture(
+  smoothedY: number[],
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedY.length;
+  if (n < 20) return null;
+
+  // Y方向の移動量がある程度ないと判定不可
+  if (ySpan < 5) return null;
+
+  // 逆Vは Y方向の方向転換が1〜2回で、頂点が中央付近に来るのが基本
+  const minChange = ySpan * 0.15;
+  const changes = countDirectionChanges(smoothedY, minChange);
+  if (changes !== 1 && changes !== 2) return null;
+
+  const apexIdx = smoothedY.reduce(
+    (best, y, idx) => (y < smoothedY[best] ? idx : best),
+    0,
+  );
+  const apexPos = apexIdx / Math.max(1, n - 1);
+  if (apexPos < 0.2 || apexPos > 0.8) return null;
+
+  const apexY = smoothedY[apexIdx];
+  const maxY = Math.max(...smoothedY);
+
+  // 頂点の左右で十分に下方向へ降りていること（両脚がある）
+  const leftLeg = smoothedY.slice(0, apexIdx + 1);
+  const rightLeg = smoothedY.slice(apexIdx);
+  if (!leftLeg.length || !rightLeg.length) return null;
+
+  const leftLowY = Math.max(...leftLeg);
+  const rightLowY = Math.max(...rightLeg);
+  const leftDrop = leftLowY - apexY;
+  const rightDrop = rightLowY - apexY;
+  const hasClearApex = apexY < maxY - ySpan * 0.5;
+  const hasBothLegs = leftDrop > ySpan * 0.35 && rightDrop > ySpan * 0.35;
+  if (!hasClearApex || !hasBothLegs) return null;
+
+  const apexCenteredness = clamp01(1 - Math.abs(apexPos - 0.5) * 2);
+  const symmetry = clamp01(
+    1 - Math.abs(leftDrop - rightDrop) / Math.max(1, leftDrop + rightDrop),
+  );
+  const depthScore = clamp01(
+    Math.min(leftDrop, rightDrop) / Math.max(1, ySpan),
+  );
+  const turnScore = changes === 1 ? 1 : 0.85;
+  const confidence = clamp01(
+    apexCenteredness * 0.4 +
+      symmetry * 0.22 +
+      depthScore * 0.28 +
+      turnScore * 0.1,
+  );
+
+  return confidence > 0.4 ? { type: "InvV", confidence } : null;
+}
+
+/**
  * 軌跡が V字 か M字 かを判定する
  * @param trail 軌跡の座標列
  * @returns 判定結果
@@ -74,13 +307,44 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
   // 点が少なすぎる場合は判定不能
   if (trail.length < 20) return { type: "unknown" };
 
-  // Y 方向の移動量が小さすぎる場合は判定しない
+  // Y 方向の移動量が小さすぎる場合でも、W（横一直線）は成立しうる
   const ySpan = calcYSpan(trail);
-  if (ySpan < 2) return { type: "unknown" };
+  const xSpan = calcXSpan(trail);
+  if (ySpan < 2 && xSpan < 5) return { type: "unknown" };
 
   // スムージング（ウィンドウサイズ: 全体の約 10%）
   const windowSize = Math.max(3, Math.floor(trail.length * 0.1));
+  const smoothedX = smoothX(trail, windowSize);
   const smoothedY = smoothY(trail, windowSize);
+  const durationMs = trail[trail.length - 1].t - trail[0].t;
+
+  // --- L字判定を先に実施（V字との誤分類を減らす） ---
+  if (xSpan >= 2) {
+    const lResult = recognizeLGesture(smoothedX, smoothedY, xSpan, ySpan);
+    if (lResult) return lResult;
+  }
+
+  // --- 逆V字判定を実施（炎🔥） ---
+  const invVResult = recognizeInvVGesture(smoothedY, ySpan);
+  if (invVResult) return invVResult;
+
+  // --- 横一直線判定を実施（ウェーブ🌊） ---
+  if (xSpan >= 2) {
+    const waveResult = recognizeWaveGesture(
+      smoothedX,
+      smoothedY,
+      xSpan,
+      ySpan,
+      durationMs,
+    );
+    if (waveResult) return waveResult;
+  }
+
+  // --- Z字判定を実施（雷マーク⚡） ---
+  if (xSpan >= 2) {
+    const zResult = recognizeZGesture(smoothedX, smoothedY, xSpan, ySpan);
+    if (zResult) return zResult;
+  }
 
   // 転換の最小変化量（Y スパンの 15% 以下の変化はノイズとみなす）
   const minChange = ySpan * 0.15;
