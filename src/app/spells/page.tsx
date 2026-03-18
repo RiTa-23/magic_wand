@@ -100,6 +100,8 @@ export default function SpellsPage() {
                 <ul className="space-y-4" aria-label="呪文一覧">
                   {spells.map((spell) => {
                     const isExpanded = expandedSpellIds.includes(spell.id);
+                    const panelId = `spell-panel-${spell.id}`;
+                    const buttonId = `spell-trigger-${spell.id}`;
                     const description =
                       spellMetaById[spell.id]?.description ??
                       "この呪文の説明は準備中です。";
@@ -115,13 +117,15 @@ export default function SpellsPage() {
                                 : [...prev, spell.id],
                             )
                           }
+                          id={buttonId}
                           className={
                             "w-full text-left rounded-xl border bg-stone/20 px-5 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]/35 " +
                             (isExpanded
                               ? "border-[color:var(--gold)]/30 bg-gold/5"
                               : "border-[color:var(--gold)]/10 hover:border-[color:var(--gold)]/20 hover:bg-stone/25")
                           }
-                          aria-pressed={isExpanded}
+                          aria-expanded={isExpanded}
+                          aria-controls={panelId}
                         >
                           <div className="flex items-start justify-between gap-6">
                             <div>
@@ -139,6 +143,9 @@ export default function SpellsPage() {
                         </button>
 
                         <div
+                          id={panelId}
+                          role="region"
+                          aria-labelledby={buttonId}
                           className={
                             "grid transition-[grid-template-rows,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none " +
                             (isExpanded
