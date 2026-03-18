@@ -190,3 +190,18 @@ export function packBinaryPixels(binary: BinaryImageData): Uint8Array {
 
   return packed;
 }
+
+/**
+ * Load an image from URL and return it as a CanvasImageSource.
+ * For use with renderCanvasImage().
+ */
+export function loadImageFromUrl(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () =>
+      reject(new Error(`Failed to load image from URL: ${url}`));
+    img.src = url;
+  });
+}

@@ -49,6 +49,7 @@ export interface IntentDispatchDeps {
   ) => Promise<{ success: boolean; message: string }>;
   isPrinterConnected: () => boolean;
   printOmikuji: (message: string) => Promise<void>;
+  printOmikujiWithRandomImage?: () => Promise<void>;
   createOmikujiMessage?: () => string;
   timeoutMs?: number;
   autoOffEnabled?: boolean;
@@ -107,11 +108,17 @@ export async function dispatchCommittedIntent(
         };
       }
 
-      const message = deps.createOmikujiMessage
-        ? deps.createOmikujiMessage()
-        : createDefaultOmikujiMessage();
+      // キャラクター画像がある場合はそれを印刷、なければテキストで印刷
+      if (deps.printOmikujiWithRandomImage) {
+        await withTimeout(deps.printOmikujiWithRandomImage(), timeoutMs);
+      } else {
+        const message = deps.createOmikujiMessage
+          ? deps.createOmikujiMessage()
+          : createDefaultOmikujiMessage();
 
-      await withTimeout(deps.printOmikuji(message), timeoutMs);
+        await withTimeout(deps.printOmikuji(message), timeoutMs);
+      }
+
       return {
         ok: true,
         target: "omikuji",
