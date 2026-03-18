@@ -242,8 +242,8 @@ export default function PlayPage() {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(true);
   const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
-  const [, setDispatchPhase] = useState<DispatchPhase>("idle");
-  const [, setDispatchMessage] = useState("");
+  const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
+  const [dispatchMessage, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
     string | null
   >(null);
@@ -1161,6 +1161,27 @@ export default function PlayPage() {
             <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
               <p className="text-xs leading-relaxed tracking-wide text-red-200">
                 {inputDeviceErrorMessage}
+              </p>
+            </div>
+          )}
+
+          {dispatchPhase !== "idle" && (
+            <div
+              role="status"
+              aria-live="polite"
+              className={`rounded-xl border px-4 py-3 ${
+                dispatchPhase === "success"
+                  ? "border-emerald-400/40 bg-emerald-950/20"
+                  : dispatchPhase === "failed" || dispatchPhase === "timeout"
+                    ? "border-rose-400/40 bg-rose-950/20"
+                    : "border-gold-dim/30 bg-stone/20"
+              }`}
+            >
+              <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+                DISPATCH STATUS
+              </p>
+              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-bright/90">
+                {dispatchMessage}
               </p>
             </div>
           )}
