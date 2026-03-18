@@ -37,11 +37,7 @@ export default function HomePage() {
 
   const handleSelectPlayMode = (mode: PlayInputMode) => {
     setIsPlayModeModalOpen(false);
-    if (mode === "camera") {
-      router.push("/play/camera");
-    } else {
-      router.push("/play?input=joycon");
-    }
+    router.push(`/play/${mode}`);
   };
 
   return (
