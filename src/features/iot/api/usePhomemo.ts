@@ -140,7 +140,10 @@ export function usePhomemo() {
 
       // 画像のアスペクト比を保ったまま、キャンバスサイズを計算
       const maxWidth = 576;
-      const imageAspectRatio = img.naturalWidth / img.naturalHeight;
+      // 画像寸法を検証し、ゼロや非有限値の場合は最小値にクランプ
+      const safeWidth = Math.max(1, img.naturalWidth || 1);
+      const safeHeight = Math.max(1, img.naturalHeight || 1);
+      const imageAspectRatio = safeWidth / safeHeight;
       const canvasWidth = maxWidth;
       const canvasHeight = Math.round(maxWidth / imageAspectRatio);
 
