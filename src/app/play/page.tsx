@@ -25,11 +25,119 @@ const TRAIL_MIN_POINTS = 20;
 const INTENT_WINDOW_MS = 7000;
 const GESTURE_CONFIDENCE_THRESHOLD = 0.55;
 const TRAIL_MAX_RENDER_POINTS = 90;
-const CALIBRATION_DURATION_MS = 2500;
+const CALIBRATION_DURATION_MS = 3000;
 const CALIBRATION_ACCEL_THRESHOLD = 500;
 const DISPATCH_COOLDOWN_MS = 1200;
+const CANVAS_WIDTH = 640;
+const CANVAS_HEIGHT = 480;
+const PADDING = 40;
 
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
+
+// ── ビューポートの計算とスムージングヘルパー ──
+function adjustViewBounds(
+  trail: { rawX: number; rawY: number }[],
+  extraPoints: { rawX: number; rawY: number }[],
+  viewBoundsRef: React.MutableRefObject<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } | null>,
+  minSpan: number,
+  lerp: number,
+) {
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+
+  for (const pt of trail) {
+    if (pt.rawX < minX) minX = pt.rawX;
+    if (pt.rawX > maxX) maxX = pt.rawX;
+    if (pt.rawY < minY) minY = pt.rawY;
+    if (pt.rawY > maxY) maxY = pt.rawY;
+  }
+  for (const pt of extraPoints) {
+    if (pt.rawX < minX) minX = pt.rawX;
+    if (pt.rawX > maxX) maxX = pt.rawX;
+    if (pt.rawY < minY) minY = pt.rawY;
+    if (pt.rawY > maxY) maxY = pt.rawY;
+  }
+
+  if (isFinite(minX)) {
+    if (maxX - minX < minSpan) {
+      const c = (minX + maxX) / 2;
+      minX = c - minSpan / 2;
+      maxX = c + minSpan / 2;
+    }
+    if (maxY - minY < minSpan) {
+      const c = (minY + maxY) / 2;
+      minY = c - minSpan / 2;
+      maxY = c + minSpan / 2;
+    }
+    const mx = (maxX - minX) * 0.1,
+      my = (maxY - minY) * 0.1;
+    minX -= mx;
+    maxX += mx;
+    minY -= my;
+    maxY += my;
+
+    // アスペクト比をキャンバスの描画領域に固定
+    const spanX = Math.max(maxX - minX, 1);
+    const spanY = Math.max(maxY - minY, 1);
+    const drawW = CANVAS_WIDTH - PADDING * 2;
+    const drawH = CANVAS_HEIGHT - PADDING * 2;
+    const targetRatio = drawW / drawH;
+    const currentRatio = spanX / spanY;
+
+    if (currentRatio > targetRatio) {
+      const newSpanY = spanX / targetRatio;
+      const cy = (minY + maxY) / 2;
+      minY = cy - newSpanY / 2;
+      maxY = cy + newSpanY / 2;
+    } else {
+      const newSpanX = spanY * targetRatio;
+      const cx = (minX + maxX) / 2;
+      minX = cx - newSpanX / 2;
+      maxX = cx + newSpanX / 2;
+    }
+
+    if (!viewBoundsRef.current) {
+      viewBoundsRef.current = { minX, maxX, minY, maxY };
+    } else {
+      viewBoundsRef.current.minX += (minX - viewBoundsRef.current.minX) * lerp;
+      viewBoundsRef.current.maxX += (maxX - viewBoundsRef.current.maxX) * lerp;
+      viewBoundsRef.current.minY += (minY - viewBoundsRef.current.minY) * lerp;
+      viewBoundsRef.current.maxY += (maxY - viewBoundsRef.current.maxY) * lerp;
+    }
+    return {
+      minX: viewBoundsRef.current.minX,
+      maxX: viewBoundsRef.current.maxX,
+      minY: viewBoundsRef.current.minY,
+      maxY: viewBoundsRef.current.maxY,
+    };
+  }
+
+  return { minX: 0, maxX: CANVAS_WIDTH, minY: 0, maxY: CANVAS_HEIGHT };
+}
+
+function toCanvasCoords(
+  rawX: number,
+  rawY: number,
+  minX: number,
+  maxX: number,
+  minY: number,
+  maxY: number,
+) {
+  const spanX = Math.max(maxX - minX, 1);
+  const spanY = Math.max(maxY - minY, 1);
+  const drawW = CANVAS_WIDTH - PADDING * 2;
+  const drawH = CANVAS_HEIGHT - PADDING * 2;
+  const cx = PADDING + ((rawX - minX) / spanX) * drawW;
+  const cy = PADDING + ((rawY - minY) / spanY) * drawH;
+  return { cx, cy };
+}
 
 function toTrailPathPoints(trail: { rawX: number; rawY: number }[]): string {
   if (trail.length < 2) return "";
@@ -100,6 +208,14 @@ export default function PlayPage() {
     x: number;
     y: number;
     z: number;
+  } | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animFrameRef = useRef<number>(0);
+  const viewBoundsRef = useRef<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
   } | null>(null);
 
   useEffect(() => {
@@ -222,6 +338,7 @@ export default function PlayPage() {
       });
   }, [gateResult, isPhomemoConnected, printTestPage]);
 
+  // ── キャリブレーション & IMU トラッキング ──
   useEffect(() => {
     if (joyConStatus !== "CONNECTED" || !joyconState) {
       trailRef.current = [];
@@ -338,6 +455,161 @@ export default function PlayPage() {
 
     prevRPressedRef.current = isRPressed;
   }, [calibrationState, joyConStatus, joyconState]);
+
+  // ── キャンバス描画 ──
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // 背景グリッド
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= CANVAS_WIDTH; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, CANVAS_HEIGHT);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= CANVAS_HEIGHT; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(CANVAS_WIDTH, y);
+        ctx.stroke();
+      }
+
+      // 描画領域の枠
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(
+        PADDING,
+        PADDING,
+        CANVAS_WIDTH - PADDING * 2,
+        CANVAS_HEIGHT - PADDING * 2,
+      );
+
+      // 十字線
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(CANVAS_WIDTH / 2, PADDING);
+      ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT - PADDING);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(PADDING, CANVAS_HEIGHT / 2);
+      ctx.lineTo(CANVAS_WIDTH - PADDING, CANVAS_HEIGHT / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const now = performance.now();
+      const trail = trailRef.current;
+      const color = "168, 85, 247"; // purple for IMU
+
+      // IMU トラッキングビジュアル
+      const extraPoints = [
+        { rawX: imuPosRef.current.x, rawY: imuPosRef.current.y },
+      ];
+      const { minX, maxX, minY, maxY } = adjustViewBounds(
+        trail,
+        extraPoints,
+        viewBoundsRef,
+        200,
+        0.15,
+      );
+
+      // 軌跡描画
+      if (trail.length > 1) {
+        for (let i = 1; i < trail.length; i++) {
+          const age = (now - trail[i].t) / 5000;
+          const alpha = Math.max(0, 1 - age);
+          const p0 = toCanvasCoords(
+            trail[i - 1].rawX,
+            trail[i - 1].rawY,
+            minX,
+            maxX,
+            minY,
+            maxY,
+          );
+          const p1 = toCanvasCoords(
+            trail[i].rawX,
+            trail[i].rawY,
+            minX,
+            maxX,
+            minY,
+            maxY,
+          );
+          ctx.strokeStyle = `rgba(${color}, ${alpha * 0.7})`;
+          ctx.lineWidth = Math.max(1, (1 - age) * 3);
+          ctx.beginPath();
+          ctx.moveTo(p0.cx, p0.cy);
+          ctx.lineTo(p1.cx, p1.cy);
+          ctx.stroke();
+        }
+      }
+
+      // カーソル描画
+      const { cx: curX, cy: curY } = toCanvasCoords(
+        imuPosRef.current.x,
+        imuPosRef.current.y,
+        minX,
+        maxX,
+        minY,
+        maxY,
+      );
+      drawDot(ctx, curX, curY, color);
+
+      // ジャイロ値表示
+      if (joyconState) {
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        ctx.font = "10px monospace";
+        ctx.fillText(
+          `Gyro  Y:${joyconState.imu.gyro.y}  Z:${joyconState.imu.gyro.z}`,
+          PADDING,
+          CANVAS_HEIGHT - 10,
+        );
+      }
+
+      // モードラベル
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText("IMU モード", PADDING, PADDING - 10);
+
+      animFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    animFrameRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [joyconState]);
+
+  // ── ドット描画ヘルパー ──
+  function drawDot(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    rgb: string,
+  ) {
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28);
+    gradient.addColorStop(0, `rgba(${rgb}, 0.5)`);
+    gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgb(${rgb})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   const handleMicToggle = () => {
     if (status === "LISTENING") {
@@ -488,6 +760,15 @@ export default function PlayPage() {
         {/* Center content */}
         <div className="min-h-svh flex items-center justify-center">
           <div className="w-full max-w-sm text-center space-y-6">
+            {/* WAND TRAIL PREVIEW - Hidden canvas for tracking visualization */}
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              className="hidden"
+              aria-hidden="true"
+            />
+
             <div className="mx-auto w-full max-w-[340px] h-[220px] rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm relative overflow-hidden">
               {showCommitFeedback && (
                 <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse" />
