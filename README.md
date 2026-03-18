@@ -10,11 +10,11 @@
 
 ### 入力方式
 
-| 入力 | デバイス | 説明 |
-| --- | --- | --- |
-| 音声認識 | マイク（Web Speech API） | 日本語の呪文を認識（あいまい一致対応） |
-| ジェスチャー（IMU） | Nintendo Joy-Con（WebHID） | ジャイロセンサーで杖の動き（V字/M字）を判定 |
-| ジェスチャー（カメラ） | Webカメラ（ONNX/YOLOv8-pose） | 杖先のポーズ推定から軌跡を判定 |
+| 入力                   | デバイス                      | 説明                                        |
+| ---------------------- | ----------------------------- | ------------------------------------------- |
+| 音声認識               | マイク（Web Speech API）      | 日本語の呪文を認識（あいまい一致対応）      |
+| ジェスチャー（IMU）    | Nintendo Joy-Con（WebHID）    | ジャイロセンサーで杖の動き（V字/M字）を判定 |
+| ジェスチャー（カメラ） | Webカメラ（ONNX/YOLOv8-pose） | 杖先のポーズ推定から軌跡を判定              |
 
 ### 魔法発動の仕組み（インテントゲート）
 
@@ -25,11 +25,11 @@
 
 ### 連携デバイス
 
-| デバイス | 接続方式 | 用途 |
-| --- | --- | --- |
-| Nintendo Joy-Con | WebHID | ジャイロによるジェスチャー入力 |
-| TP-Link Tapo P300 | Wi-Fi（API） | 4ポートスマート電源タップの制御 |
-| Phomemo M02S | Web Bluetooth | おみくじの感熱印刷 |
+| デバイス          | 接続方式      | 用途                            |
+| ----------------- | ------------- | ------------------------------- |
+| Nintendo Joy-Con  | WebHID        | ジャイロによるジェスチャー入力  |
+| TP-Link Tapo P300 | Wi-Fi（API）  | 4ポートスマート電源タップの制御 |
+| Phomemo M02S      | Web Bluetooth | おみくじの感熱印刷              |
 
 ---
 
@@ -37,54 +37,56 @@
 
 ### フレームワーク・ランタイム
 
-| 技術 | 用途 |
-| --- | --- |
-| [Next.js](https://nextjs.org/) (App Router) | Reactフレームワーク |
-| [TypeScript](https://www.typescriptlang.org/) | 型付き言語 |
-| [React](https://react.dev/) 19 | UIライブラリ |
-| [Bun](https://bun.sh/) | パッケージマネージャ / ランタイム |
-| [Devbox](https://www.jetpack.io/devbox) | 開発環境管理 |
+| 技術                                          | 用途                              |
+| --------------------------------------------- | --------------------------------- |
+| [Next.js](https://nextjs.org/) (App Router)   | Reactフレームワーク               |
+| [TypeScript](https://www.typescriptlang.org/) | 型付き言語                        |
+| [React](https://react.dev/) 19                | UIライブラリ                      |
+| [Bun](https://bun.sh/)                        | パッケージマネージャ / ランタイム |
+| [Devbox](https://www.jetpack.io/devbox)       | 開発環境管理                      |
 
 ### 開発ツール
 
-| 技術 | 用途 |
-| --- | --- |
-| [Vitest](https://vitest.dev/) | テストランナー |
-| [oxlint](https://oxc.rs/docs/guide/usage/linter.html) | Linter |
-| [Prettier](https://prettier.io/) | Formatter |
-| [GitHub Actions](https://github.co.jp/features/actions) | CI/CD |
-| [CodeRabbit](https://coderabbit.ai/) | AIコードレビュー |
+| 技術                                                           | 用途                  |
+| -------------------------------------------------------------- | --------------------- |
+| [Vitest](https://vitest.dev/)                                  | テストランナー        |
+| [oxlint](https://oxc.rs/docs/guide/usage/linter.html)          | Linter                |
+| [Prettier](https://prettier.io/)                               | Formatter             |
+| [GitHub Actions](https://github.co.jp/features/actions)        | CI/CD                 |
+| [CodeRabbit](https://coderabbit.ai/)                           | AIコードレビュー      |
 | [Babel React Compiler](https://react.dev/learn/react-compiler) | React最適化コンパイラ |
 
 ### UI・スタイリング
 
-| 技術 | 用途 |
-| --- | --- |
-| [Tailwind CSS](https://tailwindcss.com/) v4 | CSSフレームワーク |
-| [Lucide React](https://lucide.dev/) | アイコンライブラリ |
-| [next-themes](https://github.com/pacocoursey/next-themes) | テーマ管理 |
-| Google Fonts (Cinzel, Cormorant Garamond, MedievalSharp, Geist) | フォント |
+| 技術                                                            | 用途               |
+| --------------------------------------------------------------- | ------------------ |
+| [Tailwind CSS](https://tailwindcss.com/) v4                     | CSSフレームワーク  |
+| [Lucide React](https://lucide.dev/)                             | アイコンライブラリ |
+| [next-themes](https://github.com/pacocoursey/next-themes)       | テーマ管理         |
+| Google Fonts (Cinzel, Cormorant Garamond, MedievalSharp, Geist) | フォント           |
 
 ### AI/ML・画像認識
 
-| 技術 | 用途 |
-| --- | --- |
-| [ONNX Runtime Web](https://onnxruntime.ai/) | 杖検出モデル推論 (YOLOv8-pose) |
-| 独自実装 | ジェスチャー認識（軌跡の方向転換回数ベース） |
+| 技術                                                                                   | 用途                                               |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| [ONNX Runtime Web](https://onnxruntime.ai/)                                            | 杖検出モデル推論 (YOLOv8-pose)                     |
+| [Roboflow](https://roboflow.com/)                                                      | 学習データのアノテーション・データセット管理       |
+| [Python](https://www.python.org/) + [Google Colab](https://colab.research.google.com/) | YOLOv8-pose モデルの学習・ONNXモデルのエクスポート |
+| 独自実装                                                                               | ジェスチャー認識（軌跡の方向転換回数ベース）       |
 
 ### ブラウザAPI
 
-| 技術 | 用途 |
-| --- | --- |
-| [Web Speech API](https://developer.mozilla.org/ja/docs/Web/API/Web_Speech_API) | 音声認識（日本語） |
-| [WebHID API](https://developer.mozilla.org/en-US/docs/Web/API/WebHID_API) | Joy-Con接続 |
-| [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API) | Phomemo M02Sプリンター接続 |
-| [getUserMedia API](https://developer.mozilla.org/ja/docs/Web/API/MediaDevices/getUserMedia) | カメラ映像取得 |
+| 技術                                                                                        | 用途                       |
+| ------------------------------------------------------------------------------------------- | -------------------------- |
+| [Web Speech API](https://developer.mozilla.org/ja/docs/Web/API/Web_Speech_API)              | 音声認識（日本語）         |
+| [WebHID API](https://developer.mozilla.org/en-US/docs/Web/API/WebHID_API)                   | Joy-Con接続                |
+| [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)     | Phomemo M02Sプリンター接続 |
+| [getUserMedia API](https://developer.mozilla.org/ja/docs/Web/API/MediaDevices/getUserMedia) | カメラ映像取得             |
 
 ### IoT連携
 
-| 技術 | 用途 |
-| --- | --- |
+| 技術                                                                       | 用途                           |
+| -------------------------------------------------------------------------- | ------------------------------ |
 | [tp-link-tapo-connect](https://github.com/dickydoouk/tp-link-tapo-connect) | TP-Link Tapoスマートプラグ制御 |
 
 ---

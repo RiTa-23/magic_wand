@@ -1,0 +1,266 @@
+<mxfile host="65bd71144e">
+    <diagram id="architecture" name="システムアーキテクチャ">
+        <mxGraphModel dx="864" dy="593" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="input-group" value="入力層" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=8;dashed=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="40" width="520" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="voice-input" value="🎤 音声入力&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Web Speech API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="90" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="joycon-input" value="🎮 Joy-Con&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;WebHID API (IMU)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="90" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="camera-input" value="📷 カメラ&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;getUserMedia API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="90" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="recognition-group" value="認識層" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#333333;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=8;dashed=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="280" width="520" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="spell-matcher" value="呪文照合&lt;br&gt;&lt;b&gt;Spell Matcher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;あいまい一致 / Levenshtein&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="330" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="wand-detector" value="杖検出&lt;br&gt;&lt;b&gt;Wand Detector&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;ONNX Runtime / YOLOv8-pose&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="330" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="gesture-recognizer" value="ジェスチャー認識&lt;br&gt;&lt;b&gt;Gesture Recognizer&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;V字 / M字 判定&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="330" width="150" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="orchestration-group" value="統合層" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#333333;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=8;dashed=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="520" width="360" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="intent-gate" value="インテントゲート&lt;br&gt;&lt;b&gt;Intent Gate&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;音声 × ジェスチャー照合&lt;br&gt;7秒タイムウィンドウ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="570" width="170" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="dispatcher" value="ディスパッチャー&lt;br&gt;&lt;b&gt;Intent Dispatcher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;デバイス実行振り分け&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="570" width="140" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="output-group" value="出力層" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=8;dashed=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="740" width="360" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="tapo" value="💡 Tapo P300&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;スマートプラグ制御&lt;br&gt;Wi-Fi API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="790" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="phomemo" value="🖨️ Phomemo M02S&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;おみくじ印刷&lt;br&gt;Web Bluetooth&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="790" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-voice-spell" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="voice-input" target="spell-matcher" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-joycon-gesture" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="joycon-input" target="gesture-recognizer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-joycon-gesture-label" value="ジャイロ / 加速度" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#666666;" parent="arrow-joycon-gesture" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arrow-camera-wand" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="camera-input" target="wand-detector" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-camera-wand-label" value="映像フレーム" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#666666;" parent="arrow-camera-wand" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arrow-wand-gesture" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;strokeWidth=2;" parent="1" source="wand-detector" target="gesture-recognizer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-wand-gesture-label" value="杖先座標" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#666666;" parent="arrow-wand-gesture" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arrow-spell-gate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="spell-matcher" target="intent-gate" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-spell-gate-label" value="VoiceIntent" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#9673a6;fontStyle=2;" parent="arrow-spell-gate" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arrow-gesture-gate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="gesture-recognizer" target="intent-gate" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-gesture-gate-label" value="GestureIntent" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#9673a6;fontStyle=2;" parent="arrow-gesture-gate" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arrow-gate-dispatch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="intent-gate" target="dispatcher" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-gate-dispatch-label" value="committed" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#9673a6;fontStyle=3;" parent="arrow-gate-dispatch" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arrow-dispatch-tapo" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;" parent="1" source="dispatcher" target="tapo" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arrow-dispatch-phomemo" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;" parent="1" source="dispatcher" target="phomemo" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="modules" name="モジュール構成">
+        <mxGraphModel dx="633" dy="435" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="500" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="mod-voice" value="voice/&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;音声認識 + 呪文照合&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mod-device" value="device/&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Joy-Con WebHID&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="180" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mod-camera" value="camera/&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;ONNX杖検出 + カメラジェスチャー&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="300" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mod-gesture" value="gesture/&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;ジェスチャー認識（共通）&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="210" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mod-orchestrator" value="orchestrator/&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;IntentGate + Dispatcher&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="150" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mod-iot" value="iot/&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Tapo制御 + Phomemo印刷&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="1000" y="150" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="m-voice-orch" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="mod-voice" target="mod-orchestrator" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m-device-gesture" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="mod-device" target="mod-gesture" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m-camera-gesture" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="mod-camera" target="mod-gesture" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m-gesture-orch" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="mod-gesture" target="mod-orchestrator" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m-orch-iot" style="rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="mod-orchestrator" target="mod-iot" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="tech-stack" name="技術スタック">
+        <mxGraphModel dx="950" dy="652" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="ts-dev-group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="720" width="1320" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-dev-label" value="開発環境 / ツールチェイン" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="730" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-devbox" value="Devbox&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Nix ベース環境管理&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="770" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-oxlint" value="oxlint&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Linter&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="770" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-prettier" value="Prettier&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Formatter&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="770" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-vitest" value="Vitest&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;テスト&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="770" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-ghactions" value="GitHub Actions&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;CI/CD&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="770" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-coderabbit" value="CodeRabbit&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;AI レビュー&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="770" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-runtime-group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0e6ff;strokeColor=#9673a6;dashed=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="560" width="1320" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-runtime-label" value="ランタイム / ビルド" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="570" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-bun" value="Bun&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;パッケージマネージャ&lt;br&gt;/ ランタイム&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="610" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-typescript" value="TypeScript&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;型システム&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="610" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-swc" value="SWC&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;トランスパイラ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="610" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-react-compiler" value="React Compiler&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;最適化コンパイラ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="550" y="610" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-fw-group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4e8;strokeColor=#82b366;dashed=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="400" width="1320" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-fw-label" value="フレームワーク" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="410" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-nextjs" value="Next.js 16&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;App Router / SSR&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="450" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-react" value="React 19&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;UI ライブラリ&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="450" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-tailwind" value="Tailwind CSS v4&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;ユーティリティ CSS&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="450" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-lucide" value="Lucide React&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;アイコン&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="450" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-nextthemes" value="next-themes&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;テーマ管理&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="450" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-fonts" value="Google Fonts&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Cinzel / MedievalSharp&lt;br&gt;Cormorant / Geist&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="450" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-app-group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#d6b656;dashed=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="200" width="1320" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-app-label" value="アプリケーション機能" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="210" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-onnx" value="ONNX Runtime Web&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;YOLOv8-pose 推論&lt;br&gt;webgpu / webgl / wasm&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="250" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-gesture" value="Gesture Recognizer&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;独自実装&lt;br&gt;V字 / M字 判定&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="250" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-intent" value="Intent Gate&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;音声 × ジェスチャー&lt;br&gt;マルチモーダル照合&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="250" width="170" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-spell" value="Spell Matcher&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;呪文辞書照合&lt;br&gt;Levenshtein距離&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="630" y="250" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-tapo-lib" value="tp-link-tapo-connect&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;スマートプラグ制御&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="250" width="170" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-api-group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f0fe;strokeColor=#6c8ebf;dashed=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="40" width="1320" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-api-label" value="ブラウザ API" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="50" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-speech" value="Web Speech API&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;音声認識（日本語）&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="90" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-webhid" value="WebHID API&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Joy-Con 接続&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="90" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-getusermedia" value="getUserMedia&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;カメラ映像取得&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="90" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-webbluetooth" value="Web Bluetooth&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Phomemo 接続&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="90" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts-raf" value="requestAnimationFrame&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;検出ループ / 描画&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;arcSize=15;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="90" width="190" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
