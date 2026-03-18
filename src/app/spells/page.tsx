@@ -9,8 +9,8 @@ import { SPELL_DICTIONARY } from "@/features/voice/lib/spell-matcher";
 
 export default function SpellsPage() {
   const spells = useMemo(() => SPELL_DICTIONARY, []);
-  const [selectedSpellId, setSelectedSpellId] = useState<string | null>(
-    spells[0]?.id ?? null,
+  const [expandedSpellIds, setExpandedSpellIds] = useState<string[]>(() =>
+    spells[0]?.id ? [spells[0].id] : [],
   );
 
   const spellMetaById = useMemo(
@@ -99,7 +99,7 @@ export default function SpellsPage() {
               <div className="magic-scroll h-full min-h-0 overflow-auto p-5 sm:p-8">
                 <ul className="space-y-4" aria-label="呪文一覧">
                   {spells.map((spell) => {
-                    const isSelected = spell.id === selectedSpellId;
+                    const isExpanded = expandedSpellIds.includes(spell.id);
                     const description =
                       spellMetaById[spell.id]?.description ??
                       "この呪文の説明は準備中です。";
@@ -108,14 +108,20 @@ export default function SpellsPage() {
                       <li key={spell.id}>
                         <button
                           type="button"
-                          onClick={() => setSelectedSpellId(spell.id)}
+                          onClick={() =>
+                            setExpandedSpellIds((prev) =>
+                              prev.includes(spell.id)
+                                ? prev.filter((id) => id !== spell.id)
+                                : [...prev, spell.id],
+                            )
+                          }
                           className={
                             "w-full text-left rounded-xl border bg-stone/20 px-5 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]/35 " +
-                            (isSelected
+                            (isExpanded
                               ? "border-[color:var(--gold)]/30 bg-gold/5"
                               : "border-[color:var(--gold)]/10 hover:border-[color:var(--gold)]/20 hover:bg-stone/25")
                           }
-                          aria-pressed={isSelected}
+                          aria-pressed={isExpanded}
                         >
                           <div className="flex items-start justify-between gap-6">
                             <div>
@@ -135,11 +141,11 @@ export default function SpellsPage() {
                         <div
                           className={
                             "overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out motion-reduce:transition-none " +
-                            (isSelected
+                            (isExpanded
                               ? "mt-3 max-h-[520px] opacity-100 translate-y-0"
                               : "mt-0 max-h-0 opacity-0 -translate-y-1 pointer-events-none")
                           }
-                          aria-hidden={!isSelected}
+                          aria-hidden={!isExpanded}
                         >
                           <div className="rounded-xl border border-[color:var(--gold)]/15 bg-black/10 backdrop-blur-sm px-5 py-4">
                             <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
