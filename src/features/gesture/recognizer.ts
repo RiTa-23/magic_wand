@@ -11,6 +11,7 @@ export type GestureResult =
   | { type: "M"; confidence: number }
   | { type: "L"; confidence: number }
   | { type: "Z"; confidence: number }
+  | { type: "InvV"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -185,6 +186,62 @@ function recognizeZGesture(
 }
 
 /**
+ * 逆V字判定（∧の形、頂点が上）
+ * 中央付近で上方向の頂点を作り、始点/終点が下側にある形を検出する
+ */
+function recognizeInvVGesture(
+  smoothedY: number[],
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedY.length;
+  if (n < 20) return null;
+
+  // Y方向の移動量がある程度ないと判定不可
+  if (ySpan < 5) return null;
+
+  // 逆Vは Y方向の方向転換が1〜2回で、頂点が中央付近に来るのが基本
+  const minChange = ySpan * 0.15;
+  const changes = countDirectionChanges(smoothedY, minChange);
+  if (changes !== 1 && changes !== 2) return null;
+
+  const apexIdx = smoothedY.reduce(
+    (best, y, idx) => (y < smoothedY[best] ? idx : best),
+    0,
+  );
+  const apexPos = apexIdx / Math.max(1, n - 1);
+  if (apexPos < 0.2 || apexPos > 0.8) return null;
+
+  const apexY = smoothedY[apexIdx];
+  const minY = Math.min(...smoothedY);
+  const maxY = Math.max(...smoothedY);
+
+  // 頂点の左右で十分に下方向へ降りていること（両脚がある）
+  const leftLeg = smoothedY.slice(0, apexIdx + 1);
+  const rightLeg = smoothedY.slice(apexIdx);
+  if (!leftLeg.length || !rightLeg.length) return null;
+
+  const leftLowY = Math.max(...leftLeg);
+  const rightLowY = Math.max(...rightLeg);
+  const leftDrop = leftLowY - apexY;
+  const rightDrop = rightLowY - apexY;
+  const hasClearApex = apexY < maxY - ySpan * 0.5;
+  const hasBothLegs = leftDrop > ySpan * 0.35 && rightDrop > ySpan * 0.35;
+  if (!hasClearApex || !hasBothLegs) return null;
+
+  const apexCenteredness = clamp01(1 - Math.abs(apexPos - 0.5) * 2);
+  const symmetry = clamp01(
+    1 - Math.abs(leftDrop - rightDrop) / Math.max(1, leftDrop + rightDrop),
+  );
+  const depthScore = clamp01(Math.min(leftDrop, rightDrop) / Math.max(1, ySpan));
+  const turnScore = changes === 1 ? 1 : 0.85;
+  const confidence = clamp01(
+    apexCenteredness * 0.4 + symmetry * 0.22 + depthScore * 0.28 + turnScore * 0.1,
+  );
+
+  return confidence > 0.4 ? { type: "InvV", confidence } : null;
+}
+
+/**
  * 軌跡が V字 か M字 かを判定する
  * @param trail 軌跡の座標列
  * @returns 判定結果
@@ -208,6 +265,10 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
     const lResult = recognizeLGesture(smoothedX, smoothedY, xSpan, ySpan);
     if (lResult) return lResult;
   }
+
+  // --- 逆V字判定を実施（炎🔥） ---
+  const invVResult = recognizeInvVGesture(smoothedY, ySpan);
+  if (invVResult) return invVResult;
 
   // --- Z字判定を実施（雷マーク⚡） ---
   if (xSpan >= 2) {

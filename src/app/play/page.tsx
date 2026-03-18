@@ -970,7 +970,7 @@ export default function PlayPage() {
 
             <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
               コツ:
-                接続直後はレール側を下にして3秒静止すると安定します。呪文の後7秒以内に、R長押しで0.8〜1.5秒ほどV/M/Lを1回しっかり描いて離すと通りやすいです。
+                接続直後はレール側を下にして3秒静止すると安定します。呪文の後10秒以内に、R長押しで0.8〜1.5秒ほどV/M/L/Z/InvVを1回しっかり描いて離すと通りやすいです。
             </p>
           </div>
         </div>
