@@ -132,8 +132,16 @@ export default function SpellsPage() {
                           </div>
                         </button>
 
-                        {isSelected && (
-                          <div className="mt-3 rounded-xl border border-[color:var(--gold)]/15 bg-black/10 backdrop-blur-sm px-5 py-4">
+                        <div
+                          className={
+                            "overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out motion-reduce:transition-none " +
+                            (isSelected
+                              ? "mt-3 max-h-[520px] opacity-100 translate-y-0"
+                              : "mt-0 max-h-0 opacity-0 -translate-y-1 pointer-events-none")
+                          }
+                          aria-hidden={!isSelected}
+                        >
+                          <div className="rounded-xl border border-[color:var(--gold)]/15 bg-black/10 backdrop-blur-sm px-5 py-4">
                             <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
                               <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 aspect-[4/3]">
                                 <Image
@@ -167,7 +175,7 @@ export default function SpellsPage() {
                               </div>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </li>
                     );
                   })}
