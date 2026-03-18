@@ -539,7 +539,10 @@ export default function PlayPage() {
           });
         } else {
           const mappedSpells = (
-            Object.entries(DEFAULT_SPELL_GESTURE_MAP) as [SpellId, GestureType][]
+            Object.entries(DEFAULT_SPELL_GESTURE_MAP) as [
+              SpellId,
+              GestureType,
+            ][]
           )
             .filter(([, gestureType]) => gestureType === recognized.type)
             .map(([spellId]) => spellId);
@@ -1010,7 +1013,8 @@ export default function PlayPage() {
                   onClick={handleSpeechLatencyModeToggle}
                   className="mx-auto px-4 py-1.5 rounded-full border border-gold-dim/30 text-[11px] tracking-[0.18em] uppercase text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
                 >
-                  音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
+                  音声判定モード:{" "}
+                  {speechLatencyMode === "safe" ? "安全" : "高速"}
                 </button>
               </>
             ) : (
@@ -1070,7 +1074,7 @@ export default function PlayPage() {
 
             <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
               コツ:
-                接続直後はレール側を下にして3秒静止すると安定します。呪文の後10秒以内に、R長押しで0.8〜1.5秒ほどV/M/L/Z/InvV/W（横一直線）を1回しっかり描いて離すと通りやすいです。
+              接続直後はレール側を下にして3秒静止すると安定します。呪文の後10秒以内に、R長押しで0.8〜1.5秒ほどV/M/L/Z/InvV/W（横一直線）を1回しっかり描いて離すと通りやすいです。
             </p>
           </div>
         </div>

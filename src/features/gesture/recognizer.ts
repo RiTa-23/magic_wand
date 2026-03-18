@@ -225,14 +225,17 @@ function recognizeWaveGesture(
   const straightness = clamp01(1 - ySpan / Math.max(1, xSpan * 0.65));
   const horizontalScore = clamp01(xSpan / 10);
   const monotonicScore = clamp01((monotonicity - 0.58) / 0.42);
-  const durationScore = clamp01(
-    1 - Math.abs(durationMs - 900) / 900,
-  );
+  const durationScore = clamp01(1 - Math.abs(durationMs - 900) / 900);
   const confidence = clamp01(
-    straightness * 0.35 + horizontalScore * 0.35 + monotonicScore * 0.2 + durationScore * 0.1,
+    straightness * 0.35 +
+      horizontalScore * 0.35 +
+      monotonicScore * 0.2 +
+      durationScore * 0.1,
   );
 
-  return confidence > 0.35 ? { type: "W", confidence: Math.max(0.6, confidence) } : null;
+  return confidence > 0.35
+    ? { type: "W", confidence: Math.max(0.6, confidence) }
+    : null;
 }
 
 /**
@@ -281,10 +284,15 @@ function recognizeInvVGesture(
   const symmetry = clamp01(
     1 - Math.abs(leftDrop - rightDrop) / Math.max(1, leftDrop + rightDrop),
   );
-  const depthScore = clamp01(Math.min(leftDrop, rightDrop) / Math.max(1, ySpan));
+  const depthScore = clamp01(
+    Math.min(leftDrop, rightDrop) / Math.max(1, ySpan),
+  );
   const turnScore = changes === 1 ? 1 : 0.85;
   const confidence = clamp01(
-    apexCenteredness * 0.4 + symmetry * 0.22 + depthScore * 0.28 + turnScore * 0.1,
+    apexCenteredness * 0.4 +
+      symmetry * 0.22 +
+      depthScore * 0.28 +
+      turnScore * 0.1,
   );
 
   return confidence > 0.4 ? { type: "InvV", confidence } : null;

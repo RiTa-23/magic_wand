@@ -45,30 +45,33 @@ export function useSpeech(
   const recentFinalTranscriptRef = useRef("");
   const recentFinalTimestampRef = useRef(0);
 
-  const collectCandidates = useCallback((res: SpeechResult) => {
-    const now = Date.now();
-    const candidateSet = new Set<string>();
-    const alternatives = [res.transcript, ...(res.alternatives ?? [])].filter(
-      (t) => t && t.trim().length > 0,
-    );
+  const collectCandidates = useCallback(
+    (res: SpeechResult) => {
+      const now = Date.now();
+      const candidateSet = new Set<string>();
+      const alternatives = [res.transcript, ...(res.alternatives ?? [])].filter(
+        (t) => t && t.trim().length > 0,
+      );
 
-    alternatives.forEach((t) => candidateSet.add(t.trim()));
+      alternatives.forEach((t) => candidateSet.add(t.trim()));
 
-    const hasRecentFinal =
-      recentFinalTranscriptRef.current &&
-      now - recentFinalTimestampRef.current <= FINAL_BUFFER_WINDOW_MS;
+      const hasRecentFinal =
+        recentFinalTranscriptRef.current &&
+        now - recentFinalTimestampRef.current <= FINAL_BUFFER_WINDOW_MS;
 
-    if (hasRecentFinal) {
-      const prefix = recentFinalTranscriptRef.current.trim();
-      alternatives.forEach((t) => {
-        const current = t.trim();
-        candidateSet.add(`${prefix}${current}`);
-        candidateSet.add(`${prefix} ${current}`);
-      });
-    }
+      if (hasRecentFinal) {
+        const prefix = recentFinalTranscriptRef.current.trim();
+        alternatives.forEach((t) => {
+          const current = t.trim();
+          candidateSet.add(`${prefix}${current}`);
+          candidateSet.add(`${prefix} ${current}`);
+        });
+      }
 
-    return [...candidateSet];
-  }, [FINAL_BUFFER_WINDOW_MS]);
+      return [...candidateSet];
+    },
+    [FINAL_BUFFER_WINDOW_MS],
+  );
 
   const pickBestMatch = useCallback(
     (candidates: string[]) => {
