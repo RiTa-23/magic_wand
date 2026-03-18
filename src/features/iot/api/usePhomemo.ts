@@ -127,9 +127,12 @@ export function usePhomemo() {
           ? imageFiles.filter((file) => file !== lastPrintedImageRef.current)
           : imageFiles;
 
+      if (candidates.length === 0) {
+        throw new Error("候補画像がありません");
+      }
+
       const randomImage =
         candidates[Math.floor(Math.random() * candidates.length)];
-      lastPrintedImageRef.current = randomImage;
       const imagePath = `/omikujiimage/${randomImage}`;
 
       // 画像を読み込む
@@ -156,6 +159,9 @@ export function usePhomemo() {
         console.error("印刷失敗:", result.message);
         return;
       }
+
+      // 成功後に初めて直前印刷画像を更新
+      lastPrintedImageRef.current = randomImage;
 
       console.log("おみくじ画像印刷完了:", {
         imagePath,
