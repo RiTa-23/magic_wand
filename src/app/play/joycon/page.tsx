@@ -296,8 +296,9 @@ export default function JoyConPlayPage() {
     null,
   );
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
-  const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(true);
-  const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
+  const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(false);
+  const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(false);
+  const [enableCircleGlowOnRButton, setEnableCircleGlowOnRButton] = useState(true);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
@@ -877,7 +878,7 @@ export default function JoyConPlayPage() {
   const isRejected = gateResult?.status === "rejected";
   const spellName = persistedSpellName;
   const isDrawingGesture = joyconState?.buttons.r ?? false;
-  const isMagicCircleGlowing = isListening || showCommitFeedback;
+  const isMagicCircleGlowing = (isListening && enableCircleGlowOnRButton) || showCommitFeedback;
   const isImmersiveCircleGlowing =
     isMagicCircleGlowing && castingSyncMode === "immersive";
   const isVentusCircleActive =
@@ -994,6 +995,14 @@ export default function JoyConPlayPage() {
               >
                 <span>メイン状態表示</span>
                 <span>{isStatusDisplayVisible ? "表示" : "非表示"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEnableCircleGlowOnRButton((prev) => !prev)}
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                <span>Rボタン時の魔法陣発光</span>
+                <span>{enableCircleGlowOnRButton ? "有効" : "無効"}</span>
               </button>
             </div>
           </div>
