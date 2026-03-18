@@ -14,6 +14,11 @@ import { useSpeech } from "@/features/voice/api/useSpeech";
 import { toGestureIntentInput } from "@/features/orchestrator/lib/intent-gate-adapter";
 import { IntentGate } from "@/features/orchestrator/lib/intent-gate";
 import {
+  AUTO_OFF_SETTING_KEY,
+  DEFAULT_AUTO_OFF_ENABLED,
+  getAutoOffEnabled,
+} from "@/features/settings/lib/auto-off-setting";
+import {
   IntentGateResult,
   SpellId,
 } from "@/features/orchestrator/types/intent";
@@ -194,6 +199,9 @@ export default function PlayPage() {
     "idle" | "calibrating" | "done"
   >("idle");
   const [calibrationProgress, setCalibrationProgress] = useState(0);
+  const [autoOffEnabled, setAutoOffEnabledState] = useState(
+    DEFAULT_AUTO_OFF_ENABLED,
+  );
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
   const imuPosRef = useRef({ x: 0, y: 0 });
   const gyroBiasRef = useRef({ y: 0, z: 0 });
@@ -217,6 +225,21 @@ export default function PlayPage() {
     minY: number;
     maxY: number;
   } | null>(null);
+
+  useEffect(() => {
+    setAutoOffEnabledState(getAutoOffEnabled());
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === AUTO_OFF_SETTING_KEY) {
+        setAutoOffEnabledState(getAutoOffEnabled());
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (joyConStatus === "CONNECTED") {
@@ -315,6 +338,7 @@ export default function PlayPage() {
       executeTapoSpell: executeSpell,
       isPrinterConnected: () => isPhomemoConnected,
       printOmikuji: printTestPage,
+      autoOffEnabled,
     })
       .then((result) => {
         if (result.ok) {
@@ -336,7 +360,7 @@ export default function PlayPage() {
         isDispatchingRef.current = false;
         lastDispatchAtRef.current = Date.now();
       });
-  }, [gateResult, isPhomemoConnected, printTestPage]);
+  }, [autoOffEnabled, gateResult, isPhomemoConnected, printTestPage]);
 
   // ── キャリブレーション & IMU トラッキング ──
   useEffect(() => {
