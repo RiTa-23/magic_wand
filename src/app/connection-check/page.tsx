@@ -5,6 +5,7 @@ import { FloatingParticles } from "@/components/floating-particles";
 import { WandIcon } from "@/components/wand-icon";
 
 const HOME_ROUTE: Route = "/home";
+const WAND_TEST_ROUTE: Route = "/test/camera";
 const JOYCON_TEST_ROUTE: Route = "/test/wand";
 
 export default function ConnectionPage() {
@@ -66,8 +67,8 @@ export default function ConnectionPage() {
         <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-10">
           <div className="mx-auto w-full max-w-3xl lg:max-w-4xl">
             <div className="flex flex-col items-center justify-center gap-y-8 sm:flex-row sm:gap-y-0 sm:gap-x-16 lg:gap-x-20 xl:gap-x-24">
-              <button
-                type="button"
+              <Link
+                href={WAND_TEST_ROUTE}
                 className={`${cardShell} ${cardFocus}`}
                 aria-label="杖の確認"
               >
@@ -87,7 +88,7 @@ export default function ConnectionPage() {
                     aria-hidden="true"
                   />
                 </div>
-              </button>
+              </Link>
 
               <Link
                 href={JOYCON_TEST_ROUTE}
