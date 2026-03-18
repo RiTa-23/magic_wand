@@ -142,19 +142,19 @@ export default function SpellsPage() {
                           className={
                             "overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out motion-reduce:transition-none " +
                             (isExpanded
-                              ? "mt-3 max-h-[520px] opacity-100 translate-y-0"
+                              ? "mt-3 max-h-[900px] opacity-100 translate-y-0"
                               : "mt-0 max-h-0 opacity-0 -translate-y-1 pointer-events-none")
                           }
                           aria-hidden={!isExpanded}
                         >
                           <div className="rounded-xl border border-[color:var(--gold)]/15 bg-black/10 backdrop-blur-sm px-5 py-4">
                             <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
-                              <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 aspect-[4/3]">
+                              <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 w-full aspect-[2/1]">
                                 <Image
                                   src={placeholderImageSrc}
                                   alt={`${spell.name} のイメージ`}
                                   fill
-                                  className="object-cover"
+                                  className="object-contain p-2"
                                   sizes="(max-width: 640px) 100vw, 200px"
                                   priority={spell.id === "ventus"}
                                 />
