@@ -356,6 +356,7 @@ export default function PlayPage() {
       calibrationSamplesRef.current = [];
       calibrationPrevAccelRef.current = null;
       gyroBiasRef.current = { y: 0, z: 0 };
+      imuPosRef.current = { x: 0, y: 0 };
       trailRef.current = [];
       setTrailPathPoints("");
       viewBoundsRef.current = null;
