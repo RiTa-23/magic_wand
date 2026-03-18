@@ -242,6 +242,8 @@ export default function PlayPage() {
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+  const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(true);
+  const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
@@ -1032,6 +1034,11 @@ export default function PlayPage() {
     }
     return "Phomemo接続済み";
   })();
+  const isPhomemoConnectedState =
+    phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING";
+  const isInputDeviceConnectedState = isJoyConMode
+    ? joyConStatus === "CONNECTED"
+    : cameraStatus === "CONNECTED";
 
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
@@ -1054,7 +1061,7 @@ export default function PlayPage() {
         onClick={() => setIsInfoPanelOpen((prev) => !prev)}
         aria-expanded={isInfoPanelOpen}
         aria-controls="play-info-panel"
-        className="fixed right-6 top-24 z-40 inline-flex items-center gap-2 rounded-full border border-gold-dim/40 bg-stone/35 px-4 py-2 text-xs tracking-[0.18em] text-gold-dim backdrop-blur-sm transition-all hover:border-gold-bright/60 hover:text-gold-bright"
+        className="fixed right-6 top-10 z-40 inline-flex items-center gap-2 rounded-full border border-gold-dim/40 bg-stone/35 px-4 py-2 text-xs tracking-[0.18em] text-gold-dim backdrop-blur-sm transition-all hover:border-gold-bright/60 hover:text-gold-bright"
       >
         <SlidersHorizontal className="h-4 w-4" />
         {isInfoPanelOpen ? "CLOSE" : "INFO"}
@@ -1072,6 +1079,30 @@ export default function PlayPage() {
           <p className="text-[11px] tracking-[0.22em] text-gold-dim/70">
             CONNECTION & STATUS
           </p>
+
+          <div className="rounded-xl border border-gold-dim/20 bg-stone/10 p-3">
+            <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+              DISPLAY
+            </p>
+            <div className="mt-2 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsTrailPreviewVisible((prev) => !prev)}
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                <span>軌道プレビュー</span>
+                <span>{isTrailPreviewVisible ? "表示" : "非表示"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsStatusDisplayVisible((prev) => !prev)}
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                <span>メイン状態表示</span>
+                <span>{isStatusDisplayVisible ? "表示" : "非表示"}</span>
+              </button>
+            </div>
+          </div>
 
           {isSupported ? (
             <button
@@ -1097,7 +1128,15 @@ export default function PlayPage() {
               : "Phomemo接続"}
           </button>
 
-          <p className="text-xs tracking-widest text-gold-dim/70">
+          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-dim/70">
+            <span
+              aria-hidden="true"
+              className={`inline-block h-2.5 w-2.5 rounded-full ${
+                isPhomemoConnectedState
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]"
+              }`}
+            />
             {phomemoStatusText}
           </p>
 
@@ -1108,7 +1147,15 @@ export default function PlayPage() {
             {inputDeviceButtonLabel}
           </button>
 
-          <p className="text-xs tracking-widest text-gold-dim/70">
+          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-dim/70">
+            <span
+              aria-hidden="true"
+              className={`inline-block h-2.5 w-2.5 rounded-full ${
+                isInputDeviceConnectedState
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]"
+              }`}
+            />
             {inputDeviceStatusText}
           </p>
 
@@ -1165,105 +1212,111 @@ export default function PlayPage() {
               aria-hidden="true"
             />
 
-            <div className="mx-auto w-full max-w-[340px] h-[220px] rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm relative overflow-hidden">
-              <video
-                ref={videoRef}
-                className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
-                  isCameraMode ? "opacity-45" : "opacity-0"
-                }`}
-                playsInline
-                muted
-                autoPlay
-              />
-              {isCameraMode && (
-                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/30 to-black/45" />
-              )}
-              {showCommitFeedback && (
-                <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse" />
-              )}
-              <svg
-                viewBox="0 0 100 100"
-                className="absolute inset-0 h-full w-full"
-                preserveAspectRatio="xMidYMid meet"
-                aria-hidden="true"
-              >
-                <defs>
-                  <filter
-                    id="trailGlow"
-                    x="-40%"
-                    y="-40%"
-                    width="180%"
-                    height="180%"
-                  >
-                    <feGaussianBlur stdDeviation="1.8" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {trailPathPoints && (
-                  <>
-                    <polyline
-                      points={trailPathPoints}
-                      fill="none"
-                      stroke="rgba(212,175,55,0.35)"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      filter="url(#trailGlow)"
-                    />
-                    <polyline
-                      points={trailPathPoints}
-                      fill="none"
-                      stroke="rgba(255,244,182,0.9)"
-                      strokeWidth="0.9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </>
+            {isTrailPreviewVisible && (
+              <div className="mx-auto w-full max-w-[340px] h-[220px] rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm relative overflow-hidden">
+                <video
+                  ref={videoRef}
+                  className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
+                    isCameraMode ? "opacity-45" : "opacity-0"
+                  }`}
+                  playsInline
+                  muted
+                  autoPlay
+                />
+                {isCameraMode && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/30 to-black/45" />
                 )}
-              </svg>
-              <div className="absolute inset-x-0 bottom-2 text-center">
-                <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                  {isCameraMode ? "CAMERA + WAND TRAIL" : "WAND TRAIL PREVIEW"}
-                </p>
-              </div>
+                {showCommitFeedback && (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse" />
+                )}
+                <svg
+                  viewBox="0 0 100 100"
+                  className="absolute inset-0 h-full w-full"
+                  preserveAspectRatio="xMidYMid meet"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <filter
+                      id="trailGlow"
+                      x="-40%"
+                      y="-40%"
+                      width="180%"
+                      height="180%"
+                    >
+                      <feGaussianBlur stdDeviation="1.8" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
 
-              {isCameraMode && (
-                <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-gold-dim/35 bg-black/40 px-2 py-1 text-[10px] tracking-[0.15em] text-gold-dim/85">
-                  <span
-                    className={`inline-block h-2 w-2 rounded-full ${
-                      isWandDetected
-                        ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
-                        : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]"
-                    }`}
-                  />
-                  {isWandDetected ? "WAND DETECTED" : "SEARCHING WAND"}
+                  {trailPathPoints && (
+                    <>
+                      <polyline
+                        points={trailPathPoints}
+                        fill="none"
+                        stroke="rgba(212,175,55,0.35)"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        filter="url(#trailGlow)"
+                      />
+                      <polyline
+                        points={trailPathPoints}
+                        fill="none"
+                        stroke="rgba(255,244,182,0.9)"
+                        strokeWidth="0.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </>
+                  )}
+                </svg>
+                <div className="absolute inset-x-0 bottom-2 text-center">
+                  <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+                    {isCameraMode
+                      ? "CAMERA + WAND TRAIL"
+                      : "WAND TRAIL PREVIEW"}
+                  </p>
                 </div>
-              )}
-            </div>
+
+                {isCameraMode && (
+                  <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-gold-dim/35 bg-black/40 px-2 py-1 text-[10px] tracking-[0.15em] text-gold-dim/85">
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${
+                        isWandDetected
+                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
+                          : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]"
+                      }`}
+                    />
+                    {isWandDetected ? "WAND DETECTED" : "SEARCHING WAND"}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 音声認識状態表示 */}
-            <div
-              className={`px-10 py-6 rounded-full border bg-stone/20 backdrop-blur-sm shadow-xl transition-all ${
-                showCommitFeedback
-                  ? "border-gold-bright/60 shadow-[0_0_26px_rgba(212,175,55,0.45)]"
-                  : "border-gold-dim/15"
-              }`}
-            >
-              <p
-                className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}
+            {isStatusDisplayVisible && (
+              <div
+                className={`px-10 py-6 rounded-full border bg-stone/20 backdrop-blur-sm shadow-xl transition-all ${
+                  showCommitFeedback
+                    ? "border-gold-bright/60 shadow-[0_0_26px_rgba(212,175,55,0.45)]"
+                    : "border-gold-dim/15"
+                }`}
               >
-                {statusText}
-              </p>
-              {spellName && isWaitingForGesture && (
-                <p className="mt-2 text-sm tracking-widest text-gold-dim/80">
-                  「{spellName}」
+                <p
+                  className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}
+                >
+                  {statusText}
                 </p>
-              )}
-            </div>
+                {spellName && isWaitingForGesture && (
+                  <p className="mt-2 text-sm tracking-widest text-gold-dim/80">
+                    「{spellName}」
+                  </p>
+                )}
+              </div>
+            )}
 
             {showCommitFeedback && (
               <p className="text-sm tracking-widest text-gold-bright animate-pulse">
@@ -1296,12 +1349,6 @@ export default function PlayPage() {
               </p>
             )}
 
-            <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
-              コツ:{" "}
-              {isJoyConMode
-                ? "接続直後はレール側を下にして3秒静止すると安定します。呪文の後10秒以内に、R長押しで0.8〜1.5秒ほどV/M/L/Z/InvV/W（横一直線）を1回しっかり描いて離すと通りやすいです。"
-                : "カメラ接続後は杖先が見える位置で、0.8〜1.5秒ほどV/M/L/Z/InvV/W（横一直線）をはっきり描いて一瞬静止すると認識されやすいです。"}
-            </p>
           </div>
         </div>
       </div>
