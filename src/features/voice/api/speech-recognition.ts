@@ -38,16 +38,21 @@ export class SpeechRecognitionAPI {
     this.recognition = new SpeechRecognition();
     this.recognition.continuous = true; // 連続認識
     this.recognition.interimResults = true; // 中間結果を取得
+    this.recognition.maxAlternatives = 5; // 候補を広く取り、後段で最適マッチを選ぶ
     this.recognition.lang = "ja-JP"; // 日本語設定
 
     this.recognition.onresult = (event: any) => {
       const lastIndex = event.results.length - 1;
       const result = event.results[lastIndex];
+      const alternatives = Array.from(result)
+        .map((alt: any) => String(alt?.transcript ?? "").trim())
+        .filter((t: string) => t.length > 0);
       const speechResult: SpeechResult = {
         transcript: result[0].transcript,
         confidence: result[0].confidence,
         isFinal: result.isFinal,
         timestamp: Date.now(),
+        alternatives,
       };
 
       this.listeners.forEach((l) => l.onResult(speechResult));

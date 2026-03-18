@@ -10,6 +10,7 @@ export interface SpeechResult {
   confidence: number; // 信頼度 (0.0〜1.0)
   isFinal: boolean; // 確定結果かどうか
   timestamp: number; // タイムスタンプ
+  alternatives?: string[]; // 代替候補（ブラウザが返せる場合のみ）
 }
 
 /** 呪文定義 */
