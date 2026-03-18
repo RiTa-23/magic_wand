@@ -57,6 +57,7 @@ export default function SpellsPage() {
         lumos: "/spellimage/lumos.png",
         raiden: "/spellimage/lightning.png",
         wave: "/spellimage/wave.png",
+        incendio: "/spellimage/fare.jpg",
       }) as Record<string, string>,
     [],
   );
