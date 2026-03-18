@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Mic, MicOff } from "lucide-react";
+import { ChevronLeft, Mic, MicOff, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -51,12 +51,6 @@ const WAVE_GESTURE_RECOVERY_WINDOW_MS = 3000;
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
 type SpeechLatencyMode = "safe" | "fast";
 type PlayInputMode = "joycon" | "camera";
-type GestureDebugInfo = {
-  gestureType: GestureType | "unknown";
-  confidence: number | null;
-  recognizedAt: number;
-  mappedSpells: SpellId[];
-};
 
 // ── ビューポートの計算とスムージングヘルパー ──
 function adjustViewBounds(
@@ -244,11 +238,10 @@ export default function PlayPage() {
   const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
     null,
   );
-  const [lastGestureDebug, setLastGestureDebug] =
-    useState<GestureDebugInfo | null>(null);
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
@@ -291,28 +284,7 @@ export default function PlayPage() {
   } | null>(null);
 
   const handleRecognizedGesture = (recognized: GestureResult, now: number) => {
-    if (recognized.type === "unknown") {
-      setLastGestureDebug({
-        gestureType: "unknown",
-        confidence: null,
-        recognizedAt: now,
-        mappedSpells: [],
-      });
-      return;
-    }
-
-    const mappedSpells = (
-      Object.entries(DEFAULT_SPELL_GESTURE_MAP) as [SpellId, GestureType][]
-    )
-      .filter(([, gestureType]) => gestureType === recognized.type)
-      .map(([spellId]) => spellId);
-
-    setLastGestureDebug({
-      gestureType: recognized.type,
-      confidence: recognized.confidence,
-      recognizedAt: now,
-      mappedSpells,
-    });
+    if (recognized.type === "unknown") return;
 
     const gestureInput = toGestureIntentInput(recognized, now);
     if (!gestureInput) return;
@@ -344,7 +316,6 @@ export default function PlayPage() {
     setPersistedSpellName(null);
     setShowCommitFeedback(false);
     setCommitLabel("");
-    setLastGestureDebug(null);
     recentGestureInputRef.current = null;
     lastGestureAtRef.current = 0;
     trailRef.current = [];
@@ -991,24 +962,7 @@ export default function PlayPage() {
   const isDrawingGesture = isJoyConMode
     ? (joyconState?.buttons.r ?? false)
     : isCameraDrawing;
-  const isCameraConnected = cameraStatus === "CONNECTED";
   const isWandDetected = Boolean(wandPoint?.detected);
-  const cameraConfidenceText = wandPoint
-    ? `${Math.round(wandPoint.confidence * 100)}%`
-    : "-";
-  const tipCoordinateText = wandPoint
-    ? `(${Math.round(wandPoint.tipX)}, ${Math.round(wandPoint.tipY)})`
-    : "-";
-
-  const dispatchStatusText = (() => {
-    if (dispatchPhase === "running") return dispatchMessage || "発動処理中...";
-    if (dispatchPhase === "success") return dispatchMessage || "発動成功";
-    if (dispatchPhase === "failed") return dispatchMessage || "発動失敗";
-    if (dispatchPhase === "timeout") {
-      return dispatchMessage || "発動タイムアウト";
-    }
-    return "待機中";
-  })();
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1019,8 +973,6 @@ export default function PlayPage() {
     if (isRejected) return "信頼度不足 - もう一度試してください";
     return "待機中...";
   })();
-
-  const inputModeLabel = isJoyConMode ? "Joy-Con慣性検知" : "杖の物体検出";
 
   const inputDeviceButtonLabel = (() => {
     if (isJoyConMode) {
@@ -1081,27 +1033,6 @@ export default function PlayPage() {
     return "Phomemo接続済み";
   })();
 
-  const gestureDebugText = (() => {
-    if (!lastGestureDebug) {
-      return {
-        recognized: "まだ軌道認識はありません",
-        mapped: "対応魔法: -",
-      };
-    }
-
-    const confidenceText =
-      lastGestureDebug.confidence === null
-        ? "-"
-        : `${Math.round(lastGestureDebug.confidence * 100)}%`;
-    const recognized = `認識: ${lastGestureDebug.gestureType} (信頼度 ${confidenceText})`;
-    const mapped =
-      lastGestureDebug.mappedSpells.length > 0
-        ? `対応魔法: ${lastGestureDebug.mappedSpells.join(" / ")}`
-        : "対応魔法: なし";
-
-    return { recognized, mapped };
-  })();
-
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
       {/* Background image layer (match Home's darker ambience) */}
@@ -1117,6 +1048,79 @@ export default function PlayPage() {
         className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
         aria-hidden="true"
       />
+
+      <button
+        type="button"
+        onClick={() => setIsInfoPanelOpen((prev) => !prev)}
+        aria-expanded={isInfoPanelOpen}
+        aria-controls="play-info-panel"
+        className="fixed right-6 top-24 z-40 inline-flex items-center gap-2 rounded-full border border-gold-dim/40 bg-stone/35 px-4 py-2 text-xs tracking-[0.18em] text-gold-dim backdrop-blur-sm transition-all hover:border-gold-bright/60 hover:text-gold-bright"
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+        {isInfoPanelOpen ? "CLOSE" : "INFO"}
+      </button>
+
+      <aside
+        id="play-info-panel"
+        className={`fixed right-0 top-0 z-30 h-svh w-[min(88vw,360px)] border-l border-gold-dim/20 bg-[linear-gradient(180deg,rgba(10,19,30,0.88)_0%,rgba(6,12,22,0.95)_100%)] p-6 pt-24 backdrop-blur-md transition-all duration-300 ease-out ${
+          isInfoPanelOpen
+            ? "translate-x-0 opacity-100"
+            : "translate-x-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="space-y-4">
+          <p className="text-[11px] tracking-[0.22em] text-gold-dim/70">
+            CONNECTION & STATUS
+          </p>
+
+          {isSupported ? (
+            <button
+              onClick={handleSpeechLatencyModeToggle}
+              className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+            >
+              音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
+            </button>
+          ) : (
+            <p className="text-xs leading-relaxed tracking-wide text-gold-dim/60">
+              音声認識非対応のブラウザです
+            </p>
+          )}
+
+          <button
+            onClick={handlePhomemoToggle}
+            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+          >
+            {phomemoStatus === "CONNECTED" ||
+            phomemoStatus === "CONNECTING" ||
+            phomemoStatus === "PRINTING"
+              ? "Phomemo切断"
+              : "Phomemo接続"}
+          </button>
+
+          <p className="text-xs tracking-widest text-gold-dim/70">
+            {phomemoStatusText}
+          </p>
+
+          <button
+            onClick={handleInputDeviceToggle}
+            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+          >
+            {inputDeviceButtonLabel}
+          </button>
+
+          <p className="text-xs tracking-widest text-gold-dim/70">
+            {inputDeviceStatusText}
+          </p>
+
+          {inputDeviceErrorMessage && (
+            <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
+              <p className="text-xs leading-relaxed tracking-wide text-red-200">
+                {inputDeviceErrorMessage}
+              </p>
+            </div>
+          )}
+        </div>
+      </aside>
 
       <FloatingParticles />
 
@@ -1285,103 +1289,12 @@ export default function PlayPage() {
                     <Mic className="w-6 h-6 text-gold-dim" />
                   )}
                 </button>
-                <button
-                  onClick={handleSpeechLatencyModeToggle}
-                  className="mx-auto px-4 py-1.5 rounded-full border border-gold-dim/30 text-[11px] tracking-[0.18em] uppercase text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
-                >
-                  音声判定モード:{" "}
-                  {speechLatencyMode === "safe" ? "安全" : "高速"}
-                </button>
               </>
             ) : (
               <p className="text-xs text-gold-dim/50 tracking-widest">
                 音声認識非対応のブラウザです
               </p>
             )}
-
-            <button
-              onClick={handlePhomemoToggle}
-              className="mx-auto px-6 py-2 rounded-full border border-gold-dim/40 text-sm tracking-widest text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
-            >
-              {phomemoStatus === "CONNECTED" ||
-              phomemoStatus === "CONNECTING" ||
-              phomemoStatus === "PRINTING"
-                ? "Phomemo切断"
-                : "Phomemo接続"}
-            </button>
-
-            <p className="text-xs tracking-widest text-gold-dim/70">
-              {phomemoStatusText}
-            </p>
-
-            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
-              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                INPUT MODE
-              </p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                {inputModeLabel}
-              </p>
-            </div>
-
-            <button
-              onClick={handleInputDeviceToggle}
-              className="mx-auto px-6 py-2 rounded-full border border-gold-dim/40 text-sm tracking-widest text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
-            >
-              {inputDeviceButtonLabel}
-            </button>
-
-            <p className="text-xs tracking-widest text-gold-dim/70">
-              {inputDeviceStatusText}
-            </p>
-
-            {inputDeviceErrorMessage && (
-              <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
-                <p className="text-xs leading-relaxed tracking-wide text-red-200">
-                  {inputDeviceErrorMessage}
-                </p>
-              </div>
-            )}
-
-            {isCameraMode && (
-              <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3 text-left">
-                <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                  CAMERA DEBUG
-                </p>
-                <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                  接続: {isCameraConnected ? "CONNECTED" : cameraStatus}
-                </p>
-                <p className="text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                  検出: {isWandDetected ? "DETECTED" : "NOT DETECTED"}
-                </p>
-                <p className="text-xs leading-relaxed tracking-wide text-gold-dim/80">
-                  信頼度: {cameraConfidenceText}
-                </p>
-                <p className="text-xs leading-relaxed tracking-wide text-gold-dim/75">
-                  杖先座標: {tipCoordinateText}
-                </p>
-              </div>
-            )}
-
-            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
-              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                DISPATCH STATE
-              </p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                {dispatchStatusText}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
-              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                GESTURE DEBUG
-              </p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                {gestureDebugText.recognized}
-              </p>
-              <p className="text-xs leading-relaxed tracking-wide text-gold-dim/75">
-                {gestureDebugText.mapped}
-              </p>
-            </div>
 
             <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
               コツ:{" "}
