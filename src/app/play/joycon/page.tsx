@@ -280,9 +280,7 @@ export default function JoyConPlayPage() {
   } = usePhomemo();
 
   // ── IntentGate ──
-  const gate = useRef(
-    new IntentGate(resolveIntentGateConfig("stable")),
-  );
+  const gate = useRef(new IntentGate(resolveIntentGateConfig("stable")));
 
   // ── UI状態 ──
   const [gateResult, setGateResult] = useState<IntentGateResult | null>(null);
@@ -298,7 +296,8 @@ export default function JoyConPlayPage() {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(false);
   const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(false);
-  const [enableCircleGlowOnRButton, setEnableCircleGlowOnRButton] = useState(true);
+  const [enableCircleGlowOnRButton, setEnableCircleGlowOnRButton] =
+    useState(true);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
@@ -878,26 +877,29 @@ export default function JoyConPlayPage() {
   const isRejected = gateResult?.status === "rejected";
   const spellName = persistedSpellName;
   const isDrawingGesture = joyconState?.buttons.r ?? false;
-  const isMagicCircleGlowing = (isListening && enableCircleGlowOnRButton) || showCommitFeedback;
+  const isMagicCircleGlowing =
+    (isListening && enableCircleGlowOnRButton) || showCommitFeedback;
   const isImmersiveCircleGlowing =
     isMagicCircleGlowing && castingSyncMode === "immersive";
   const isVentusCircleActive =
     showCommitFeedback && activeCircleSpell === "ventus";
-  const isLumosCircleActive = showCommitFeedback && activeCircleSpell === "lumos";
+  const isLumosCircleActive =
+    showCommitFeedback && activeCircleSpell === "lumos";
   const isIncendioCircleActive =
     showCommitFeedback && activeCircleSpell === "incendio";
-  const isRaidenCircleActive = showCommitFeedback && activeCircleSpell === "raiden";
+  const isRaidenCircleActive =
+    showCommitFeedback && activeCircleSpell === "raiden";
   const magicCircleGlowClass = isVentusCircleActive
     ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
     : isLumosCircleActive
       ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
       : isRaidenCircleActive
         ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
-      : isIncendioCircleActive
-        ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
-    : isMagicCircleGlowing
-      ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
-      : "opacity-95";
+        : isIncendioCircleActive
+          ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
+          : isMagicCircleGlowing
+            ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
+            : "opacity-95";
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1039,7 +1041,8 @@ export default function JoyConPlayPage() {
                 }
                 className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
               >
-                発動同期モード: {castingSyncMode === "stable" ? "安定" : "同時詠唱"}
+                発動同期モード:{" "}
+                {castingSyncMode === "stable" ? "安定" : "同時詠唱"}
               </button>
             </>
           ) : (
@@ -1186,7 +1189,12 @@ export default function JoyConPlayPage() {
                 </g>
 
                 <g className="origin-center animate-[pulse_0.95s_ease-in-out_infinite]">
-                  <circle cx="50" cy="50" r="11.2" fill="rgba(142,226,255,0.86)" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="11.2"
+                    fill="rgba(142,226,255,0.86)"
+                  />
                   <circle cx="50" cy="50" r="6" fill="rgba(238,252,255,0.97)" />
                 </g>
               </svg>
@@ -1248,8 +1256,18 @@ export default function JoyConPlayPage() {
                 </g>
 
                 <g className="origin-center animate-[pulse_1.05s_ease-in-out_infinite]">
-                  <circle cx="50" cy="50" r="11.5" fill="rgba(255,120,76,0.86)" />
-                  <circle cx="50" cy="50" r="6.2" fill="rgba(255,234,168,0.96)" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="11.5"
+                    fill="rgba(255,120,76,0.86)"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="6.2"
+                    fill="rgba(255,234,168,0.96)"
+                  />
                 </g>
               </svg>
             </AnchoredCircleLayer>
@@ -1423,16 +1441,15 @@ export default function JoyConPlayPage() {
               <div
                 className="absolute inset-[-24%] rounded-full"
                 style={{
-                  background:
-                    isVentusCircleActive
-                      ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
-                      : isLumosCircleActive
-                        ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
-                        : isRaidenCircleActive
-                          ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
+                  background: isVentusCircleActive
+                    ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
+                    : isLumosCircleActive
+                      ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
+                      : isRaidenCircleActive
+                        ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
                         : isIncendioCircleActive
                           ? "conic-gradient(from 0deg, rgba(255,143,91,0.24), rgba(255,75,50,0.18), rgba(255,222,132,0.2), rgba(255,143,91,0.24))"
-                      : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
+                          : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
                   animation: "spin 6s linear infinite",
                   filter: "blur(18px)",
                 }}
@@ -1446,12 +1463,13 @@ export default function JoyConPlayPage() {
                       ? "border-[#fff1ac]/70"
                       : isRaidenCircleActive
                         ? "border-[#a9eeff]/72"
-                      : isIncendioCircleActive
-                        ? "border-[#ffb47f]/70"
-                      : "border-[#ffd87f]/55"
+                        : isIncendioCircleActive
+                          ? "border-[#ffb47f]/70"
+                          : "border-[#ffd87f]/55"
                 }`}
                 style={{
-                  animation: "spin 8s linear infinite reverse, pulse 1.8s ease-in-out infinite",
+                  animation:
+                    "spin 8s linear infinite reverse, pulse 1.8s ease-in-out infinite",
                 }}
                 aria-hidden="true"
               />
@@ -1463,16 +1481,15 @@ export default function JoyConPlayPage() {
               <div
                 className="absolute inset-[-18%] rounded-full animate-pulse"
                 style={{
-                  background:
-                    isVentusCircleActive
-                      ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
-                      : isLumosCircleActive
-                        ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
-                        : isRaidenCircleActive
-                          ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
+                  background: isVentusCircleActive
+                    ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
+                    : isLumosCircleActive
+                      ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
+                      : isRaidenCircleActive
+                        ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
                         : isIncendioCircleActive
                           ? "radial-gradient(circle, rgba(255,146,98,0.34) 0%, rgba(255,90,61,0.2) 40%, rgba(13,30,46,0) 74%)"
-                      : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
+                          : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
                 }}
                 aria-hidden="true"
               />
@@ -1484,9 +1501,9 @@ export default function JoyConPlayPage() {
                       ? "border-[#fff4bf]/70"
                       : isRaidenCircleActive
                         ? "border-[#ccf5ff]/74"
-                      : isIncendioCircleActive
-                        ? "border-[#ffd1a0]/70"
-                      : "border-[#f5d77a]/55"
+                        : isIncendioCircleActive
+                          ? "border-[#ffd1a0]/70"
+                          : "border-[#f5d77a]/55"
                 }`}
                 style={{ animationDuration: "2.4s" }}
                 aria-hidden="true"
