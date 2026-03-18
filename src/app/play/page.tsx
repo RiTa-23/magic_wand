@@ -25,9 +25,7 @@ import {
   getAutoOffEnabled,
 } from "@/features/settings/lib/auto-off-setting";
 import {
-  DEFAULT_SPELL_GESTURE_MAP,
   GestureIntentInput,
-  GestureType,
   IntentGateResult,
   SpellId,
 } from "@/features/orchestrator/types/intent";
@@ -244,8 +242,8 @@ export default function PlayPage() {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(true);
   const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
-  const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
-  const [dispatchMessage, setDispatchMessage] = useState("");
+  const [, setDispatchPhase] = useState<DispatchPhase>("idle");
+  const [, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
     string | null
   >(null);
