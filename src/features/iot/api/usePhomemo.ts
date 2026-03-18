@@ -110,7 +110,12 @@ export function usePhomemo() {
       }
 
       const manifest = await manifestResponse.json();
-      const imageFiles: string[] = manifest.images || [];
+      // manifest.images が配列かつ文字列のみで構成されているかを検証
+      const imageFiles: string[] = Array.isArray(manifest.images)
+        ? (manifest.images as unknown[]).filter(
+            (file) => typeof file === "string",
+          )
+        : [];
 
       if (imageFiles.length === 0) {
         throw new Error("omikujiimage フォルダに画像ファイルが見つかりません");
