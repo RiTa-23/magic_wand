@@ -16,49 +16,29 @@ export default function TutorialPage() {
   const slides = useMemo<TutorialSlide[]>(
     () => [
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/page_1.png",
         imageAlt: "杖の準備",
         description: "杖を手に取り、姿勢を整えましょう。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/page_3.png",
         imageAlt: "接続の確認",
         description: "デバイスが接続できているか確認します。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
-        imageAlt: "魔力の集中",
-        description: "深呼吸して、魔力を一点に集めます。",
-      },
-      {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/page_4.png",
         imageAlt: "呪文の詠唱",
         description: "呪文をはっきり唱えてください。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/page_6.png",
         imageAlt: "ジェスチャー",
         description: "杖で合図の動きを描きます。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
-        imageAlt: "発動の合図",
-        description: "光が集まったら、発動のタイミングです。",
-      },
-      {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
-        imageAlt: "結果の確認",
-        description: "反応が出たか、目と耳で確かめます。",
-      },
-      {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/page_7.png",
         imageAlt: "再調整",
         description: "うまくいかない時は、距離と向きを調整します。",
-      },
-      {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
-        imageAlt: "連携",
-        description: "魔法は道具と連携して強くなります。",
       },
       {
         imageSrc: "/yuchimage/yuchisiro.jpg",
@@ -209,29 +189,29 @@ export default function TutorialPage() {
 
       <div className="relative z-20 h-full overflow-hidden px-6 sm:px-10 flex flex-col">
         {/* Top area */}
-        <div className="relative pt-8 sm:pt-10 flex-none">
+        <div className="relative pt-4 sm:pt-6 flex-none">
           {/* Back link (match Play/Settings style) */}
           <Link
             href="/home"
-            className="absolute left-0 top-8 sm:top-10 group flex items-center gap-2 text-[color:var(--gold-dim)] transition-colors hover:text-[color:var(--gold-bright)]"
+            className="absolute left-0 top-4 sm:top-6 group flex items-center gap-2 text-[color:var(--gold-dim)] transition-colors hover:text-[color:var(--gold-bright)]"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span className="text-xs uppercase tracking-widest text-shadow-glow">
+            <span className="text-[10px] uppercase tracking-widest text-shadow-glow">
               Back
             </span>
           </Link>
 
           {/* Title (top center) */}
           <header className="text-center">
-            <BookOpen className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-[color:var(--gold)] opacity-80" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-[0.4em] text-[color:var(--gold-bright)] uppercase">
+            <BookOpen className="w-6 h-6 mx-auto mb-1 text-[color:var(--gold)] opacity-80" />
+            <h1 className="text-sm sm:text-base font-bold tracking-[0.3em] text-[color:var(--gold-bright)] opacity-60 uppercase">
               Tutorial
             </h1>
           </header>
         </div>
 
         {/* Center area (carousel) */}
-        <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-10">
+        <div className="flex-1 min-h-0 flex items-center justify-center py-2 sm:py-4">
           <div className="w-full max-w-4xl h-full min-h-0">
             <div className="relative h-full min-h-0 overflow-hidden">
               {/* Current slide */}
@@ -331,7 +311,7 @@ function SlideContent({ slide }: { slide: TutorialSlide }) {
 
   return (
     <div className="h-full w-full px-2 sm:px-6 flex flex-col items-center justify-center gap-5 sm:gap-7">
-      <div className="relative w-full max-w-3xl h-[min(360px,32svh)] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
+      <div className="relative w-full max-w-3xl aspect-video overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
         {showImage && (
           <Image
             src={slide.imageSrc}

@@ -60,7 +60,7 @@ export default function HomePage() {
               <WandIcon className="w-8 h-8 text-gold" />
               <div>
                 <h1 className="text-xl font-bold tracking-[0.15em] text-gold-bright leading-none">
-                  Magic Wind
+                  Magic Wand
                 </h1>
                 <p className="text-[11px] font-serif tracking-[0.15em] text-gold-dim/60 mt-0.5">
                   {"杖で風を操る魔法アプリ"}
