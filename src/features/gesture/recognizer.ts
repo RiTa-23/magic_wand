@@ -113,7 +113,7 @@ function recognizeLGesture(
 
   // 角は序盤すぎず終盤すぎない位置にあること
   const cornerPos = cornerIdx / Math.max(1, n - 1);
-  if (cornerPos < 0.3 || cornerPos > 0.9) return null;
+  if (cornerPos < 0.2 || cornerPos > 0.95) return null;
 
   const startX = smoothedX[0];
   const startY = smoothedY[0];
@@ -127,12 +127,12 @@ function recognizeLGesture(
   const horizontalDx = Math.abs(endX - cornerX);
   const horizontalDy = Math.abs(endY - cornerY);
 
-  const hasStrongVertical = verticalDy > ySpan * 0.45;
-  const hasStrongHorizontal = horizontalDx > xSpan * 0.45;
+  const hasStrongVertical = verticalDy > ySpan * 0.35;
+  const hasStrongHorizontal = horizontalDx > xSpan * 0.3;
   if (!hasStrongVertical || !hasStrongHorizontal) return null;
 
-  const verticalStraight = verticalDx <= xSpan * 0.5;
-  const horizontalStraight = horizontalDy <= ySpan * 0.35;
+  const verticalStraight = verticalDx <= xSpan * 0.65;
+  const horizontalStraight = horizontalDy <= ySpan * 0.5;
   if (!verticalStraight || !horizontalStraight) return null;
 
   const verticalityScore = clamp01(1 - verticalDx / Math.max(1, verticalDy));
@@ -144,7 +144,8 @@ function recognizeLGesture(
     verticalityScore * 0.45 + horizontalityScore * 0.45 + cornerScore * 0.1,
   );
 
-  return { type: "L", confidence };
+  // L字判定まで通った場合は、IntentGate閾値(0.45)を越えやすいよう最低値を底上げする
+  return { type: "L", confidence: Math.max(0.52, confidence) };
 }
 
 /**
