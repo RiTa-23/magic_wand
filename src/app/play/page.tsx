@@ -1335,9 +1335,15 @@ export default function PlayPage() {
                   }`}
                 >
                   {isListening ? (
-                    <MicOff className="h-8 w-8 text-gold-bright" strokeWidth={2.25} />
+                    <MicOff
+                      className="h-8 w-8 text-gold-bright"
+                      strokeWidth={2.25}
+                    />
                   ) : (
-                    <Mic className="h-8 w-8 text-gold-bright/95" strokeWidth={2.25} />
+                    <Mic
+                      className="h-8 w-8 text-gold-bright/95"
+                      strokeWidth={2.25}
+                    />
                   )}
                 </button>
               </>
@@ -1346,7 +1352,6 @@ export default function PlayPage() {
                 音声認識非対応のブラウザです
               </p>
             )}
-
           </div>
         </div>
       </div>
