@@ -188,9 +188,9 @@ export default function SpellsPage() {
                                     {"認識キーワード"}
                                   </div>
                                   <div className="mt-3 flex flex-wrap gap-2">
-                                    {spell.keywords.map((keyword) => (
+                                    {spell.keywords.map((keyword, index) => (
                                       <span
-                                        key={keyword}
+                                        key={`${spell.id}:${index}`}
                                         className="rounded-full border border-[color:var(--gold)]/15 bg-stone/20 px-3 py-1 text-[11px] tracking-[0.18em] text-[color:var(--foreground)]/85"
                                       >
                                         {keyword}
