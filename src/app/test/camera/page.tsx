@@ -421,6 +421,22 @@ export default function CameraWandTestPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
           {/* メインエリア */}
           <div className="space-y-4">
+            {/* トレイルキャンバス */}
+            <div className="relative">
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                className="w-full rounded-xl border border-gray-800 bg-gray-900"
+                style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
+              />
+              {isConnected && !wandPoint?.detected && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
+                  <p className="text-gray-500 text-sm">杖を検出中...</p>
+                </div>
+              )}
+            </div>
+
             {/* カメラプレビュー */}
             <div className="relative rounded-xl border border-gray-800 overflow-hidden bg-gray-900">
               <video
@@ -444,22 +460,6 @@ export default function CameraWandTestPage() {
                       ? "カメラ・モデル初期化中..."
                       : "カメラを接続してください"}
                   </p>
-                </div>
-              )}
-            </div>
-
-            {/* トレイルキャンバス */}
-            <div className="relative">
-              <canvas
-                ref={canvasRef}
-                width={CANVAS_WIDTH}
-                height={CANVAS_HEIGHT}
-                className="w-full rounded-xl border border-gray-800 bg-gray-900"
-                style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
-              />
-              {isConnected && !wandPoint?.detected && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
-                  <p className="text-gray-500 text-sm">杖を検出中...</p>
                 </div>
               )}
             </div>
