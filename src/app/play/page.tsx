@@ -609,7 +609,9 @@ export default function PlayPage() {
               onClick={handlePhomemoToggle}
               className="mx-auto px-6 py-2 rounded-full border border-gold-dim/40 text-sm tracking-widest text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
             >
-              {phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING"
+              {phomemoStatus === "CONNECTED" ||
+              phomemoStatus === "CONNECTING" ||
+              phomemoStatus === "PRINTING"
                 ? "Phomemo切断"
                 : "Phomemo接続"}
             </button>
