@@ -80,7 +80,10 @@ export class WandDetector {
       // セッションの解放
       if (this.session) {
         await this.session.release().catch((releaseErr) => {
-          console.error("Failed to release ONNX session during cleanup:", releaseErr);
+          console.error(
+            "Failed to release ONNX session during cleanup:",
+            releaseErr,
+          );
         });
         this.session = null;
       }
