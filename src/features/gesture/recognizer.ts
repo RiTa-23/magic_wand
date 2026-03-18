@@ -10,6 +10,7 @@ export type GestureResult =
   | { type: "V"; confidence: number }
   | { type: "M"; confidence: number }
   | { type: "L"; confidence: number }
+  | { type: "Z"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -145,6 +146,45 @@ function recognizeLGesture(
 }
 
 /**
+ * Z字判定
+ * 左から右へ → 右下へ → 右から左へ のジグザグパターンを検出する（雷マーク⚡）
+ */
+function recognizeZGesture(
+  smoothedX: number[],
+  smoothedY: number[],
+  xSpan: number,
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedX.length;
+  if (n < 20) return null;
+
+  // X方向で方向転換が1-2回起こることを確認（Z字の特徴）
+  const minChange = xSpan * 0.15; // X変化の最小値
+  const xChanges = countDirectionChanges(smoothedX, minChange);
+  if (xChanges < 1 || xChanges > 2) return null;
+
+  // Y方向での変化量がある程度ある（完全に水平ではない）
+  if (ySpan < xSpan * 0.3) return null;
+
+  // 軌跡全体でX方向の変化が大きい
+  const startX = smoothedX[0];
+  const endX = smoothedX[n - 1];
+  const xTotal = Math.abs(endX - startX);
+  if (xTotal < xSpan * 0.5) return null;
+
+  // ジグザグが起こっているか確認： 全体では左から右（または右から左）、その中で反転がある
+  // confidenceの計算
+  const xChangeFrequency = xChanges / 2; // 1-2回なら 0.5-1.0
+  const xCoverage = clamp01(xTotal / xSpan); // X全体をどれだけ使っているか
+  const yCoverage = clamp01(ySpan / xSpan); // Y方向の広さ（0.3以上が必須）
+  const confidence = clamp01(
+    xChangeFrequency * 0.4 + xCoverage * 0.35 + yCoverage * 0.25,
+  );
+
+  return confidence > 0.3 ? { type: "Z", confidence } : null;
+}
+
+/**
  * 軌跡が V字 か M字 かを判定する
  * @param trail 軌跡の座標列
  * @returns 判定結果
@@ -167,6 +207,12 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
   if (xSpan >= 2) {
     const lResult = recognizeLGesture(smoothedX, smoothedY, xSpan, ySpan);
     if (lResult) return lResult;
+  }
+
+  // --- Z字判定を実施（雷マーク⚡） ---
+  if (xSpan >= 2) {
+    const zResult = recognizeZGesture(smoothedX, smoothedY, xSpan, ySpan);
+    if (zResult) return zResult;
   }
 
   // 転換の最小変化量（Y スパンの 15% 以下の変化はノイズとみなす）

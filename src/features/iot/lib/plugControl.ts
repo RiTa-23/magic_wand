@@ -74,6 +74,7 @@ const SPELL_PORT = {
   LUMOS: 1, // ポート2: 光
   INCENDIO: 2, // ポート3: 炎
   AGUAMENTI: 3, // ポート4: 水
+  RAIDEN: 4, // ポート5: 雷
 } as const;
 
 /** オートOFFのデフォルト待機時間（ミリ秒） */
@@ -348,6 +349,28 @@ export async function castAguamentiAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
   );
 }
 
+/**
+ * 魔法: ライデイン - ポート4をON
+ */
+export async function castRaiden() {
+  return togglePort(SPELL_PORT.RAIDEN, true, "ライデイン", "⚡");
+}
+
+/**
+ * 魔法: ライデイン解除 - ポート4をOFF
+ */
+export async function releaseRaiden() {
+  return togglePort(SPELL_PORT.RAIDEN, false, "ライデイン解除", "✨");
+}
+
+/**
+ * 魔法: ライデイン（オートOFF）- ポート4をONにし、指定秒後にOFF
+ * @param durationMs - ONのままにする時間（デフォルト: 5秒）
+ */
+export async function castRaidenAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+  return castPortWithAutoOff(SPELL_PORT.RAIDEN, "ライデイン", "⚡", durationMs);
+}
+
 // ========================================
 // 全ポート制御の魔法
 // ========================================
@@ -530,6 +553,10 @@ export async function executeSpell(spellName: string) {
       return await castAguamenti();
     case "AguamentiOff":
       return await castAguamentiOff();
+    case "Raiden":
+      return await castRaiden();
+    case "RaidenOff":
+      return await releaseRaiden();
     case "Maxima":
       return await castMaxima();
     case "Nox":
@@ -542,6 +569,8 @@ export async function executeSpell(spellName: string) {
       return await castIncendioAuto();
     case "AguamentiAuto":
       return await castAguamentiAuto();
+    case "RaidenAuto":
+      return await castRaidenAuto();
     default:
       console.log("未知の魔法っす…！");
       return { success: false, message: "未知の魔法っす" };

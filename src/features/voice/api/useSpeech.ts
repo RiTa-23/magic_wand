@@ -10,12 +10,22 @@ import {
   SpellMatchResult,
 } from "../types/speech";
 
+export interface UseSpeechOptions {
+  finalBufferWindowMs?: number;
+  interimMatchThreshold?: number;
+  interimCommitThreshold?: number;
+}
+
 /**
  * 音声認識と呪文マッチングを統合するカスタムフック
  */
-export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
-  const FINAL_BUFFER_WINDOW_MS = 2200;
-  const INTERIM_MATCH_THRESHOLD = 0.8;
+export function useSpeech(
+  spells: SpellEntry[] = SPELL_DICTIONARY,
+  options: UseSpeechOptions = {},
+) {
+  const FINAL_BUFFER_WINDOW_MS = options.finalBufferWindowMs ?? 2200;
+  const INTERIM_MATCH_THRESHOLD = options.interimMatchThreshold ?? 0.8;
+  const INTERIM_COMMIT_THRESHOLD = options.interimCommitThreshold ?? 1.0;
   const FATAL_SPEECH_ERRORS = new Set([
     "not-allowed",
     "service-not-allowed",
@@ -58,7 +68,7 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     }
 
     return [...candidateSet];
-  }, []);
+  }, [FINAL_BUFFER_WINDOW_MS]);
 
   const pickBestMatch = useCallback(
     (candidates: string[]) => {
@@ -116,6 +126,14 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
             hasDispatchedMatchRef.current = true;
           } else if (
             !hasDispatchedMatchRef.current &&
+            match.confidence >= INTERIM_COMMIT_THRESHOLD
+          ) {
+            // interimでも完全一致なら先行確定して待ち時間を短縮
+            setSpellMatch(match);
+            setFinalSpellMatch(match);
+            hasDispatchedMatchRef.current = true;
+          } else if (
+            !hasDispatchedMatchRef.current &&
             match.confidence >= INTERIM_MATCH_THRESHOLD
           ) {
             // interim結果: 高信頼度(0.8以上)のみ表示、finalで上書き可能に保つ
@@ -151,7 +169,14 @@ export function useSpeech(spells: SpellEntry[] = SPELL_DICTIONARY) {
     // エンジン開始
     speechRecognitionAPI.start();
     removeListenerRef.current = removeListener;
-  }, [spells]);
+  }, [
+    FINAL_BUFFER_WINDOW_MS,
+    INTERIM_COMMIT_THRESHOLD,
+    INTERIM_MATCH_THRESHOLD,
+    spells,
+    collectCandidates,
+    pickBestMatch,
+  ]);
 
   /**
    * 音声認識の停止

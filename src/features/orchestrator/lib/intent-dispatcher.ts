@@ -11,6 +11,7 @@ const TAPO_SPELL_NAME_BY_ID: Record<
   incendio: "Incendio",
   aguamenti: "Aguamenti",
   nox: "Nox",
+  raiden: "Raiden",
 };
 
 const AUTO_OFF_CAPABLE_SPELLS = new Set([
@@ -18,6 +19,7 @@ const AUTO_OFF_CAPABLE_SPELLS = new Set([
   "Lumos",
   "Incendio",
   "Aguamenti",
+  "Raiden",
 ]);
 
 const OMIKUJI_MESSAGES = [

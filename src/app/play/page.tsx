@@ -38,6 +38,7 @@ const CANVAS_HEIGHT = 480;
 const PADDING = 40;
 
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
+type SpeechLatencyMode = "safe" | "fast";
 
 // ── ビューポートの計算とスムージングヘルパー ──
 function adjustViewBounds(
@@ -171,7 +172,22 @@ export default function PlayPage() {
       gestureConfidenceThreshold: GESTURE_CONFIDENCE_THRESHOLD,
     }),
   );
-  const { status, finalSpellMatch, start, stop, isSupported } = useSpeech();
+  const [speechLatencyMode, setSpeechLatencyMode] =
+    useState<SpeechLatencyMode>("safe");
+  const { status, finalSpellMatch, start, stop, isSupported } = useSpeech(
+    undefined,
+    speechLatencyMode === "fast"
+      ? {
+          finalBufferWindowMs: 1800,
+          interimMatchThreshold: 0.7,
+          interimCommitThreshold: 0.8,
+        }
+      : {
+          finalBufferWindowMs: 2200,
+          interimMatchThreshold: 0.8,
+          interimCommitThreshold: 1.0,
+        },
+  );
   const {
     status: joyConStatus,
     joyconState,
@@ -655,6 +671,10 @@ export default function PlayPage() {
     }
   };
 
+  const handleSpeechLatencyModeToggle = () => {
+    setSpeechLatencyMode((prev) => (prev === "safe" ? "fast" : "safe"));
+  };
+
   const handleJoyConToggle = async () => {
     if (joyConStatus === "CONNECTED" || joyConStatus === "CONNECTING") {
       await disconnect();
@@ -880,21 +900,29 @@ export default function PlayPage() {
 
             {/* マイクボタン */}
             {isSupported ? (
-              <button
-                onClick={handleMicToggle}
-                aria-label={isListening ? "音声認識を停止" : "音声認識を開始"}
-                className={`mx-auto flex items-center justify-center w-16 h-16 rounded-full border transition-all duration-300 ${
-                  isListening
-                    ? "border-gold-bright bg-gold-bright/20 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                    : "border-gold-dim/40 bg-stone/20 hover:border-gold-bright/60 hover:bg-gold-dim/10"
-                }`}
-              >
-                {isListening ? (
-                  <MicOff className="w-6 h-6 text-gold-bright" />
-                ) : (
-                  <Mic className="w-6 h-6 text-gold-dim" />
-                )}
-              </button>
+              <>
+                <button
+                  onClick={handleMicToggle}
+                  aria-label={isListening ? "音声認識を停止" : "音声認識を開始"}
+                  className={`mx-auto flex items-center justify-center w-16 h-16 rounded-full border transition-all duration-300 ${
+                    isListening
+                      ? "border-gold-bright bg-gold-bright/20 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                      : "border-gold-dim/40 bg-stone/20 hover:border-gold-bright/60 hover:bg-gold-dim/10"
+                  }`}
+                >
+                  {isListening ? (
+                    <MicOff className="w-6 h-6 text-gold-bright" />
+                  ) : (
+                    <Mic className="w-6 h-6 text-gold-dim" />
+                  )}
+                </button>
+                <button
+                  onClick={handleSpeechLatencyModeToggle}
+                  className="mx-auto px-4 py-1.5 rounded-full border border-gold-dim/30 text-[11px] tracking-[0.18em] uppercase text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
+                >
+                  音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
+                </button>
+              </>
             ) : (
               <p className="text-xs text-gold-dim/50 tracking-widest">
                 音声認識非対応のブラウザです
@@ -940,7 +968,7 @@ export default function PlayPage() {
 
             <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
               コツ:
-              接続直後はレール側を下にして2.5秒静止すると安定します。呪文の後7秒以内に、R長押しで0.8〜1.5秒ほどV/Mを1回しっかり描いて離すと通りやすいです。
+                接続直後はレール側を下にして3秒静止すると安定します。呪文の後7秒以内に、R長押しで0.8〜1.5秒ほどV/M/Lを1回しっかり描いて離すと通りやすいです。
             </p>
           </div>
         </div>
