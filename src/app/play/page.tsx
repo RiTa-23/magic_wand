@@ -344,6 +344,7 @@ export default function PlayPage() {
       trailRef.current = [];
       setTrailPathPoints("");
       imuPosRef.current = { x: 0, y: 0 };
+      viewBoundsRef.current = null;
       prevRPressedRef.current = false;
       return;
     }
@@ -357,6 +358,7 @@ export default function PlayPage() {
       gyroBiasRef.current = { y: 0, z: 0 };
       trailRef.current = [];
       setTrailPathPoints("");
+      viewBoundsRef.current = null;
       return;
     }
 
