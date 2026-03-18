@@ -19,6 +19,8 @@ import {
   getAutoOffEnabled,
 } from "@/features/settings/lib/auto-off-setting";
 import {
+  DEFAULT_SPELL_GESTURE_MAP,
+  GestureType,
   IntentGateResult,
   SpellId,
 } from "@/features/orchestrator/types/intent";
@@ -40,6 +42,12 @@ const PADDING = 40;
 
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
 type SpeechLatencyMode = "safe" | "fast";
+type GestureDebugInfo = {
+  gestureType: GestureType | "unknown";
+  confidence: number | null;
+  recognizedAt: number;
+  mappedSpells: SpellId[];
+};
 
 // ── ビューポートの計算とスムージングヘルパー ──
 function adjustViewBounds(
@@ -208,6 +216,8 @@ export default function PlayPage() {
   const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
     null,
   );
+  const [lastGestureDebug, setLastGestureDebug] =
+    useState<GestureDebugInfo | null>(null);
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
@@ -486,6 +496,29 @@ export default function PlayPage() {
 
       if (!inCooldown && trailRef.current.length >= TRAIL_MIN_POINTS) {
         const recognized = recognizeGesture(trailRef.current);
+
+        if (recognized.type === "unknown") {
+          setLastGestureDebug({
+            gestureType: "unknown",
+            confidence: null,
+            recognizedAt: now,
+            mappedSpells: [],
+          });
+        } else {
+          const mappedSpells = (
+            Object.entries(DEFAULT_SPELL_GESTURE_MAP) as [SpellId, GestureType][]
+          )
+            .filter(([, gestureType]) => gestureType === recognized.type)
+            .map(([spellId]) => spellId);
+
+          setLastGestureDebug({
+            gestureType: recognized.type,
+            confidence: recognized.confidence,
+            recognizedAt: now,
+            mappedSpells,
+          });
+        }
+
         const gestureInput = toGestureIntentInput(recognized, now);
 
         if (gestureInput) {
@@ -760,6 +793,27 @@ export default function PlayPage() {
     return "Phomemo接続済み";
   })();
 
+  const gestureDebugText = (() => {
+    if (!lastGestureDebug) {
+      return {
+        recognized: "まだ軌道認識はありません",
+        mapped: "対応魔法: -",
+      };
+    }
+
+    const confidenceText =
+      lastGestureDebug.confidence === null
+        ? "-"
+        : `${Math.round(lastGestureDebug.confidence * 100)}%`;
+    const recognized = `認識: ${lastGestureDebug.gestureType} (信頼度 ${confidenceText})`;
+    const mapped =
+      lastGestureDebug.mappedSpells.length > 0
+        ? `対応魔法: ${lastGestureDebug.mappedSpells.join(" / ")}`
+        : "対応魔法: なし";
+
+    return { recognized, mapped };
+  })();
+
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
       {/* Background image layer (match Home's darker ambience) */}
@@ -965,6 +1019,18 @@ export default function PlayPage() {
               </p>
               <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
                 {dispatchStatusText}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
+              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+                GESTURE DEBUG
+              </p>
+              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
+                {gestureDebugText.recognized}
+              </p>
+              <p className="text-xs leading-relaxed tracking-wide text-gold-dim/75">
+                {gestureDebugText.mapped}
               </p>
             </div>
 
