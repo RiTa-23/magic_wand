@@ -20,6 +20,7 @@ import {
 } from "@/features/settings/lib/auto-off-setting";
 import {
   DEFAULT_SPELL_GESTURE_MAP,
+  GestureIntentInput,
   GestureType,
   IntentGateResult,
   SpellId,
@@ -39,6 +40,7 @@ const DISPATCH_COOLDOWN_MS = 1200;
 const CANVAS_WIDTH = 640;
 const CANVAS_HEIGHT = 480;
 const PADDING = 40;
+const WAVE_GESTURE_RECOVERY_WINDOW_MS = 3000;
 
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
 type SpeechLatencyMode = "safe" | "fast";
@@ -240,6 +242,7 @@ export default function PlayPage() {
   const isDispatchingRef = useRef(false);
   const lastDispatchAtRef = useRef(0);
   const lastHandledCommitRef = useRef("");
+  const recentGestureInputRef = useRef<GestureIntentInput | null>(null);
   const calibrationPrevAccelRef = useRef<{
     x: number;
     y: number;
@@ -294,11 +297,41 @@ export default function PlayPage() {
 
     setPersistedSpellName(finalSpellMatch.spell.name);
 
+    const spellId = finalSpellMatch.spell.id as SpellId;
+
     const voiceResult = gate.current.pushVoice({
-      spellId: finalSpellMatch.spell.id as SpellId,
+      spellId,
       confidence: finalSpellMatch.confidence,
       timestamp: Date.now(),
     });
+
+    // Wジェスチャーは「認識表示は出たがGateに残らなかった」ケースを救済する
+    if (
+      spellId === "wave" &&
+      voiceResult.status === "waiting_for_gesture" &&
+      recentGestureInputRef.current?.gestureType === "W" &&
+      Date.now() - recentGestureInputRef.current.timestamp <=
+        WAVE_GESTURE_RECOVERY_WINDOW_MS
+    ) {
+      const recoveredGestureResult = gate.current.pushGesture(
+        recentGestureInputRef.current,
+      );
+
+      if (recoveredGestureResult.status === "committed") {
+        setGateResult(recoveredGestureResult);
+        stop();
+        return;
+      }
+
+      const recoveredVoiceResult = gate.current.pushVoice({
+        spellId,
+        confidence: finalSpellMatch.confidence,
+        timestamp: Date.now(),
+      });
+      setGateResult(recoveredVoiceResult);
+      stop();
+      return;
+    }
 
     setGateResult(voiceResult);
     stop();
@@ -522,6 +555,7 @@ export default function PlayPage() {
         const gestureInput = toGestureIntentInput(recognized, now);
 
         if (gestureInput) {
+          recentGestureInputRef.current = gestureInput;
           const gestureGateResult = gate.current.pushGesture(gestureInput);
           setGateResult(gestureGateResult);
           lastGestureAtRef.current = now;

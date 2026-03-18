@@ -196,13 +196,16 @@ function recognizeWaveGesture(
   smoothedY: number[],
   xSpan: number,
   ySpan: number,
+  durationMs: number,
 ): GestureResult | null {
   const n = smoothedX.length;
   if (n < 20) return null;
 
-  // 横幅が十分あり、縦ブレは小さいこと
-  if (xSpan < 8) return null;
-  if (ySpan > xSpan * 0.28) return null;
+  // ウェーブ専用: 横へ引いたかどうかを最優先で判定する
+  // ほぼ一直線の横スワイプで成立させる
+  if (xSpan < 5) return null;
+  if (ySpan > xSpan * 0.65) return null;
+  if (durationMs < 280 || durationMs > 2200) return null;
 
   // X方向は概ね単調に進む（大きな折り返しがない）
   let forward = 0;
@@ -217,20 +220,19 @@ function recognizeWaveGesture(
   const total = forward + backward;
   if (total === 0) return null;
   const monotonicity = Math.max(forward, backward) / total;
-  if (monotonicity < 0.82) return null;
+  if (monotonicity < 0.58) return null;
 
-  // Y方向の微小ノイズでの蛇行を抑える
-  const yChanges = countDirectionChanges(smoothedY, Math.max(1, ySpan * 0.18));
-  if (yChanges > 2) return null;
-
-  const straightness = clamp01(1 - ySpan / Math.max(1, xSpan * 0.28));
-  const horizontalScore = clamp01(xSpan / Math.max(8, ySpan * 2.2));
-  const monotonicScore = clamp01((monotonicity - 0.82) / 0.18);
+  const straightness = clamp01(1 - ySpan / Math.max(1, xSpan * 0.65));
+  const horizontalScore = clamp01(xSpan / 10);
+  const monotonicScore = clamp01((monotonicity - 0.58) / 0.42);
+  const durationScore = clamp01(
+    1 - Math.abs(durationMs - 900) / 900,
+  );
   const confidence = clamp01(
-    straightness * 0.45 + horizontalScore * 0.25 + monotonicScore * 0.3,
+    straightness * 0.35 + horizontalScore * 0.35 + monotonicScore * 0.2 + durationScore * 0.1,
   );
 
-  return confidence > 0.45 ? { type: "W", confidence } : null;
+  return confidence > 0.35 ? { type: "W", confidence: Math.max(0.6, confidence) } : null;
 }
 
 /**
@@ -297,15 +299,16 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
   // 点が少なすぎる場合は判定不能
   if (trail.length < 20) return { type: "unknown" };
 
-  // Y 方向の移動量が小さすぎる場合は判定しない
+  // Y 方向の移動量が小さすぎる場合でも、W（横一直線）は成立しうる
   const ySpan = calcYSpan(trail);
   const xSpan = calcXSpan(trail);
-  if (ySpan < 2) return { type: "unknown" };
+  if (ySpan < 2 && xSpan < 5) return { type: "unknown" };
 
   // スムージング（ウィンドウサイズ: 全体の約 10%）
   const windowSize = Math.max(3, Math.floor(trail.length * 0.1));
   const smoothedX = smoothX(trail, windowSize);
   const smoothedY = smoothY(trail, windowSize);
+  const durationMs = trail[trail.length - 1].t - trail[0].t;
 
   // --- L字判定を先に実施（V字との誤分類を減らす） ---
   if (xSpan >= 2) {
@@ -319,7 +322,13 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
 
   // --- 横一直線判定を実施（ウェーブ🌊） ---
   if (xSpan >= 2) {
-    const waveResult = recognizeWaveGesture(smoothedX, smoothedY, xSpan, ySpan);
+    const waveResult = recognizeWaveGesture(
+      smoothedX,
+      smoothedY,
+      xSpan,
+      ySpan,
+      durationMs,
+    );
     if (waveResult) return waveResult;
   }
 
