@@ -26,11 +26,6 @@ export default function TutorialPage() {
         description: "デバイスが接続できているか確認します。",
       },
       {
-        imageSrc: "/tutorial/page_.png",
-        imageAlt: "魔力の集中",
-        description: "深呼吸して、魔力を一点に集めます。",
-      },
-      {
         imageSrc: "/tutorial/page_4.png",
         imageAlt: "呪文の詠唱",
         description: "呪文をはっきり唱えてください。",
@@ -41,24 +36,9 @@ export default function TutorialPage() {
         description: "杖で合図の動きを描きます。",
       },
       {
-        imageSrc: "/tutorial/06_trigger.png",
-        imageAlt: "発動の合図",
-        description: "光が集まったら、発動のタイミングです。",
-      },
-      {
-        imageSrc: "/tutorial/07_result.png",
-        imageAlt: "結果の確認",
-        description: "反応が出たか、目と耳で確かめます。",
-      },
-      {
         imageSrc: "/tutorial/page_7.png",
         imageAlt: "再調整",
         description: "うまくいかない時は、距離と向きを調整します。",
-      },
-      {
-        imageSrc: "/tutorial/09.png",
-        imageAlt: "連携",
-        description: "魔法は道具と連携して強くなります。",
       },
       {
         imageSrc: "/yuchimage/yuchisiro.jpg",
