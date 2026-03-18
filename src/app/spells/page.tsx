@@ -40,6 +40,12 @@ export default function SpellsPage() {
           description:
             "炎を灯す呪文。対応するデバイスに『点火』の意図を伝えます。",
         },
+        wave: {
+          description: "波動の呪文。次々に魔法が発動します。",
+        },
+        raiden: {
+          description: "雷撃の呪文。電撃を放ちます。",
+        },
       }) as Record<string, { description: string }>,
     [],
   );
@@ -49,6 +55,8 @@ export default function SpellsPage() {
     () =>
       ({
         lumos: "/spellimage/lumos.png",
+        raiden: "/spellimage/lightning.png",
+        wave: "/spellimage/wave.png",
       }) as Record<string, string>,
     [],
   );
@@ -188,9 +196,9 @@ export default function SpellsPage() {
                                     {"認識キーワード"}
                                   </div>
                                   <div className="mt-3 flex flex-wrap gap-2">
-                                    {spell.keywords.map((keyword) => (
+                                    {spell.keywords.map((keyword, index) => (
                                       <span
-                                        key={keyword}
+                                        key={`${spell.id}:${index}`}
                                         className="rounded-full border border-[color:var(--gold)]/15 bg-stone/20 px-3 py-1 text-[11px] tracking-[0.18em] text-[color:var(--foreground)]/85"
                                       >
                                         {keyword}
