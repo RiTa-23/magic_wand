@@ -430,11 +430,6 @@ export default function CameraWandTestPage() {
                 className="w-full rounded-xl border border-gray-800 bg-gray-900"
                 style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
               />
-              {isConnected && !wandPoint?.detected && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
-                  <p className="text-gray-500 text-sm">杖を検出中...</p>
-                </div>
-              )}
             </div>
 
             {/* カメラプレビュー */}
@@ -472,32 +467,28 @@ export default function CameraWandTestPage() {
               <h2 className="text-sm font-semibold text-gray-400 mb-3">
                 杖先 (tip)
               </h2>
-              {wandPoint?.detected ? (
-                <div className="space-y-2 font-mono">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="bg-gray-800 rounded p-2">
-                      <span className="text-gray-500 text-xs">X</span>
-                      <p className="text-green-400 text-lg font-bold">
-                        {Math.round(wandPoint.tipX)}
-                      </p>
-                    </div>
-                    <div className="bg-gray-800 rounded p-2">
-                      <span className="text-gray-500 text-xs">Y</span>
-                      <p className="text-green-400 text-lg font-bold">
-                        {Math.round(wandPoint.tipY)}
-                      </p>
-                    </div>
+              <div className="space-y-2 font-mono">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-gray-800 rounded p-2">
+                    <span className="text-gray-500 text-xs">X</span>
+                    <p className="text-green-400 text-lg font-bold">
+                      {wandPoint ? Math.round(wandPoint.tipX) : "—"}
+                    </p>
                   </div>
-                  <div className="bg-gray-800/50 rounded p-2 text-xs">
-                    <span className="text-gray-500">信頼度</span>
-                    <p className="text-green-400">
-                      {wandPoint.tipConfidence.toFixed(3)}
+                  <div className="bg-gray-800 rounded p-2">
+                    <span className="text-gray-500 text-xs">Y</span>
+                    <p className="text-green-400 text-lg font-bold">
+                      {wandPoint ? Math.round(wandPoint.tipY) : "—"}
                     </p>
                   </div>
                 </div>
-              ) : (
-                <p className="text-gray-600 text-sm italic">未検出</p>
-              )}
+                <div className="bg-gray-800/50 rounded p-2 text-xs">
+                  <span className="text-gray-500">信頼度</span>
+                  <p className="text-green-400">
+                    {wandPoint ? wandPoint.tipConfidence.toFixed(3) : "—"}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* 手元座標 */}
@@ -505,24 +496,20 @@ export default function CameraWandTestPage() {
               <h2 className="text-sm font-semibold text-gray-400 mb-3">
                 手元 (grip)
               </h2>
-              {wandPoint?.detected ? (
-                <div className="grid grid-cols-2 gap-2 text-sm font-mono">
-                  <div className="bg-gray-800 rounded p-2">
-                    <span className="text-gray-500 text-xs">X</span>
-                    <p className="text-yellow-400 text-lg font-bold">
-                      {Math.round(wandPoint.gripX)}
-                    </p>
-                  </div>
-                  <div className="bg-gray-800 rounded p-2">
-                    <span className="text-gray-500 text-xs">Y</span>
-                    <p className="text-yellow-400 text-lg font-bold">
-                      {Math.round(wandPoint.gripY)}
-                    </p>
-                  </div>
+              <div className="grid grid-cols-2 gap-2 text-sm font-mono">
+                <div className="bg-gray-800 rounded p-2">
+                  <span className="text-gray-500 text-xs">X</span>
+                  <p className="text-yellow-400 text-lg font-bold">
+                    {wandPoint ? Math.round(wandPoint.gripX) : "—"}
+                  </p>
                 </div>
-              ) : (
-                <p className="text-gray-600 text-sm italic">未検出</p>
-              )}
+                <div className="bg-gray-800 rounded p-2">
+                  <span className="text-gray-500 text-xs">Y</span>
+                  <p className="text-yellow-400 text-lg font-bold">
+                    {wandPoint ? Math.round(wandPoint.gripY) : "—"}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* 検出信頼度 */}
@@ -531,44 +518,38 @@ export default function CameraWandTestPage() {
                 検出信頼度
               </h2>
               <p className="text-3xl font-bold text-white font-mono">
-                {wandPoint
-                  ? wandPoint.detected
-                    ? wandPoint.confidence.toFixed(3)
-                    : "—"
-                  : "—"}
+                {wandPoint ? wandPoint.confidence.toFixed(3) : "—"}
               </p>
             </div>
 
             {/* BBox情報 */}
-            {wandPoint?.detected && (
-              <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-                <h2 className="text-sm font-semibold text-gray-400 mb-2">
-                  BBox
-                </h2>
-                <div className="text-xs font-mono space-y-1">
-                  <p>
-                    x:{" "}
-                    <span className="text-gray-300">
-                      {Math.round(wandPoint.boundingBox.x)}
-                    </span>
-                    {"  "}y:{" "}
-                    <span className="text-gray-300">
-                      {Math.round(wandPoint.boundingBox.y)}
-                    </span>
-                  </p>
-                  <p>
-                    w:{" "}
-                    <span className="text-gray-300">
-                      {Math.round(wandPoint.boundingBox.width)}
-                    </span>
-                    {"  "}h:{" "}
-                    <span className="text-gray-300">
-                      {Math.round(wandPoint.boundingBox.height)}
-                    </span>
-                  </p>
-                </div>
+            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+              <h2 className="text-sm font-semibold text-gray-400 mb-2">
+                BBox
+              </h2>
+              <div className="text-xs font-mono space-y-1">
+                <p>
+                  x:{" "}
+                  <span className="text-gray-300">
+                    {wandPoint ? Math.round(wandPoint.boundingBox.x) : "—"}
+                  </span>
+                  {"  "}y:{" "}
+                  <span className="text-gray-300">
+                    {wandPoint ? Math.round(wandPoint.boundingBox.y) : "—"}
+                  </span>
+                </p>
+                <p>
+                  w:{" "}
+                  <span className="text-gray-300">
+                    {wandPoint ? Math.round(wandPoint.boundingBox.width) : "—"}
+                  </span>
+                  {"  "}h:{" "}
+                  <span className="text-gray-300">
+                    {wandPoint ? Math.round(wandPoint.boundingBox.height) : "—"}
+                  </span>
+                </p>
               </div>
-            )}
+            </div>
 
             {/* ジェスチャー認識 */}
             <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
