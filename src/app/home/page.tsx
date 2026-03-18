@@ -1,6 +1,12 @@
 "use client";
 
-import { Wifi, BookOpen, Settings, ChevronLeft } from "lucide-react";
+import {
+  Wifi,
+  BookOpen,
+  Settings,
+  ChevronLeft,
+  ScrollText,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MagicCircle } from "@/components/magic-circle";
@@ -87,15 +93,21 @@ export default function HomePage() {
               onClick={() => router.push("/tutorial")}
             />
             <MagicMenuButton
+              label="呪文一覧"
+              icon={ScrollText}
+              delay={200}
+              onClick={() => router.push("/spells")}
+            />
+            <MagicMenuButton
               label="接続確認"
               icon={Wifi}
-              delay={200}
+              delay={300}
               onClick={() => router.push("/connection-check")}
             />
             <PrimaryMagicButton
               label="魔法を発動"
               icon={WandIcon}
-              delay={300}
+              delay={400}
               onClick={() => router.push("/play")}
             />
           </nav>
