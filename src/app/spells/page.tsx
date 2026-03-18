@@ -45,6 +45,13 @@ export default function SpellsPage() {
   );
 
   const placeholderImageSrc = "/spellimage/ventus.jpg";
+  const imageSrcById = useMemo(
+    () =>
+      ({
+        lumos: "/spellimage/lumos.png",
+      }) as Record<string, string>,
+    [],
+  );
 
   return (
     <main className="relative h-svh w-full overflow-hidden overscroll-none bg-[color:var(--background)] text-[color:var(--foreground)]">
@@ -105,6 +112,8 @@ export default function SpellsPage() {
                     const description =
                       spellMetaById[spell.id]?.description ??
                       "この呪文の説明は準備中です。";
+                    const imageSrc =
+                      imageSrcById[spell.id] ?? placeholderImageSrc;
 
                     return (
                       <li key={spell.id}>
@@ -159,7 +168,7 @@ export default function SpellsPage() {
                               <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
                                 <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 w-full aspect-[2/1]">
                                   <Image
-                                    src={placeholderImageSrc}
+                                    src={imageSrc}
                                     alt=""
                                     fill
                                     className="object-contain p-2"
