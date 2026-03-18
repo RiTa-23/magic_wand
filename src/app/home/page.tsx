@@ -6,9 +6,13 @@ import {
   Settings,
   ChevronLeft,
   ScrollText,
+  Camera,
+  Gamepad2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { MagicCircle } from "@/components/magic-circle";
 import { FloatingParticles } from "@/components/floating-particles";
 import { HeroMagicCircle } from "@/components/hero-magic-circle";
@@ -16,8 +20,25 @@ import { MagicMenuButton } from "@/components/magic-menu-button";
 import { PrimaryMagicButton } from "@/components/primary-magic-button";
 import { WandIcon } from "@/components/wand-icon";
 
+type PlayInputMode = "joycon" | "camera";
+
 export default function HomePage() {
   const router = useRouter();
+  const [isPlayModeModalOpen, setIsPlayModeModalOpen] =
+    useState<boolean>(false);
+
+  const handleOpenPlayModeModal = () => {
+    setIsPlayModeModalOpen(true);
+  };
+
+  const handleClosePlayModeModal = () => {
+    setIsPlayModeModalOpen(false);
+  };
+
+  const handleSelectPlayMode = (mode: PlayInputMode) => {
+    setIsPlayModeModalOpen(false);
+    router.push(`/play?input=${mode}`);
+  };
 
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background">
@@ -108,7 +129,7 @@ export default function HomePage() {
               label="魔法を発動"
               icon={WandIcon}
               delay={400}
-              onClick={() => router.push("/play")}
+              onClick={handleOpenPlayModeModal}
             />
           </nav>
 
@@ -127,6 +148,71 @@ export default function HomePage() {
           </p>
         </footer>
       </div>
+
+      {isPlayModeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label="プレイ方式の選択"
+        >
+          <div className="relative w-full max-w-xl rounded-2xl border border-gold-dim/30 bg-stone/90 p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] backdrop-blur-md">
+            <button
+              type="button"
+              onClick={handleClosePlayModeModal}
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-gold-dim/25 text-gold-dim/80 transition-colors hover:border-gold/60 hover:text-gold-bright"
+              aria-label="閉じる"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <h2 className="text-center text-lg font-bold tracking-[0.16em] text-gold-bright">
+              プレイ方式を選択
+            </h2>
+            <p className="mt-2 text-center text-xs tracking-[0.12em] text-gold-dim/70">
+              Joy-Conの慣性検知か、杖の物体検出のどちらで遊びますか？
+            </p>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleSelectPlayMode("joycon")}
+                className="group rounded-xl border border-gold-dim/30 bg-stone-light/20 px-4 py-5 text-left transition-all hover:border-gold/65 hover:bg-gold/10"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gold-dim/35 bg-gold/5 text-gold">
+                    <Gamepad2 className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-bold tracking-[0.12em] text-gold-bright">
+                    Joy-Con
+                  </p>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed tracking-[0.08em] text-gold-dim/75">
+                  R長押しで軌跡を描いて、離したタイミングでジェスチャー判定します。
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectPlayMode("camera")}
+                className="group rounded-xl border border-gold-dim/30 bg-stone-light/20 px-4 py-5 text-left transition-all hover:border-gold/65 hover:bg-gold/10"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gold-dim/35 bg-gold/5 text-gold">
+                    <Camera className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-bold tracking-[0.12em] text-gold-bright">
+                    杖の物体検出
+                  </p>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed tracking-[0.08em] text-gold-dim/75">
+                  カメラで杖先を追跡し、動きと停止を自動判定してジェスチャー認識します。
+                </p>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

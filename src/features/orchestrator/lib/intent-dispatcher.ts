@@ -113,6 +113,10 @@ export async function dispatchCommittedIntent(
         try {
           await withTimeout(deps.printOmikujiWithRandomImage(), timeoutMs);
         } catch (error) {
+          console.warn(
+            "printOmikujiWithRandomImage failed, falling back to text omikuji:",
+            error,
+          );
           // 画像印刷失敗時はテキストベースのフォールバックを使用
           const message = deps.createOmikujiMessage
             ? deps.createOmikujiMessage()
