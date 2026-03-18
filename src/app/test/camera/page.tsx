@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWandDetector } from "@/features/camera/api/useWandDetector";
 import { useCameraGesture } from "@/features/camera/api/useCameraGesture";
 
@@ -131,6 +131,20 @@ export default function CameraWandTestPage() {
     useWandDetector();
   const { lastGesture, isDrawing, resetGesture } =
     useCameraGesture(wandPoint);
+
+  // ジェスチャー判定通知
+  const [gestureToast, setGestureToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!lastGesture || lastGesture.type === "unknown") return;
+    const label = lastGesture.type === "V" ? "V字" : "M字";
+    setGestureToast(
+      `${label} が判定されました（信頼度: ${lastGesture.confidence.toFixed(2)}）`,
+    );
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setGestureToast(null), 2500);
+  }, [lastGesture]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
@@ -352,6 +366,17 @@ export default function CameraWandTestPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
+      {/* ジェスチャー判定トースト */}
+      {gestureToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-[fadeSlideIn_0.3s_ease-out]">
+          <div className="px-6 py-3 rounded-xl bg-gray-800/90 border border-cyan-500/50 shadow-lg shadow-cyan-500/20 backdrop-blur-sm">
+            <p className="text-sm font-semibold text-cyan-300">
+              {gestureToast}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">カメラ杖検出テスト</h1>
 
