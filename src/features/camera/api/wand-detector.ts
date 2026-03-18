@@ -50,7 +50,7 @@ export class WandDetector {
 
     // 1. ONNX Runtime セッション初期化（webgpu → webgl → wasm の順でフォールバック）
     this.session = await ort.InferenceSession.create(
-      "/models/wand_pose_v4.onnx",
+      "/models/wand_pose_v5.onnx",
       {
         executionProviders: ["webgpu", "webgl", "wasm"],
       },
