@@ -30,7 +30,7 @@ export default function ConnectionPage() {
     "absolute right-0 top-5 bottom-5 w-[1.5px] bg-gradient-to-b from-transparent via-gold/25 to-transparent";
 
   const iconContainer =
-    "relative flex items-center justify-center h-20 w-20 rounded-2xl border border-gold-dim/20 bg-gold/5 text-gold transition-all duration-300 group-hover:bg-gold/10 group-hover:text-gold-bright group-hover:scale-110 shrink-0";
+    "relative flex items-center justify-center h-24 w-24 rounded-2xl border border-gold-dim/20 bg-gold/5 text-gold transition-all duration-300 group-hover:bg-gold/10 group-hover:text-gold-bright group-hover:scale-110 shrink-0";
 
   const labelClass =
     "relative text-base font-bold tracking-[0.22em] text-foreground/90 transition-colors duration-300 group-hover:text-gold-bright";
@@ -78,7 +78,7 @@ export default function ConnectionPage() {
                   <div className={cardOrnamentRight} aria-hidden="true" />
 
                   <div className={iconContainer}>
-                    <WandIcon className="h-10 w-10" />
+                    <WandIcon className="h-12 w-12" />
                   </div>
                   <span className={labelClass}>{"杖の確認"}</span>
 
@@ -101,7 +101,7 @@ export default function ConnectionPage() {
                   <div className={cardOrnamentRight} aria-hidden="true" />
 
                   <div className={iconContainer}>
-                    <Gamepad2 className="h-10 w-10" />
+                    <Gamepad2 className="h-12 w-12" />
                   </div>
                   <span className={labelClass}>{"joy-conの確認"}</span>
 
