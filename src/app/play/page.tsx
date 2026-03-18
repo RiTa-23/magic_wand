@@ -405,6 +405,7 @@ export default function PlayPage() {
           z: sum.z / samples.length,
         };
         setCalibrationState("done");
+        calibrationSamplesRef.current = [];
       }
 
       return;
