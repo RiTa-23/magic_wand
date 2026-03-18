@@ -1067,6 +1067,8 @@ export default function PlayPage() {
 
       <aside
         id="play-info-panel"
+        aria-hidden={!isInfoPanelOpen}
+        inert={!isInfoPanelOpen}
         className={`fixed right-0 top-0 z-30 h-svh w-[min(88vw,360px)] border-l border-gold-dim/20 bg-[linear-gradient(180deg,rgba(10,19,30,0.88)_0%,rgba(6,12,22,0.95)_100%)] p-6 pt-24 backdrop-blur-md transition-all duration-300 ease-out ${
           isInfoPanelOpen
             ? "translate-x-0 opacity-100"
