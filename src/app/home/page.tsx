@@ -37,7 +37,7 @@ export default function HomePage() {
 
   const handleSelectPlayMode = (mode: PlayInputMode) => {
     setIsPlayModeModalOpen(false);
-    router.push(`/play?input=${mode}`);
+    router.push(`/play/${mode}`);
   };
 
   return (
