@@ -50,13 +50,11 @@ export default function ConnectionPage() {
                 className={`${cardBase} ${cardFocus}`}
                 aria-label="杖の確認"
               >
-                <div className="flex w-full flex-1 flex-col items-center">
-                  <div className="mt-auto flex flex-col items-center justify-center space-y-4 pb-1">
-                    <WandIcon className="h-24 w-24 text-gold" />
-                    <span className="text-base font-bold tracking-[0.25em] text-gold-bright">
-                      {"杖の確認"}
-                    </span>
-                  </div>
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <WandIcon className="h-28 w-28 text-gold sm:h-32 sm:w-32" />
+                  <span className="text-base font-bold tracking-[0.25em] text-gold-bright">
+                    {"杖の確認"}
+                  </span>
                 </div>
               </button>
 
@@ -65,13 +63,11 @@ export default function ConnectionPage() {
                 className={`${cardBase} ${cardFocus}`}
                 aria-label="joy-conの確認"
               >
-                <div className="flex w-full flex-1 flex-col items-center">
-                  <div className="mt-auto flex flex-col items-center justify-center space-y-4 pb-1">
-                    <Gamepad2 className="h-24 w-24 text-gold" />
-                    <span className="text-base font-bold tracking-[0.25em] text-gold-bright">
-                      {"joy-conの確認"}
-                    </span>
-                  </div>
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <Gamepad2 className="h-28 w-28 text-gold sm:h-32 sm:w-32" />
+                  <span className="text-base font-bold tracking-[0.25em] text-gold-bright">
+                    {"joy-conの確認"}
+                  </span>
                 </div>
               </Link>
             </div>
