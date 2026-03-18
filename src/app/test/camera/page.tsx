@@ -471,20 +471,22 @@ export default function CameraWandTestPage() {
                   <div className="bg-gray-800 rounded p-2">
                     <span className="text-gray-500 text-xs">X</span>
                     <p className="text-green-400 text-lg font-bold">
-                      {wandPoint ? Math.round(wandPoint.tipX) : "—"}
+                      {wandPoint?.detected ? Math.round(wandPoint.tipX) : "—"}
                     </p>
                   </div>
                   <div className="bg-gray-800 rounded p-2">
                     <span className="text-gray-500 text-xs">Y</span>
                     <p className="text-green-400 text-lg font-bold">
-                      {wandPoint ? Math.round(wandPoint.tipY) : "—"}
+                      {wandPoint?.detected ? Math.round(wandPoint.tipY) : "—"}
                     </p>
                   </div>
                 </div>
                 <div className="bg-gray-800/50 rounded p-2 text-xs">
                   <span className="text-gray-500">信頼度</span>
                   <p className="text-green-400">
-                    {wandPoint ? wandPoint.tipConfidence.toFixed(3) : "—"}
+                    {wandPoint?.detected
+                      ? wandPoint.tipConfidence.toFixed(3)
+                      : "—"}
                   </p>
                 </div>
               </div>
@@ -499,13 +501,13 @@ export default function CameraWandTestPage() {
                 <div className="bg-gray-800 rounded p-2">
                   <span className="text-gray-500 text-xs">X</span>
                   <p className="text-yellow-400 text-lg font-bold">
-                    {wandPoint ? Math.round(wandPoint.gripX) : "—"}
+                    {wandPoint?.detected ? Math.round(wandPoint.gripX) : "—"}
                   </p>
                 </div>
                 <div className="bg-gray-800 rounded p-2">
                   <span className="text-gray-500 text-xs">Y</span>
                   <p className="text-yellow-400 text-lg font-bold">
-                    {wandPoint ? Math.round(wandPoint.gripY) : "—"}
+                    {wandPoint?.detected ? Math.round(wandPoint.gripY) : "—"}
                   </p>
                 </div>
               </div>
@@ -517,7 +519,7 @@ export default function CameraWandTestPage() {
                 検出信頼度
               </h2>
               <p className="text-3xl font-bold text-white font-mono">
-                {wandPoint ? wandPoint.confidence.toFixed(3) : "—"}
+                {wandPoint?.detected ? wandPoint.confidence.toFixed(3) : "—"}
               </p>
             </div>
 
@@ -528,21 +530,29 @@ export default function CameraWandTestPage() {
                 <p>
                   x:{" "}
                   <span className="text-gray-300">
-                    {wandPoint ? Math.round(wandPoint.boundingBox.x) : "—"}
+                    {wandPoint?.detected
+                      ? Math.round(wandPoint.boundingBox.x)
+                      : "—"}
                   </span>
                   {"  "}y:{" "}
                   <span className="text-gray-300">
-                    {wandPoint ? Math.round(wandPoint.boundingBox.y) : "—"}
+                    {wandPoint?.detected
+                      ? Math.round(wandPoint.boundingBox.y)
+                      : "—"}
                   </span>
                 </p>
                 <p>
                   w:{" "}
                   <span className="text-gray-300">
-                    {wandPoint ? Math.round(wandPoint.boundingBox.width) : "—"}
+                    {wandPoint?.detected
+                      ? Math.round(wandPoint.boundingBox.width)
+                      : "—"}
                   </span>
                   {"  "}h:{" "}
                   <span className="text-gray-300">
-                    {wandPoint ? Math.round(wandPoint.boundingBox.height) : "—"}
+                    {wandPoint?.detected
+                      ? Math.round(wandPoint.boundingBox.height)
+                      : "—"}
                   </span>
                 </p>
               </div>

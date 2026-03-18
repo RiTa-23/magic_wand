@@ -47,11 +47,20 @@ export function useCameraGesture(
   const idleStartRef = useRef<number | null>(null);
   const lastGestureAtRef = useRef(0);
   const lastTimestampRef = useRef(0);
+  const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearIdleTimeout = () => {
+    if (idleTimeoutRef.current !== null) {
+      clearTimeout(idleTimeoutRef.current);
+      idleTimeoutRef.current = null;
+    }
+  };
 
   const resetGesture = useCallback(() => {
     gestureTrailRef.current = [];
     lastPosRef.current = null;
     idleStartRef.current = null;
+    clearIdleTimeout();
     setIsDrawing(false);
     setLastGesture(null);
   }, []);
@@ -89,18 +98,22 @@ export function useCameraGesture(
 
     // 杖が検出されていない場合
     if (!wandPoint || !wandPoint.detected) {
+      setIsDrawing(false);
       if (gestureTrailRef.current.length > 0 && idleStartRef.current === null) {
-        // 検出ロスト → idle開始
+        // 検出ロスト → idle開始、タイマーでtryRecognizeを予約
         idleStartRef.current = now;
-      }
-      if (
-        idleStartRef.current !== null &&
-        now - idleStartRef.current >= IDLE_TIMEOUT_MS
-      ) {
-        tryRecognize();
+        clearIdleTimeout();
+        idleTimeoutRef.current = setTimeout(() => {
+          idleTimeoutRef.current = null;
+          tryRecognize();
+        }, IDLE_TIMEOUT_MS);
       }
       return;
     }
+
+    // 杖が検出された → idleタイマーをクリア
+    clearIdleTimeout();
+    idleStartRef.current = null;
 
     // 同じタイムスタンプのフレームは無視
     if (wandPoint.timestamp === lastTimestampRef.current) return;
@@ -120,26 +133,30 @@ export function useCameraGesture(
     lastPosRef.current = { x: tipX, y: tipY };
 
     if (velocity > VELOCITY_THRESHOLD) {
-      // 杖が動いている → ポイントを蓄積、idle解除
+      // 杖が動いている → ポイントを蓄積
       gestureTrailRef.current.push({ rawX: tipX, rawY: tipY, t: now });
       if (gestureTrailRef.current.length > MAX_GESTURE_TRAIL) {
         gestureTrailRef.current.shift();
       }
-      idleStartRef.current = null;
       setIsDrawing(true);
     } else {
-      // 杖が静止している
+      // 杖が静止している → タイマーで判定を予約
+      setIsDrawing(false);
       if (gestureTrailRef.current.length > 0 && idleStartRef.current === null) {
         idleStartRef.current = now;
-      }
-      if (
-        idleStartRef.current !== null &&
-        now - idleStartRef.current >= IDLE_TIMEOUT_MS
-      ) {
-        tryRecognize();
+        clearIdleTimeout();
+        idleTimeoutRef.current = setTimeout(() => {
+          idleTimeoutRef.current = null;
+          tryRecognize();
+        }, IDLE_TIMEOUT_MS);
       }
     }
   }, [wandPoint, tryRecognize]);
+
+  // クリーンアップ: アンマウント時にタイマーを解除
+  useEffect(() => {
+    return () => clearIdleTimeout();
+  }, []);
 
   return { lastGesture, isDrawing, resetGesture };
 }
