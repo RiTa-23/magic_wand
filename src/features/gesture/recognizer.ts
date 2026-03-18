@@ -12,7 +12,7 @@ export type GestureResult =
   | { type: "L"; confidence: number }
   | { type: "Z"; confidence: number }
   | { type: "InvV"; confidence: number }
-  | { type: "Wave"; confidence: number }
+  | { type: "W"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -232,7 +232,7 @@ function recognizeWaveGesture(
     waveCountScore * 0.35 + horizontalScore * 0.3 + monotonicScore * 0.35,
   );
 
-  return confidence > 0.42 ? { type: "Wave", confidence } : null;
+  return confidence > 0.42 ? { type: "W", confidence } : null;
 }
 
 /**

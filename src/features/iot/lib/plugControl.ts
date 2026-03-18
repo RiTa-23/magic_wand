@@ -459,11 +459,11 @@ export async function castNox() {
 }
 
 /**
- * 魔法: ウェーブ - すべてのポートを約1秒間隔で順番にON
+ * 魔法: ウェーブ - すべてのポートを約1秒間隔で順番にONし、その後順番にOFF
  */
 export async function castWave(intervalMs = DEFAULT_WAVE_INTERVAL_MS) {
   try {
-    console.log("🌊 ウェーブ発動！ポートを順番にONにします");
+    console.log("🌊 ウェーブ発動！ポートを順番にON/OFFします");
     const p300 = await getTapoClient();
     const childDevices = await getCachedChildDevices(p300);
 
@@ -483,9 +483,22 @@ export async function castWave(intervalMs = DEFAULT_WAVE_INTERVAL_MS) {
       }
     }
 
+    // ONが完了したら、同じ順序でOFFして波の消灯を作る
+    await sleep(intervalMs);
+    for (let i = 0; i < childDevices.length; i += 1) {
+      const child = childDevices[i];
+      console.log(
+        `🌊 [${i + 1}/${childDevices.length}] ${child.nickname || child.device_id} をOFF`,
+      );
+      await p300.turnOff(child.device_id);
+      if (i < childDevices.length - 1) {
+        await sleep(intervalMs);
+      }
+    }
+
     return {
       success: true,
-      message: `ウェーブ成功！${childDevices.length}個のポートを${Math.round(intervalMs / 1000)}秒間隔で順番にONにしました🌊`,
+      message: `ウェーブ成功！${childDevices.length}個のポートを${Math.round(intervalMs / 1000)}秒間隔で順番にON/OFFしました🌊`,
     };
   } catch (error) {
     console.error("❌ ウェーブ失敗:", error);

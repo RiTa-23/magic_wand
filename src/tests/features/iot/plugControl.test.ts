@@ -143,16 +143,21 @@ describe("IoT Plug Control Tests", () => {
   });
 
   describe("全ポート制御", () => {
-    it("castWave: すべてのポートを順番にONにできる", async () => {
+    it("castWave: すべてのポートを順番にONした後、順番にOFFできる", async () => {
       const result = await castWave();
 
       expect(result.success).toBe(true);
       expect(result.message).toContain("ウェーブ成功");
       expect(mockTapoDevice.turnOn).toHaveBeenCalledTimes(4);
+      expect(mockTapoDevice.turnOff).toHaveBeenCalledTimes(4);
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(1, "child-0");
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(2, "child-1");
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(3, "child-2");
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(4, "child-3");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(1, "child-0");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(2, "child-1");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(3, "child-2");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(4, "child-3");
     });
 
     it("castMaxima: すべてのポートをONにできる", async () => {
@@ -293,6 +298,7 @@ describe("IoT Plug Control Tests", () => {
       expect(result.success).toBe(true);
       expect(result.message).toContain("ウェーブ成功");
       expect(mockTapoDevice.turnOn).toHaveBeenCalledTimes(4);
+      expect(mockTapoDevice.turnOff).toHaveBeenCalledTimes(4);
     });
   });
 });
