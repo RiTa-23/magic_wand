@@ -32,9 +32,12 @@ const GESTURE_COOLDOWN_MS = 800;
 const GYRO_SENSITIVITY = 0.12;
 const GYRO_DEADZONE = 15;
 const TRAIL_MIN_POINTS = 20;
-const INTENT_WINDOW_MS = 10000;
-const GESTURE_CONFIDENCE_THRESHOLD = 0.45;
-const VOICE_CONFIDENCE_THRESHOLD = 0.6;
+const STABLE_INTENT_WINDOW_MS = 10000;
+const STABLE_GESTURE_CONFIDENCE_THRESHOLD = 0.45;
+const STABLE_VOICE_CONFIDENCE_THRESHOLD = 0.6;
+const IMMERSIVE_INTENT_WINDOW_MS = 1800;
+const IMMERSIVE_GESTURE_CONFIDENCE_THRESHOLD = 0.55;
+const IMMERSIVE_VOICE_CONFIDENCE_THRESHOLD = 0.7;
 const TRAIL_MAX_RENDER_POINTS = 90;
 const CALIBRATION_DURATION_MS = 3000;
 const CALIBRATION_ACCEL_THRESHOLD = 500;
@@ -46,6 +49,23 @@ const WAVE_GESTURE_RECOVERY_WINDOW_MS = 3000;
 
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
 type SpeechLatencyMode = "safe" | "fast";
+type CastingSyncMode = "stable" | "immersive";
+
+function resolveIntentGateConfig(mode: CastingSyncMode) {
+  if (mode === "immersive") {
+    return {
+      timeWindowMs: IMMERSIVE_INTENT_WINDOW_MS,
+      voiceConfidenceThreshold: IMMERSIVE_VOICE_CONFIDENCE_THRESHOLD,
+      gestureConfidenceThreshold: IMMERSIVE_GESTURE_CONFIDENCE_THRESHOLD,
+    };
+  }
+
+  return {
+    timeWindowMs: STABLE_INTENT_WINDOW_MS,
+    voiceConfidenceThreshold: STABLE_VOICE_CONFIDENCE_THRESHOLD,
+    gestureConfidenceThreshold: STABLE_GESTURE_CONFIDENCE_THRESHOLD,
+  };
+}
 
 // ── ビューポートの計算とスムージングヘルパー ──
 function adjustViewBounds(
@@ -209,6 +229,8 @@ export default function JoyConPlayPage() {
   // ── 音声認識 ──
   const [speechLatencyMode, setSpeechLatencyMode] =
     useState<SpeechLatencyMode>("safe");
+  const [castingSyncMode, setCastingSyncMode] =
+    useState<CastingSyncMode>("stable");
   const { status, finalSpellMatch, start, stop, isSupported } = useSpeech(
     undefined,
     speechLatencyMode === "fast"
@@ -237,11 +259,7 @@ export default function JoyConPlayPage() {
 
   // ── IntentGate ──
   const gate = useRef(
-    new IntentGate({
-      timeWindowMs: INTENT_WINDOW_MS,
-      voiceConfidenceThreshold: VOICE_CONFIDENCE_THRESHOLD,
-      gestureConfidenceThreshold: GESTURE_CONFIDENCE_THRESHOLD,
-    }),
+    new IntentGate(resolveIntentGateConfig("stable")),
   );
 
   // ── UI状態 ──
@@ -317,6 +335,17 @@ export default function JoyConPlayPage() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
+  // ── 発動同期モード切替（ゲート構成を再初期化） ──
+  useEffect(() => {
+    gate.current = new IntentGate(resolveIntentGateConfig(castingSyncMode));
+    setGateResult(null);
+    setPersistedSpellName(null);
+    setShowCommitFeedback(false);
+    setCommitLabel("");
+    recentGestureInputRef.current = null;
+    lastGestureAtRef.current = 0;
+  }, [castingSyncMode]);
+
   // ── Joy-Conエラー検知 ──
   useEffect(() => {
     if (joyConStatus === "ERROR") {
@@ -374,7 +403,9 @@ export default function JoyConPlayPage() {
       );
       if (recoveredGestureResult.status === "committed") {
         setGateResult(recoveredGestureResult);
-        stop();
+        if (castingSyncMode === "stable") {
+          stop();
+        }
         return;
       }
       const recoveredVoiceResult = gate.current.pushVoice({
@@ -383,13 +414,28 @@ export default function JoyConPlayPage() {
         timestamp: Date.now(),
       });
       setGateResult(recoveredVoiceResult);
-      stop();
+      if (castingSyncMode === "stable") {
+        stop();
+      }
       return;
     }
 
     setGateResult(voiceResult);
-    stop();
-  }, [finalSpellMatch, stop]);
+    if (castingSyncMode === "stable" || voiceResult.status === "committed") {
+      stop();
+    }
+  }, [castingSyncMode, finalSpellMatch, stop]);
+
+  // ── 同時詠唱モード: commit したら音声認識を停止 ──
+  useEffect(() => {
+    if (
+      castingSyncMode === "immersive" &&
+      gateResult?.status === "committed" &&
+      status === "LISTENING"
+    ) {
+      stop();
+    }
+  }, [castingSyncMode, gateResult?.status, status, stop]);
 
   // ── ジェスチャー待ち → 音声認識自動開始 ──
   useEffect(() => {
@@ -892,16 +938,29 @@ export default function JoyConPlayPage() {
 
           {/* 音声判定モード */}
           {isSupported ? (
-            <button
-              onClick={() =>
-                setSpeechLatencyMode((prev) =>
-                  prev === "safe" ? "fast" : "safe",
-                )
-              }
-              className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
-            >
-              音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
-            </button>
+            <>
+              <button
+                onClick={() =>
+                  setSpeechLatencyMode((prev) =>
+                    prev === "safe" ? "fast" : "safe",
+                  )
+                }
+                className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
+              </button>
+
+              <button
+                onClick={() =>
+                  setCastingSyncMode((prev) =>
+                    prev === "stable" ? "immersive" : "stable",
+                  )
+                }
+                className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                発動同期モード: {castingSyncMode === "stable" ? "安定" : "同時詠唱"}
+              </button>
+            </>
           ) : (
             <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">
               音声認識非対応のブラウザです
