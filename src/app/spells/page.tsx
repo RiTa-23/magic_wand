@@ -114,6 +114,7 @@ export default function SpellsPage() {
                       "この呪文の説明は準備中です。";
                     const imageSrc =
                       imageSrcById[spell.id] ?? placeholderImageSrc;
+                    const shouldPrioritizeImage = spell.id === spells[0]?.id;
 
                     return (
                       <li key={spell.id}>
@@ -173,7 +174,7 @@ export default function SpellsPage() {
                                     fill
                                     className="object-contain p-2"
                                     sizes="(max-width: 640px) 100vw, 200px"
-                                    priority={spell.id === "ventus"}
+                                    priority={shouldPrioritizeImage}
                                     aria-hidden="true"
                                   />
                                 </div>
