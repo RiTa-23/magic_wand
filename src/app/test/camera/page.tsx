@@ -129,8 +129,7 @@ function drawDot(
 export default function CameraWandTestPage() {
   const { status, wandPoint, videoRef, connect, disconnect } =
     useWandDetector();
-  const { lastGesture, isDrawing, resetGesture } =
-    useCameraGesture(wandPoint);
+  const { lastGesture, isDrawing, resetGesture } = useCameraGesture(wandPoint);
 
   // ジェスチャー判定通知
   const [gestureToast, setGestureToast] = useState<string | null>(null);
@@ -524,9 +523,7 @@ export default function CameraWandTestPage() {
 
             {/* BBox情報 */}
             <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-              <h2 className="text-sm font-semibold text-gray-400 mb-2">
-                BBox
-              </h2>
+              <h2 className="text-sm font-semibold text-gray-400 mb-2">BBox</h2>
               <div className="text-xs font-mono space-y-1">
                 <p>
                   x:{" "}
@@ -560,9 +557,7 @@ export default function CameraWandTestPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className={`inline-block w-2 h-2 rounded-full ${
-                      isDrawing
-                        ? "bg-green-400 animate-pulse"
-                        : "bg-gray-600"
+                      isDrawing ? "bg-green-400 animate-pulse" : "bg-gray-600"
                     }`}
                   />
                   <span className="text-xs text-gray-400">
@@ -580,9 +575,7 @@ export default function CameraWandTestPage() {
                             : "text-gray-500"
                       }`}
                     >
-                      {lastGesture.type === "unknown"
-                        ? "?"
-                        : lastGesture.type}
+                      {lastGesture.type === "unknown" ? "?" : lastGesture.type}
                     </p>
                     {"confidence" in lastGesture && (
                       <p className="text-xs text-gray-400 text-center mt-1">

@@ -129,10 +129,7 @@ export function useCameraGesture(
       setIsDrawing(true);
     } else {
       // 杖が静止している
-      if (
-        gestureTrailRef.current.length > 0 &&
-        idleStartRef.current === null
-      ) {
+      if (gestureTrailRef.current.length > 0 && idleStartRef.current === null) {
         idleStartRef.current = now;
       }
       if (
