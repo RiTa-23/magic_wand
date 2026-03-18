@@ -89,9 +89,6 @@ export default function SettingsPage() {
             <h1 className="text-xl sm:text-2xl font-bold tracking-[0.4em] text-[color:var(--gold-bright)] uppercase">
               Spells
             </h1>
-            <p className="mt-2 text-xs tracking-[0.22em] text-[color:var(--gold-dim)]/80">
-              {"呪文一覧"}
-            </p>
           </header>
         </div>
 
