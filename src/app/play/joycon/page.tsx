@@ -886,10 +886,13 @@ export default function JoyConPlayPage() {
   const isLumosCircleActive = showCommitFeedback && activeCircleSpell === "lumos";
   const isIncendioCircleActive =
     showCommitFeedback && activeCircleSpell === "incendio";
+  const isRaidenCircleActive = showCommitFeedback && activeCircleSpell === "raiden";
   const magicCircleGlowClass = isVentusCircleActive
     ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
     : isLumosCircleActive
       ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
+      : isRaidenCircleActive
+        ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
       : isIncendioCircleActive
         ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
     : isMagicCircleGlowing
@@ -1131,6 +1134,68 @@ export default function JoyConPlayPage() {
           <AnchoredCircleLayer
             sizePercent={100}
             className={`transition-all duration-700 ease-out ${
+              isRaidenCircleActive
+                ? "opacity-100 scale-100 blur-0"
+                : "opacity-0 scale-[0.95] blur-[1.8px]"
+            }`}
+          >
+            <AnchoredCircleLayer
+              sizePercent={172}
+              className="rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(146,236,255,0.34) 0%, rgba(92,182,255,0.22) 34%, rgba(195,244,255,0.1) 56%, rgba(8,22,36,0) 80%)",
+                filter: "blur(26px)",
+              }}
+            >
+              <></>
+            </AnchoredCircleLayer>
+
+            <AnchoredCircleLayer sizePercent={132}>
+              <svg viewBox="0 0 100 100" className="h-full w-full">
+                <g className="origin-center animate-[spin_11s_linear_infinite]">
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <path
+                      key={`raiden-bolt-${i}`}
+                      d="M 50 11 L 55 25 L 49 25 L 56 40 L 44 26 L 50 26 Z"
+                      fill="rgba(191,244,255,0.88)"
+                      transform={`rotate(${i * 36} 50 50)`}
+                    />
+                  ))}
+                </g>
+
+                <g className="origin-center animate-[spin_4.2s_linear_infinite_reverse]">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="36"
+                    fill="none"
+                    stroke="rgba(126,227,255,0.76)"
+                    strokeWidth="1.1"
+                    strokeDasharray="2 6"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="28"
+                    fill="none"
+                    stroke="rgba(184,245,255,0.7)"
+                    strokeWidth="0.95"
+                    strokeDasharray="1 4"
+                  />
+                </g>
+
+                <g className="origin-center animate-[pulse_0.95s_ease-in-out_infinite]">
+                  <circle cx="50" cy="50" r="11.2" fill="rgba(142,226,255,0.86)" />
+                  <circle cx="50" cy="50" r="6" fill="rgba(238,252,255,0.97)" />
+                </g>
+              </svg>
+            </AnchoredCircleLayer>
+          </AnchoredCircleLayer>
+
+          <AnchoredCircleLayer
+            sizePercent={100}
+            className={`transition-all duration-700 ease-out ${
               isIncendioCircleActive
                 ? "opacity-100 scale-100 blur-0"
                 : "opacity-0 scale-[0.95] blur-[1.8px]"
@@ -1363,6 +1428,8 @@ export default function JoyConPlayPage() {
                       ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
                       : isLumosCircleActive
                         ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
+                        : isRaidenCircleActive
+                          ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
                         : isIncendioCircleActive
                           ? "conic-gradient(from 0deg, rgba(255,143,91,0.24), rgba(255,75,50,0.18), rgba(255,222,132,0.2), rgba(255,143,91,0.24))"
                       : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
@@ -1377,6 +1444,8 @@ export default function JoyConPlayPage() {
                     ? "border-[#a9ff84]/65"
                     : isLumosCircleActive
                       ? "border-[#fff1ac]/70"
+                      : isRaidenCircleActive
+                        ? "border-[#a9eeff]/72"
                       : isIncendioCircleActive
                         ? "border-[#ffb47f]/70"
                       : "border-[#ffd87f]/55"
@@ -1399,6 +1468,8 @@ export default function JoyConPlayPage() {
                       ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
                       : isLumosCircleActive
                         ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
+                        : isRaidenCircleActive
+                          ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
                         : isIncendioCircleActive
                           ? "radial-gradient(circle, rgba(255,146,98,0.34) 0%, rgba(255,90,61,0.2) 40%, rgba(13,30,46,0) 74%)"
                       : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
@@ -1411,6 +1482,8 @@ export default function JoyConPlayPage() {
                     ? "border-[#b8ff9e]/65"
                     : isLumosCircleActive
                       ? "border-[#fff4bf]/70"
+                      : isRaidenCircleActive
+                        ? "border-[#ccf5ff]/74"
                       : isIncendioCircleActive
                         ? "border-[#ffd1a0]/70"
                       : "border-[#f5d77a]/55"
