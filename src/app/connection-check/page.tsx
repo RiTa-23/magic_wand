@@ -22,10 +22,12 @@ export default function ConnectionPage() {
         {/* Back */}
         <Link
           href={HOME_ROUTE}
-          className="absolute top-10 left-10 group flex items-center justify-center w-10 h-10 rounded-full border border-gold-dim/20 bg-stone/40 backdrop-blur-md transition-all duration-300 hover:border-gold/60 hover:bg-gold/5 hover:shadow-[0_0_20px_rgba(212,175,55,0.15)] active:scale-90"
+          className="absolute top-10 left-10 group flex items-center gap-2 text-gold-dim transition-colors hover:text-gold-bright"
         >
-          <ChevronLeft className="w-6 h-6 text-gold/80 transition-colors duration-300 group-hover:text-gold-bright" />
-          <span className="sr-only">{"ホームに戻る"}</span>
+          <ChevronLeft className="h-5 w-5" />
+          <span className="text-xs uppercase tracking-widest text-shadow-glow">
+            Back
+          </span>
         </Link>
 
         {/* Center buttons */}
