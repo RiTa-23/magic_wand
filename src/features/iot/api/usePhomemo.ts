@@ -20,6 +20,7 @@ export function usePhomemo() {
 
   // 同一インスタンスを保持
   const phomemoRef = useRef<PhomemoBluetooth | null>(null);
+  const lastPrintedImageRef = useRef<string | null>(null);
 
   // 初回マウント時にインスタンス化
   useEffect(() => {
@@ -93,7 +94,7 @@ export function usePhomemo() {
 
   /**
    * キャラクター画像をランダムに選んで印刷する
-   * public/spellimage/ フォルダから .png ファイルを自動取得
+   * public/omikujiimage/ フォルダから画像を自動取得
    */
   const printOmikujiWithRandomImage = useCallback(async () => {
     if (!phomemoRef.current) return;
@@ -114,9 +115,15 @@ export function usePhomemo() {
         throw new Error("omikujiimage フォルダに画像ファイルが見つかりません");
       }
 
-      // ランダムに画像を選択
+      // 連続で同じ画像が出ないよう、直前に印刷した画像は候補から除外する
+      const candidates =
+        imageFiles.length > 1
+          ? imageFiles.filter((file) => file !== lastPrintedImageRef.current)
+          : imageFiles;
+
       const randomImage =
-        imageFiles[Math.floor(Math.random() * imageFiles.length)];
+        candidates[Math.floor(Math.random() * candidates.length)];
+      lastPrintedImageRef.current = randomImage;
       const imagePath = `/omikujiimage/${randomImage}`;
 
       // 画像を読み込む
