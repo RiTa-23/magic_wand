@@ -110,7 +110,16 @@ export async function dispatchCommittedIntent(
 
       // キャラクター画像がある場合はそれを印刷、なければテキストで印刷
       if (deps.printOmikujiWithRandomImage) {
-        await withTimeout(deps.printOmikujiWithRandomImage(), timeoutMs);
+        try {
+          await withTimeout(deps.printOmikujiWithRandomImage(), timeoutMs);
+        } catch (error) {
+          // 画像印刷失敗時はテキストベースのフォールバックを使用
+          const message = deps.createOmikujiMessage
+            ? deps.createOmikujiMessage()
+            : createDefaultOmikujiMessage();
+
+          await withTimeout(deps.printOmikuji(message), timeoutMs);
+        }
       } else {
         const message = deps.createOmikujiMessage
           ? deps.createOmikujiMessage()
