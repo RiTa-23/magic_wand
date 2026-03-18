@@ -8,8 +8,9 @@ import type { WandDetectionResult } from "../types/camera";
 
 /** 杖先が静止したとみなすまでの時間（ms） */
 const IDLE_TIMEOUT_MS = 400;
-/** 杖先の移動速度がこれ以下なら「静止」とみなす（px/frame） */
-const VELOCITY_THRESHOLD = 2;
+/** 杖先の移動速度がこれ以下なら「静止」とみなす（px/frame）
+ *  EMAスムージング後でもカメラ検出ノイズで2〜4px程度のジッターがあるため余裕を持たせる */
+const VELOCITY_THRESHOLD = 6;
 /** ジェスチャー判定に必要な最小ポイント数 */
 const MIN_TRAIL_POINTS = 20;
 /** 判定後のクールダウン（ms） */
