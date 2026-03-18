@@ -154,17 +154,37 @@ function drawDot(
 
 export default function CameraPlayPage() {
   // ── カメラ・ジェスチャー ──
-  const { status: cameraStatus, wandPoint, videoRef, connect: connectCamera, disconnect: disconnectCamera } =
-    useWandDetector();
+  const {
+    status: cameraStatus,
+    wandPoint,
+    videoRef,
+    connect: connectCamera,
+    disconnect: disconnectCamera,
+  } = useWandDetector();
   const { lastGesture, isDrawing, resetGesture } = useCameraGesture(wandPoint);
 
   // ── 音声認識 ──
-  const [speechLatencyMode, setSpeechLatencyMode] = useState<SpeechLatencyMode>("safe");
-  const { status: speechStatus, finalSpellMatch, start, stop, isSupported } = useSpeech(
+  const [speechLatencyMode, setSpeechLatencyMode] =
+    useState<SpeechLatencyMode>("safe");
+  const {
+    status: speechStatus,
+    finalSpellMatch,
+    start,
+    stop,
+    isSupported,
+  } = useSpeech(
     undefined,
     speechLatencyMode === "fast"
-      ? { finalBufferWindowMs: 1200, interimMatchThreshold: 0.7, interimCommitThreshold: 0.8 }
-      : { finalBufferWindowMs: 1500, interimMatchThreshold: 0.8, interimCommitThreshold: 1.0 },
+      ? {
+          finalBufferWindowMs: 1200,
+          interimMatchThreshold: 0.7,
+          interimCommitThreshold: 0.8,
+        }
+      : {
+          finalBufferWindowMs: 1500,
+          interimMatchThreshold: 0.8,
+          interimCommitThreshold: 1.0,
+        },
   );
 
   // ── IoT ──
@@ -189,14 +209,20 @@ export default function CameraPlayPage() {
 
   // ── UI状態 ──
   const [gateResult, setGateResult] = useState<IntentGateResult | null>(null);
-  const [persistedSpellName, setPersistedSpellName] = useState<string | null>(null);
+  const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
+    null,
+  );
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
-  const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<string | null>(null);
-  const [autoOffEnabled, setAutoOffEnabledState] = useState(DEFAULT_AUTO_OFF_ENABLED);
+  const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
+    string | null
+  >(null);
+  const [autoOffEnabled, setAutoOffEnabledState] = useState(
+    DEFAULT_AUTO_OFF_ENABLED,
+  );
 
   // ── Refs ──
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -204,7 +230,12 @@ export default function CameraPlayPage() {
   const animFrameRef = useRef<number>(0);
   const lastTimestampRef = useRef<number>(0);
   const wandPointRef = useRef(wandPoint);
-  const viewBoundsRef = useRef<{ minX: number; maxX: number; minY: number; maxY: number } | null>(null);
+  const viewBoundsRef = useRef<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } | null>(null);
   const lastGestureAtRef = useRef(0);
   const isDispatchingRef = useRef(false);
   const lastDispatchAtRef = useRef(0);
@@ -252,7 +283,9 @@ export default function CameraPlayPage() {
   // ── カメラエラー検知 ──
   useEffect(() => {
     if (cameraStatus === "ERROR") {
-      setInputDeviceErrorMessage("カメラ接続に失敗しました。権限設定と他アプリの使用状況を確認してください。");
+      setInputDeviceErrorMessage(
+        "カメラ接続に失敗しました。権限設定と他アプリの使用状況を確認してください。",
+      );
       return;
     }
     if (cameraStatus === "CONNECTED") {
@@ -286,9 +319,12 @@ export default function CameraPlayPage() {
       spellId === "wave" &&
       voiceResult.status === "waiting_for_gesture" &&
       recentGestureInputRef.current?.gestureType === "W" &&
-      Date.now() - recentGestureInputRef.current.timestamp <= WAVE_GESTURE_RECOVERY_WINDOW_MS
+      Date.now() - recentGestureInputRef.current.timestamp <=
+        WAVE_GESTURE_RECOVERY_WINDOW_MS
     ) {
-      const recoveredGestureResult = gate.current.pushGesture(recentGestureInputRef.current);
+      const recoveredGestureResult = gate.current.pushGesture(
+        recentGestureInputRef.current,
+      );
       if (recoveredGestureResult.status === "committed") {
         setGateResult(recoveredGestureResult);
         stop();
@@ -310,7 +346,11 @@ export default function CameraPlayPage() {
 
   // ── ジェスチャー待ち → 音声認識自動開始 ──
   useEffect(() => {
-    if (gateResult?.status === "waiting_for_voice" && speechStatus === "IDLE" && isSupported) {
+    if (
+      gateResult?.status === "waiting_for_voice" &&
+      speechStatus === "IDLE" &&
+      isSupported
+    ) {
       start();
     }
   }, [gateResult?.status, isSupported, start, speechStatus]);
@@ -318,7 +358,9 @@ export default function CameraPlayPage() {
   // ── コミットフィードバック表示 ──
   useEffect(() => {
     if (gateResult?.status !== "committed" || !gateResult.commit) return;
-    setCommitLabel(`${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`);
+    setCommitLabel(
+      `${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`,
+    );
     setShowCommitFeedback(true);
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
@@ -339,16 +381,23 @@ export default function CameraPlayPage() {
     lastHandledCommitRef.current = commitKey;
 
     const now = Date.now();
-    if (isDispatchingRef.current || now - lastDispatchAtRef.current < DISPATCH_COOLDOWN_MS) {
+    if (
+      isDispatchingRef.current ||
+      now - lastDispatchAtRef.current < DISPATCH_COOLDOWN_MS
+    ) {
       setDispatchPhase("running");
-      setDispatchMessage("発動処理が進行中です。少し待ってからもう一度お試しください。");
+      setDispatchMessage(
+        "発動処理が進行中です。少し待ってからもう一度お試しください。",
+      );
       return;
     }
 
     isDispatchingRef.current = true;
     setDispatchPhase("running");
     setDispatchMessage(
-      commit.spellId === "kyua_uppu_rapa_pa" ? "おみくじを印刷しています..." : "Tapo魔法を実行しています...",
+      commit.spellId === "kyua_uppu_rapa_pa"
+        ? "おみくじを印刷しています..."
+        : "Tapo魔法を実行しています...",
     );
 
     dispatchCommittedIntent(commit, {
@@ -410,7 +459,12 @@ export default function CameraPlayPage() {
       // 描画領域の枠
       ctx.strokeStyle = "rgba(255,255,255,0.1)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(PADDING, PADDING, CANVAS_WIDTH - PADDING * 2, CANVAS_HEIGHT - PADDING * 2);
+      ctx.strokeRect(
+        PADDING,
+        PADDING,
+        CANVAS_WIDTH - PADDING * 2,
+        CANVAS_HEIGHT - PADDING * 2,
+      );
 
       // 十字線
       ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -450,7 +504,13 @@ export default function CameraPlayPage() {
         extraPoints.push({ rawX: wp.gripX, rawY: wp.gripY });
       }
 
-      const { minX, maxX, minY, maxY } = adjustViewBounds(trail, extraPoints, viewBoundsRef, 100, 0.1);
+      const { minX, maxX, minY, maxY } = adjustViewBounds(
+        trail,
+        extraPoints,
+        viewBoundsRef,
+        100,
+        0.1,
+      );
 
       // 座標変換
       const toCanvas = (rawX: number, rawY: number) => {
@@ -500,7 +560,11 @@ export default function CameraPlayPage() {
         // 座標ラベル
         ctx.fillStyle = "rgba(255,255,255,0.8)";
         ctx.font = "11px monospace";
-        ctx.fillText(`tip (${Math.round(wp.tipX)}, ${Math.round(wp.tipY)})`, tip.cx + 14, tip.cy - 8);
+        ctx.fillText(
+          `tip (${Math.round(wp.tipX)}, ${Math.round(wp.tipY)})`,
+          tip.cx + 14,
+          tip.cy - 8,
+        );
       }
 
       // モードラベル
@@ -558,7 +622,9 @@ export default function CameraPlayPage() {
         setInputDeviceErrorMessage(null);
       } catch (error) {
         console.error("Failed to disconnect camera:", error);
-        setInputDeviceErrorMessage("カメラ切断に失敗しました。再度お試しください。");
+        setInputDeviceErrorMessage(
+          "カメラ切断に失敗しました。再度お試しください。",
+        );
       }
       return;
     }
@@ -567,13 +633,19 @@ export default function CameraPlayPage() {
       setInputDeviceErrorMessage(null);
     } catch (error) {
       console.error("Failed to connect camera:", error);
-      setInputDeviceErrorMessage("カメラ接続に失敗しました。再度お試しください。");
+      setInputDeviceErrorMessage(
+        "カメラ接続に失敗しました。再度お試しください。",
+      );
       resetGesture();
     }
   };
 
   const handlePhomemoToggle = async () => {
-    if (phomemoStatus === "CONNECTED" || phomemoStatus === "CONNECTING" || phomemoStatus === "PRINTING") {
+    if (
+      phomemoStatus === "CONNECTED" ||
+      phomemoStatus === "CONNECTING" ||
+      phomemoStatus === "PRINTING"
+    ) {
       await disconnectPhomemo();
       return;
     }
@@ -619,18 +691,29 @@ export default function CameraPlayPage() {
     if (phomemoStatus === "CONNECTING") return "Phomemo接続中...";
     if (phomemoStatus === "DISCONNECTED") return "Phomemo未接続";
     if (phomemoStatus === "PRINTING") return "Phomemo印刷中...";
-    if (phomemoStatus === "ERROR") return phomemoErrorMessage || "Phomemoエラー";
+    if (phomemoStatus === "ERROR")
+      return phomemoErrorMessage || "Phomemoエラー";
     return "Phomemo接続済み";
   })();
 
-  const isPhomemoConnectedState = phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING";
+  const isPhomemoConnectedState =
+    phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING";
 
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
       {/* Background layers */}
-      <div className="fixed inset-0 bg-background opacity-30" aria-hidden="true" />
-      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80" aria-hidden="true" />
-      <div className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]" aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-background opacity-30"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
+        aria-hidden="true"
+      />
 
       {/* INFO パネルトグル */}
       <button
@@ -656,18 +739,26 @@ export default function CameraPlayPage() {
         }`}
       >
         <div className="space-y-4">
-          <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">CONNECTION & STATUS</p>
+          <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">
+            CONNECTION & STATUS
+          </p>
 
           {/* 音声判定モード */}
           {isSupported ? (
             <button
-              onClick={() => setSpeechLatencyMode((prev) => (prev === "safe" ? "fast" : "safe"))}
+              onClick={() =>
+                setSpeechLatencyMode((prev) =>
+                  prev === "safe" ? "fast" : "safe",
+                )
+              }
               className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
             >
               音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
             </button>
           ) : (
-            <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">音声認識非対応のブラウザです</p>
+            <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">
+              音声認識非対応のブラウザです
+            </p>
           )}
 
           {/* Phomemo */}
@@ -675,7 +766,9 @@ export default function CameraPlayPage() {
             onClick={handlePhomemoToggle}
             className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
           >
-            {phomemoStatus === "CONNECTED" || phomemoStatus === "CONNECTING" || phomemoStatus === "PRINTING"
+            {phomemoStatus === "CONNECTED" ||
+            phomemoStatus === "CONNECTING" ||
+            phomemoStatus === "PRINTING"
               ? "Phomemo切断"
               : "Phomemo接続"}
           </button>
@@ -696,7 +789,9 @@ export default function CameraPlayPage() {
             onClick={handleCameraToggle}
             className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
           >
-            {cameraStatus === "CONNECTED" || cameraStatus === "INITIALIZING" ? "カメラ切断" : "カメラ接続"}
+            {cameraStatus === "CONNECTED" || cameraStatus === "INITIALIZING"
+              ? "カメラ切断"
+              : "カメラ接続"}
           </button>
           <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-bright/85">
             <span
@@ -712,45 +807,63 @@ export default function CameraPlayPage() {
 
           {inputDeviceErrorMessage && (
             <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
-              <p className="text-xs leading-relaxed tracking-wide text-red-200">{inputDeviceErrorMessage}</p>
+              <p className="text-xs leading-relaxed tracking-wide text-red-200">
+                {inputDeviceErrorMessage}
+              </p>
             </div>
           )}
 
           {/* ジェスチャー認識状態 */}
           <div className="rounded-xl border border-gold-dim/20 bg-stone/10 p-3">
-            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">GESTURE</p>
+            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+              GESTURE
+            </p>
             <div className="mt-2 flex items-center gap-2">
               <span
                 className={`inline-block w-2 h-2 rounded-full ${
                   isDrawing ? "bg-green-400 animate-pulse" : "bg-gray-600"
                 }`}
               />
-              <span className="text-xs text-gold-bright/70">{isDrawing ? "描画中..." : "待機中"}</span>
+              <span className="text-xs text-gold-bright/70">
+                {isDrawing ? "描画中..." : "待機中"}
+              </span>
             </div>
             {lastGesture && lastGesture.type !== "unknown" && (
               <div className="mt-2 rounded-lg bg-stone/20 p-2 text-center">
-                <p className="text-2xl font-bold text-gold-bright">{lastGesture.type}</p>
-                <p className="text-[10px] text-gold-dim/70">信頼度: {lastGesture.confidence.toFixed(3)}</p>
+                <p className="text-2xl font-bold text-gold-bright">
+                  {lastGesture.type}
+                </p>
+                <p className="text-[10px] text-gold-dim/70">
+                  信頼度: {lastGesture.confidence.toFixed(3)}
+                </p>
               </div>
             )}
           </div>
 
           {/* 杖検出情報 */}
           <div className="rounded-xl border border-gold-dim/20 bg-stone/10 p-3">
-            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">WAND DETECTION</p>
+            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+              WAND DETECTION
+            </p>
             <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-mono">
               <div className="rounded bg-stone/20 p-2">
                 <span className="text-gold-dim/60 text-[10px]">Tip X</span>
-                <p className="text-green-400 font-bold">{wandPoint?.detected ? Math.round(wandPoint.tipX) : "—"}</p>
+                <p className="text-green-400 font-bold">
+                  {wandPoint?.detected ? Math.round(wandPoint.tipX) : "—"}
+                </p>
               </div>
               <div className="rounded bg-stone/20 p-2">
                 <span className="text-gold-dim/60 text-[10px]">Tip Y</span>
-                <p className="text-green-400 font-bold">{wandPoint?.detected ? Math.round(wandPoint.tipY) : "—"}</p>
+                <p className="text-green-400 font-bold">
+                  {wandPoint?.detected ? Math.round(wandPoint.tipY) : "—"}
+                </p>
               </div>
             </div>
             <div className="mt-2 rounded bg-stone/20 p-2 text-xs">
               <span className="text-gold-dim/60 text-[10px]">信頼度</span>
-              <p className="text-gold-bright/90 font-mono">{wandPoint?.detected ? wandPoint.confidence.toFixed(3) : "—"}</p>
+              <p className="text-gold-bright/90 font-mono">
+                {wandPoint?.detected ? wandPoint.confidence.toFixed(3) : "—"}
+              </p>
             </div>
           </div>
 
@@ -767,8 +880,12 @@ export default function CameraPlayPage() {
                     : "border-gold-dim/30 bg-stone/20"
               }`}
             >
-              <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">DISPATCH STATUS</p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-bright/90">{dispatchMessage}</p>
+              <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+                DISPATCH STATUS
+              </p>
+              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-bright/90">
+                {dispatchMessage}
+              </p>
             </div>
           )}
         </div>
@@ -788,13 +905,19 @@ export default function CameraPlayPage() {
           className="absolute top-10 left-10 group flex items-center gap-2 text-gold-dim transition-colors hover:text-gold-bright"
         >
           <ChevronLeft className="w-5 h-5" />
-          <span className="text-xs uppercase tracking-widest text-shadow-glow">Back</span>
+          <span className="text-xs uppercase tracking-widest text-shadow-glow">
+            Back
+          </span>
         </Link>
 
         {/* Title */}
         <header className="absolute top-10 left-1/2 -translate-x-1/2 text-center">
-          <h1 className="text-2xl font-bold tracking-[0.4em] text-gold-bright uppercase">Play</h1>
-          <p className="mt-4 text-sm font-serif tracking-[0.15em] text-gold-dim/60">カメラモード</p>
+          <h1 className="text-2xl font-bold tracking-[0.4em] text-gold-bright uppercase">
+            Play
+          </h1>
+          <p className="mt-4 text-sm font-serif tracking-[0.15em] text-gold-dim/60">
+            カメラモード
+          </p>
         </header>
 
         {/* Center content */}
@@ -839,9 +962,14 @@ export default function CameraPlayPage() {
                 muted
               />
               {!isConnected && (
-                <div className="flex items-center justify-center bg-stone/10" style={{ aspectRatio: "640/480" }}>
+                <div
+                  className="flex items-center justify-center bg-stone/10"
+                  style={{ aspectRatio: "640/480" }}
+                >
                   <p className="text-gold-dim/50 text-sm">
-                    {cameraStatus === "INITIALIZING" ? "カメラ・モデル初期化中..." : "カメラを接続してください"}
+                    {cameraStatus === "INITIALIZING"
+                      ? "カメラ・モデル初期化中..."
+                      : "カメラを接続してください"}
                   </p>
                 </div>
               )}
@@ -855,16 +983,22 @@ export default function CameraPlayPage() {
                   : "border-gold-dim/15"
               }`}
             >
-              <p className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}>
+              <p
+                className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}
+              >
                 {statusText}
               </p>
               {spellName && isWaitingForGesture && (
-                <p className="mt-2 text-sm tracking-widest text-gold-dim/80">「{spellName}」</p>
+                <p className="mt-2 text-sm tracking-widest text-gold-dim/80">
+                  「{spellName}」
+                </p>
               )}
             </div>
 
             {showCommitFeedback && (
-              <p className="text-sm tracking-widest text-gold-bright animate-pulse">COMMITTED: {commitLabel}</p>
+              <p className="text-sm tracking-widest text-gold-bright animate-pulse">
+                COMMITTED: {commitLabel}
+              </p>
             )}
 
             {/* マイクボタン */}
@@ -879,13 +1013,21 @@ export default function CameraPlayPage() {
                 }`}
               >
                 {isListening ? (
-                  <MicOff className="h-8 w-8 text-gold-bright" strokeWidth={2.25} />
+                  <MicOff
+                    className="h-8 w-8 text-gold-bright"
+                    strokeWidth={2.25}
+                  />
                 ) : (
-                  <Mic className="h-8 w-8 text-gold-bright/95" strokeWidth={2.25} />
+                  <Mic
+                    className="h-8 w-8 text-gold-bright/95"
+                    strokeWidth={2.25}
+                  />
                 )}
               </button>
             ) : (
-              <p className="text-xs text-gold-dim/50 tracking-widest">音声認識非対応のブラウザです</p>
+              <p className="text-xs text-gold-dim/50 tracking-widest">
+                音声認識非対応のブラウザです
+              </p>
             )}
           </div>
         </div>
