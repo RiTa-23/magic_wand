@@ -1,8 +1,13 @@
 "use client";
 
+import { ChevronLeft } from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useWandDetector } from "@/features/camera/api/useWandDetector";
 import { useCameraGesture } from "@/features/camera/api/useCameraGesture";
+
+const CONNECTION_CHECK_ROUTE: Route = "/connection-check";
 
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
@@ -377,6 +382,14 @@ export default function CameraWandTestPage() {
       )}
 
       <div className="max-w-4xl mx-auto">
+        <Link
+          href={CONNECTION_CHECK_ROUTE}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 transition-colors hover:text-cyan-200"
+          aria-label="接続確認画面へ戻る"
+        >
+          <ChevronLeft className="h-5 w-5" />
+          接続確認へ戻る
+        </Link>
         <h1 className="text-2xl font-bold mb-4">カメラ杖検出テスト</h1>
 
         {/* 接続ボタン + ステータス */}
