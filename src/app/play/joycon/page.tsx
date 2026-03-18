@@ -217,6 +217,28 @@ function drawDot(
   ctx.fill();
 }
 
+function AnchoredCircleLayer({
+  sizePercent,
+  className,
+  style,
+  children,
+}: {
+  sizePercent: number;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${className ?? ""}`}
+      style={{ width: `${sizePercent}%`, height: `${sizePercent}%`, ...style }}
+      aria-hidden="true"
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function JoyConPlayPage() {
   // ── Joy-Con ──
   const {
@@ -861,9 +883,9 @@ export default function JoyConPlayPage() {
   const isVentusCircleActive =
     showCommitFeedback && activeCircleSpell === "ventus";
   const magicCircleGlowClass = isVentusCircleActive
-    ? "scale-[1.06] drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
+    ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
     : isMagicCircleGlowing
-      ? "scale-[1.03] drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
+      ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
       : "opacity-95";
 
   const statusText = (() => {
@@ -1088,102 +1110,104 @@ export default function JoyConPlayPage() {
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
         <div
-          className={`relative h-[460px] w-[460px] transition-all duration-500 ease-out ${magicCircleGlowClass}`}
+          className={`relative h-[460px] w-[460px] transition-[filter,opacity] duration-500 ease-out ${magicCircleGlowClass}`}
         >
-          <div
-            className={`absolute inset-0 transition-all duration-700 ease-out ${
+          <AnchoredCircleLayer
+            sizePercent={100}
+            className={`transition-all duration-700 ease-out ${
               isVentusCircleActive
                 ? "opacity-100 scale-100 blur-0"
                 : "opacity-0 scale-[0.94] blur-[1.6px]"
             }`}
-            aria-hidden="true"
           >
-            <div
-              className="absolute inset-[-30%] rounded-full"
+            <AnchoredCircleLayer
+              sizePercent={160}
+              className="rounded-full"
               style={{
                 background:
                   "radial-gradient(circle, rgba(153,255,103,0.28) 0%, rgba(88,235,116,0.2) 32%, rgba(29,80,42,0.08) 56%, rgba(8,22,36,0) 78%)",
                 filter: "blur(24px)",
               }}
-            />
-
-            <svg
-              viewBox="0 0 100 100"
-              className="absolute inset-[-10%] h-[120%] w-[120%]"
             >
-              <g className="origin-center animate-[spin_9s_linear_infinite]">
-                <ellipse
-                  cx="50"
-                  cy="50"
-                  rx="45"
-                  ry="16"
-                  fill="none"
-                  stroke="rgba(173,255,128,0.8)"
-                  strokeWidth="1.2"
-                  strokeDasharray="5 5"
-                />
-                <ellipse
-                  cx="50"
-                  cy="50"
-                  rx="40"
-                  ry="13"
-                  fill="none"
-                  stroke="rgba(124,255,144,0.72)"
-                  strokeWidth="1"
-                  transform="rotate(42 50 50)"
-                />
-                <ellipse
-                  cx="50"
-                  cy="50"
-                  rx="34"
-                  ry="11"
-                  fill="none"
-                  stroke="rgba(196,255,173,0.66)"
-                  strokeWidth="0.9"
-                  transform="rotate(118 50 50)"
-                />
-              </g>
+              <></>
+            </AnchoredCircleLayer>
 
-              <g className="origin-center animate-[spin_5.5s_linear_infinite_reverse]">
-                {Array.from({ length: 18 }, (_, i) => {
-                  const angle = (i * 20 * Math.PI) / 180;
-                  const x = 50 + 47 * Math.cos(angle);
-                  const y = 50 + 47 * Math.sin(angle);
-                  return (
-                    <ellipse
-                      key={`ventus-leaf-${i}`}
-                      cx={x}
-                      cy={y}
-                      rx="1.15"
-                      ry="2.7"
-                      fill="rgba(178,255,137,0.88)"
-                      transform={`rotate(${i * 20 + 90} ${x} ${y})`}
-                    />
-                  );
-                })}
-              </g>
+            <AnchoredCircleLayer sizePercent={120}>
+              <svg viewBox="0 0 100 100" className="h-full w-full">
+                <g className="origin-center animate-[spin_9s_linear_infinite]">
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="45"
+                    ry="16"
+                    fill="none"
+                    stroke="rgba(173,255,128,0.8)"
+                    strokeWidth="1.2"
+                    strokeDasharray="5 5"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="40"
+                    ry="13"
+                    fill="none"
+                    stroke="rgba(124,255,144,0.72)"
+                    strokeWidth="1"
+                    transform="rotate(42 50 50)"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="34"
+                    ry="11"
+                    fill="none"
+                    stroke="rgba(196,255,173,0.66)"
+                    strokeWidth="0.9"
+                    transform="rotate(118 50 50)"
+                  />
+                </g>
 
-              <g className="origin-center animate-[spin_4.2s_linear_infinite]">
-                <path
-                  d="M 22 50 C 31 25, 69 25, 78 50 C 69 75, 31 75, 22 50"
-                  fill="none"
-                  stroke="rgba(141,255,154,0.58)"
-                  strokeWidth="1"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 50 22 C 75 31, 75 69, 50 78 C 25 69, 25 31, 50 22"
-                  fill="none"
-                  stroke="rgba(141,255,154,0.5)"
-                  strokeWidth="0.95"
-                  strokeLinecap="round"
-                />
-              </g>
+                <g className="origin-center animate-[spin_5.5s_linear_infinite_reverse]">
+                  {Array.from({ length: 18 }, (_, i) => {
+                    const angle = (i * 20 * Math.PI) / 180;
+                    const x = Number((50 + 47 * Math.cos(angle)).toFixed(3));
+                    const y = Number((50 + 47 * Math.sin(angle)).toFixed(3));
+                    return (
+                      <ellipse
+                        key={`ventus-leaf-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="1.15"
+                        ry="2.7"
+                        fill="rgba(178,255,137,0.88)"
+                        transform={`rotate(${i * 20 + 90} ${x} ${y})`}
+                      />
+                    );
+                  })}
+                </g>
 
-              <circle cx="50" cy="50" r="8.3" fill="rgba(223,255,198,0.85)" />
-              <circle cx="50" cy="50" r="4.5" fill="rgba(255,255,235,0.95)" />
-            </svg>
-          </div>
+                <g className="origin-center animate-[spin_4.2s_linear_infinite]">
+                  <path
+                    d="M 22 50 C 31 25, 69 25, 78 50 C 69 75, 31 75, 22 50"
+                    fill="none"
+                    stroke="rgba(141,255,154,0.58)"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 50 22 C 75 31, 75 69, 50 78 C 25 69, 25 31, 50 22"
+                    fill="none"
+                    stroke="rgba(141,255,154,0.5)"
+                    strokeWidth="0.95"
+                    strokeLinecap="round"
+                  />
+                </g>
+
+                <circle cx="50" cy="50" r="8.3" fill="rgba(223,255,198,0.85)" />
+                <circle cx="50" cy="50" r="4.5" fill="rgba(255,255,235,0.95)" />
+              </svg>
+            </AnchoredCircleLayer>
+          </AnchoredCircleLayer>
 
           {isImmersiveCircleGlowing && (
             <>
@@ -1233,11 +1257,7 @@ export default function JoyConPlayPage() {
             </>
           )}
 
-          <div
-            className={`h-full w-full ${
-              isImmersiveCircleGlowing ? "animate-[spin_12s_linear_infinite]" : ""
-            }`}
-          >
+          <div className="h-full w-full">
             <HeroMagicCircle />
           </div>
         </div>
