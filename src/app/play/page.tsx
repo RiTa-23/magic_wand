@@ -1330,16 +1330,16 @@ export default function PlayPage() {
                 <button
                   onClick={handleMicToggle}
                   aria-label={isListening ? "音声認識を停止" : "音声認識を開始"}
-                  className={`mx-auto flex items-center justify-center w-16 h-16 rounded-full border transition-all duration-300 ${
+                  className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 backdrop-blur-sm transition-all duration-300 ${
                     isListening
-                      ? "border-gold-bright bg-gold-bright/20 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                      : "border-gold-dim/40 bg-stone/20 hover:border-gold-bright/60 hover:bg-gold-dim/10"
+                      ? "border-gold-bright bg-gold-bright/25 shadow-[0_0_26px_rgba(212,175,55,0.5)]"
+                      : "border-gold-dim/70 bg-stone/45 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:border-gold-bright/75 hover:bg-stone/65 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)]"
                   }`}
                 >
                   {isListening ? (
-                    <MicOff className="w-6 h-6 text-gold-bright" />
+                    <MicOff className="h-8 w-8 text-gold-bright" strokeWidth={2.25} />
                   ) : (
-                    <Mic className="w-6 h-6 text-gold-dim" />
+                    <Mic className="h-8 w-8 text-gold-bright/95" strokeWidth={2.25} />
                   )}
                 </button>
               </>
