@@ -16,47 +16,47 @@ export default function TutorialPage() {
   const slides = useMemo<TutorialSlide[]>(
     () => [
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/page_1.png",
         imageAlt: "杖の準備",
         description: "杖を手に取り、姿勢を整えましょう。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/02_connection.png",
         imageAlt: "接続の確認",
         description: "デバイスが接続できているか確認します。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/03_concentration.png",
         imageAlt: "魔力の集中",
         description: "深呼吸して、魔力を一点に集めます。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/04_incantation.png",
         imageAlt: "呪文の詠唱",
         description: "呪文をはっきり唱えてください。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/05_gesture.png",
         imageAlt: "ジェスチャー",
         description: "杖で合図の動きを描きます。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/06_trigger.png",
         imageAlt: "発動の合図",
         description: "光が集まったら、発動のタイミングです。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/07_result.png",
         imageAlt: "結果の確認",
         description: "反応が出たか、目と耳で確かめます。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/08_adjustment.png",
         imageAlt: "再調整",
         description: "うまくいかない時は、距離と向きを調整します。",
       },
       {
-        imageSrc: "/yuchimage/yuchisiro.jpg",
+        imageSrc: "/tutorial/09_synergy.png",
         imageAlt: "連携",
         description: "魔法は道具と連携して強くなります。",
       },
@@ -331,7 +331,7 @@ function SlideContent({ slide }: { slide: TutorialSlide }) {
 
   return (
     <div className="h-full w-full px-2 sm:px-6 flex flex-col items-center justify-center gap-5 sm:gap-7">
-      <div className="relative w-full max-w-3xl h-[min(360px,32svh)] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
+      <div className="relative w-full max-w-3xl h-[min(720px,60svh)] overflow-hidden rounded-2xl border border-[color:var(--gold)]/18 bg-black/10">
         {showImage && (
           <Image
             src={slide.imageSrc}
