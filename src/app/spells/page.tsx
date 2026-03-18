@@ -140,43 +140,45 @@ export default function SpellsPage() {
 
                         <div
                           className={
-                            "overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out motion-reduce:transition-none " +
+                            "grid transition-[grid-template-rows,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none " +
                             (isExpanded
-                              ? "mt-3 max-h-[900px] opacity-100 translate-y-0"
-                              : "mt-0 max-h-0 opacity-0 -translate-y-1 pointer-events-none")
+                              ? "mt-3 grid-rows-[1fr] opacity-100 translate-y-0"
+                              : "mt-0 grid-rows-[0fr] opacity-0 -translate-y-1 pointer-events-none")
                           }
                           aria-hidden={!isExpanded}
                         >
-                          <div className="rounded-xl border border-[color:var(--gold)]/15 bg-black/10 backdrop-blur-sm px-5 py-4">
-                            <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
-                              <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 w-full aspect-[2/1]">
-                                <Image
-                                  src={placeholderImageSrc}
-                                  alt={`${spell.name} のイメージ`}
-                                  fill
-                                  className="object-contain p-2"
-                                  sizes="(max-width: 640px) 100vw, 200px"
-                                  priority={spell.id === "ventus"}
-                                />
-                              </div>
-
-                              <div>
-                                <div className="text-sm sm:text-base tracking-[0.14em] text-[color:var(--foreground)]/85">
-                                  {description}
+                          <div className="min-h-0 overflow-hidden">
+                            <div className="rounded-xl border border-[color:var(--gold)]/15 bg-black/10 backdrop-blur-sm px-5 py-4">
+                              <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
+                                <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 w-full aspect-[2/1]">
+                                  <Image
+                                    src={placeholderImageSrc}
+                                    alt={`${spell.name} のイメージ`}
+                                    fill
+                                    className="object-contain p-2"
+                                    sizes="(max-width: 640px) 100vw, 200px"
+                                    priority={spell.id === "ventus"}
+                                  />
                                 </div>
 
-                                <div className="mt-4 text-xs tracking-[0.2em] text-[color:var(--gold-dim)]/80">
-                                  {"認識キーワード"}
-                                </div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {spell.keywords.map((keyword) => (
-                                    <span
-                                      key={keyword}
-                                      className="rounded-full border border-[color:var(--gold)]/15 bg-stone/20 px-3 py-1 text-[11px] tracking-[0.18em] text-[color:var(--foreground)]/85"
-                                    >
-                                      {keyword}
-                                    </span>
-                                  ))}
+                                <div>
+                                  <div className="text-sm sm:text-base tracking-[0.14em] text-[color:var(--foreground)]/85">
+                                    {description}
+                                  </div>
+
+                                  <div className="mt-4 text-xs tracking-[0.2em] text-[color:var(--gold-dim)]/80">
+                                    {"認識キーワード"}
+                                  </div>
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {spell.keywords.map((keyword) => (
+                                      <span
+                                        key={keyword}
+                                        className="rounded-full border border-[color:var(--gold)]/15 bg-stone/20 px-3 py-1 text-[11px] tracking-[0.18em] text-[color:var(--foreground)]/85"
+                                      >
+                                        {keyword}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                             </div>
