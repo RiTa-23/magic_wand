@@ -2,14 +2,16 @@ import { IntentCommit, SpellId } from "../types/intent";
 
 const DEFAULT_DISPATCH_TIMEOUT_MS = 9000;
 
-const TAPO_SPELL_NAME_BY_ID: Record<Exclude<SpellId, "kyua_uppu_rapa_pa">, string> =
-  {
-    ventus: "Ventus",
-    lumos: "Lumos",
-    incendio: "Incendio",
-    aguamenti: "Aguamenti",
-    nox: "Nox",
-  };
+const TAPO_SPELL_NAME_BY_ID: Record<
+  Exclude<SpellId, "kyua_uppu_rapa_pa">,
+  string
+> = {
+  ventus: "Ventus",
+  lumos: "Lumos",
+  incendio: "Incendio",
+  aguamenti: "Aguamenti",
+  nox: "Nox",
+};
 
 const OMIKUJI_MESSAGES = [
   "【大吉】\n魔法が最高に冴える日。新しい挑戦がうまくいきます。",
