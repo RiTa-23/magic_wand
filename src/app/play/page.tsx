@@ -7,6 +7,9 @@ import { FloatingParticles } from "@/components/floating-particles";
 import { HeroMagicCircle } from "@/components/hero-magic-circle";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
 import { recognizeGesture } from "@/features/gesture/recognizer";
+import { usePhomemo } from "@/features/iot/api/usePhomemo";
+import { executeSpell } from "@/features/iot/lib/plugControl";
+import { dispatchCommittedIntent } from "@/features/orchestrator/lib/intent-dispatcher";
 import { useSpeech } from "@/features/voice/api/useSpeech";
 import { toGestureIntentInput } from "@/features/orchestrator/lib/intent-gate-adapter";
 import { IntentGate } from "@/features/orchestrator/lib/intent-gate";
@@ -24,6 +27,9 @@ const GESTURE_CONFIDENCE_THRESHOLD = 0.55;
 const TRAIL_MAX_RENDER_POINTS = 90;
 const CALIBRATION_DURATION_MS = 2500;
 const CALIBRATION_ACCEL_THRESHOLD = 500;
+const DISPATCH_COOLDOWN_MS = 1200;
+
+type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
 
 function toTrailPathPoints(trail: { rawX: number; rawY: number }[]): string {
   if (trail.length < 2) return "";
@@ -59,6 +65,14 @@ export default function PlayPage() {
     connect,
     disconnect,
   } = useJoyCon();
+  const {
+    status: phomemoStatus,
+    errorMessage: phomemoErrorMessage,
+    connect: connectPhomemo,
+    disconnect: disconnectPhomemo,
+    printTestPage,
+    isConnected: isPhomemoConnected,
+  } = usePhomemo();
   const [gateResult, setGateResult] = useState<IntentGateResult | null>(null);
   const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
     null,
@@ -66,6 +80,8 @@ export default function PlayPage() {
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
+  const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
+  const [dispatchMessage, setDispatchMessage] = useState("");
   const [calibrationState, setCalibrationState] = useState<
     "idle" | "calibrating" | "done"
   >("idle");
@@ -77,6 +93,9 @@ export default function PlayPage() {
   const lastGestureAtRef = useRef(0);
   const calibrationStartRef = useRef<number | null>(null);
   const calibrationSamplesRef = useRef<{ y: number; z: number }[]>([]);
+  const isDispatchingRef = useRef(false);
+  const lastDispatchAtRef = useRef(0);
+  const lastHandledCommitRef = useRef("");
   const calibrationPrevAccelRef = useRef<{
     x: number;
     y: number;
@@ -148,6 +167,60 @@ export default function PlayPage() {
       window.clearTimeout(timerId);
     };
   }, [gateResult]);
+
+  useEffect(() => {
+    if (gateResult?.status !== "committed" || !gateResult.commit) return;
+
+    const commit = gateResult.commit;
+    const commitKey = `${commit.spellId}:${commit.gestureType}:${commit.committedAt}`;
+    if (lastHandledCommitRef.current === commitKey) return;
+    lastHandledCommitRef.current = commitKey;
+
+    const now = Date.now();
+    const inCooldown = now - lastDispatchAtRef.current < DISPATCH_COOLDOWN_MS;
+
+    if (isDispatchingRef.current || inCooldown) {
+      setDispatchPhase("running");
+      setDispatchMessage(
+        "発動処理が進行中です。少し待ってからもう一度お試しください。",
+      );
+      return;
+    }
+
+    isDispatchingRef.current = true;
+    setDispatchPhase("running");
+    setDispatchMessage(
+      commit.spellId === "kyua_uppu_rapa_pa"
+        ? "おみくじを印刷しています..."
+        : "Tapo魔法を実行しています...",
+    );
+
+    dispatchCommittedIntent(commit, {
+      executeTapoSpell: executeSpell,
+      isPrinterConnected: () => isPhomemoConnected,
+      printOmikuji: printTestPage,
+    })
+      .then((result) => {
+        if (result.ok) {
+          setDispatchPhase("success");
+          setDispatchMessage(result.message);
+          return;
+        }
+
+        if (result.errorCode === "dispatch_timeout") {
+          setDispatchPhase("timeout");
+          setDispatchMessage(result.message);
+          return;
+        }
+
+        setDispatchPhase("failed");
+        setDispatchMessage(result.message);
+      })
+      .finally(() => {
+        isDispatchingRef.current = false;
+        lastDispatchAtRef.current = Date.now();
+      });
+  }, [gateResult, isPhomemoConnected, printTestPage]);
 
   useEffect(() => {
     if (joyConStatus !== "CONNECTED" || !joyconState) {
@@ -295,6 +368,19 @@ export default function PlayPage() {
     await connect();
   };
 
+  const handlePhomemoToggle = async () => {
+    if (
+      phomemoStatus === "CONNECTED" ||
+      phomemoStatus === "CONNECTING" ||
+      phomemoStatus === "PRINTING"
+    ) {
+      await disconnectPhomemo();
+      return;
+    }
+
+    await connectPhomemo();
+  };
+
   const isListening = status === "LISTENING";
   const isWaitingForGesture = gateResult?.status === "waiting_for_gesture";
   const isWaitingForVoice = gateResult?.status === "waiting_for_voice";
@@ -302,6 +388,16 @@ export default function PlayPage() {
   const isRejected = gateResult?.status === "rejected";
   const spellName = persistedSpellName;
   const isDrawingGesture = joyconState?.buttons.r ?? false;
+
+  const dispatchStatusText = (() => {
+    if (dispatchPhase === "running") return dispatchMessage || "発動処理中...";
+    if (dispatchPhase === "success") return dispatchMessage || "発動成功";
+    if (dispatchPhase === "failed") return dispatchMessage || "発動失敗";
+    if (dispatchPhase === "timeout") {
+      return dispatchMessage || "発動タイムアウト";
+    }
+    return "待機中";
+  })();
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -330,6 +426,16 @@ export default function PlayPage() {
       return "軌道信頼度不足";
     }
     return "接続済み (R長押しで軌道入力)";
+  })();
+
+  const phomemoStatusText = (() => {
+    if (phomemoStatus === "CONNECTING") return "Phomemo接続中...";
+    if (phomemoStatus === "DISCONNECTED") return "Phomemo未接続";
+    if (phomemoStatus === "PRINTING") return "Phomemo印刷中...";
+    if (phomemoStatus === "ERROR") {
+      return phomemoErrorMessage || "Phomemoエラー";
+    }
+    return "Phomemo接続済み";
   })();
 
   return (
@@ -498,6 +604,30 @@ export default function PlayPage() {
             <p className="text-xs tracking-widest text-gold-dim/70">
               {joyConStatusText}
             </p>
+
+            <button
+              onClick={handlePhomemoToggle}
+              className="mx-auto px-6 py-2 rounded-full border border-gold-dim/40 text-sm tracking-widest text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
+            >
+              {phomemoStatus === "CONNECTED" ||
+              phomemoStatus === "CONNECTING" ||
+              phomemoStatus === "PRINTING"
+                ? "Phomemo切断"
+                : "Phomemo接続"}
+            </button>
+
+            <p className="text-xs tracking-widest text-gold-dim/70">
+              {phomemoStatusText}
+            </p>
+
+            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
+              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+                DISPATCH STATE
+              </p>
+              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
+                {dispatchStatusText}
+              </p>
+            </div>
 
             <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
               コツ:
