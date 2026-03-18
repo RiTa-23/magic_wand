@@ -1,16 +1,93 @@
 # Magic Wand
 
+## 📖 プロダクト概要
+
+**Magic Wand** は、「音声による呪文詠唱」と「杖のジェスチャー」を組み合わせて、スマートホームデバイスを魔法のように操作する体験型Webアプリケーションです。
+
+### コンセプト
+
+ユーザーは魔法使いになりきり、呪文を唱えながら杖を振ることで、部屋の照明や家電を操作できます。音声とジェスチャーの両方が揃った時だけ魔法が発動する仕様により、誤作動を防ぎつつ没入感のある体験を実現しています。
+
+### 入力方式
+
+| 入力                   | デバイス                      | 説明                                        |
+| ---------------------- | ----------------------------- | ------------------------------------------- |
+| 音声認識               | マイク（Web Speech API）      | 日本語の呪文を認識（あいまい一致対応）      |
+| ジェスチャー（IMU）    | Nintendo Joy-Con（WebHID）    | ジャイロセンサーで杖の動き（V字/M字）を判定 |
+| ジェスチャー（カメラ） | Webカメラ（ONNX/YOLOv8-pose） | 杖先のポーズ推定から軌跡を判定              |
+
+### 魔法発動の仕組み（インテントゲート）
+
+1. **音声認識** — 呪文の詠唱を検出・照合（信頼度 ≥ 0.8）
+2. **ジェスチャー認識** — 杖の軌跡からV字/M字を判定（信頼度 ≥ 0.7）
+3. **照合** — 呪文に対応するジェスチャーが 7秒以内に揃えば発動
+4. **実行** — TP-Link Tapoスマートプラグの制御 or Phomemoプリンターで印刷
+
+### 連携デバイス
+
+| デバイス          | 接続方式      | 用途                            |
+| ----------------- | ------------- | ------------------------------- |
+| Nintendo Joy-Con  | WebHID        | ジャイロによるジェスチャー入力  |
+| TP-Link Tapo P300 | Wi-Fi（API）  | 4ポートスマート電源タップの制御 |
+| Phomemo M02S      | Web Bluetooth | おみくじの感熱印刷              |
+
+---
+
 ## 🛠 使用技術
 
-このプロジェクトは以下のツールを使用してモダンで高速な開発環境を構築しています。
+### フレームワーク・ランタイム
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router)
-- **Package Manager / Runtime**: [Bun](https://bun.sh/)
-- **Environment Management**: [Devbox](https://www.jetpack.io/devbox)
-- **Linter**: [oxlint](https://oxc.rs/docs/guide/usage/linter.html)
-- **Formatter**: [Prettier](https://prettier.io/)
-- **Test Runner**: [Vitest](https://vitest.dev/)
-- **AI Code Review**: [CodeRabbit](https://coderabbit.ai/)
+| 技術                                          | 用途                              |
+| --------------------------------------------- | --------------------------------- |
+| [Next.js](https://nextjs.org/) (App Router)   | Reactフレームワーク               |
+| [TypeScript](https://www.typescriptlang.org/) | 型付き言語                        |
+| [React](https://react.dev/) 19                | UIライブラリ                      |
+| [Bun](https://bun.sh/)                        | パッケージマネージャ / ランタイム |
+| [Devbox](https://www.jetpack.io/devbox)       | 開発環境管理                      |
+
+### 開発ツール
+
+| 技術                                                           | 用途                  |
+| -------------------------------------------------------------- | --------------------- |
+| [Vitest](https://vitest.dev/)                                  | テストランナー        |
+| [oxlint](https://oxc.rs/docs/guide/usage/linter.html)          | Linter                |
+| [Prettier](https://prettier.io/)                               | Formatter             |
+| [GitHub Actions](https://github.co.jp/features/actions)        | CI/CD                 |
+| [CodeRabbit](https://coderabbit.ai/)                           | AIコードレビュー      |
+| [Babel React Compiler](https://react.dev/learn/react-compiler) | React最適化コンパイラ |
+
+### UI・スタイリング
+
+| 技術                                                            | 用途               |
+| --------------------------------------------------------------- | ------------------ |
+| [Tailwind CSS](https://tailwindcss.com/) v4                     | CSSフレームワーク  |
+| [Lucide React](https://lucide.dev/)                             | アイコンライブラリ |
+| [next-themes](https://github.com/pacocoursey/next-themes)       | テーマ管理         |
+| Google Fonts (Cinzel, Cormorant Garamond, MedievalSharp, Geist) | フォント           |
+
+### AI/ML・画像認識
+
+| 技術                                                                                   | 用途                                               |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| [ONNX Runtime Web](https://onnxruntime.ai/)                                            | 杖検出モデル推論 (YOLOv8-pose)                     |
+| [Roboflow](https://roboflow.com/)                                                      | 学習データのアノテーション・データセット管理       |
+| [Python](https://www.python.org/) + [Google Colab](https://colab.research.google.com/) | YOLOv8-pose モデルの学習・ONNXモデルのエクスポート |
+| 独自実装                                                                               | ジェスチャー認識（軌跡の方向転換回数ベース）       |
+
+### ブラウザAPI
+
+| 技術                                                                                        | 用途                       |
+| ------------------------------------------------------------------------------------------- | -------------------------- |
+| [Web Speech API](https://developer.mozilla.org/ja/docs/Web/API/Web_Speech_API)              | 音声認識（日本語）         |
+| [WebHID API](https://developer.mozilla.org/en-US/docs/Web/API/WebHID_API)                   | Joy-Con接続                |
+| [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)     | Phomemo M02Sプリンター接続 |
+| [getUserMedia API](https://developer.mozilla.org/ja/docs/Web/API/MediaDevices/getUserMedia) | カメラ映像取得             |
+
+### IoT連携
+
+| 技術                                                                       | 用途                           |
+| -------------------------------------------------------------------------- | ------------------------------ |
+| [tp-link-tapo-connect](https://github.com/dickydoouk/tp-link-tapo-connect) | TP-Link Tapoスマートプラグ制御 |
 
 ---
 
