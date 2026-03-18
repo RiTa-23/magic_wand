@@ -270,6 +270,9 @@ export default function JoyConPlayPage() {
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
+  const [activeCircleSpell, setActiveCircleSpell] = useState<SpellId | null>(
+    null,
+  );
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(true);
   const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
@@ -342,6 +345,7 @@ export default function JoyConPlayPage() {
     setGateResult(null);
     setPersistedSpellName(null);
     setShowCommitFeedback(false);
+    setActiveCircleSpell(null);
     setCommitLabel("");
     recentGestureInputRef.current = null;
     lastGestureAtRef.current = 0;
@@ -452,17 +456,19 @@ export default function JoyConPlayPage() {
   // ── コミットフィードバック表示 ──
   useEffect(() => {
     if (gateResult?.status !== "committed" || !gateResult.commit) return;
+    setActiveCircleSpell(gateResult.commit.spellId);
     setCommitLabel(
       `${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`,
     );
     setShowCommitFeedback(true);
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
+      setActiveCircleSpell(null);
       setCommitLabel("");
       gate.current.clear();
       setGateResult(null);
       setPersistedSpellName(null);
-    }, 1800);
+    }, 2400);
     return () => window.clearTimeout(timerId);
   }, [gateResult]);
 
@@ -849,8 +855,16 @@ export default function JoyConPlayPage() {
   const isRejected = gateResult?.status === "rejected";
   const spellName = persistedSpellName;
   const isDrawingGesture = joyconState?.buttons.r ?? false;
-  const isImmersiveListening =
-    isListening && castingSyncMode === "immersive";
+  const isMagicCircleGlowing = isListening || showCommitFeedback;
+  const isImmersiveCircleGlowing =
+    isMagicCircleGlowing && castingSyncMode === "immersive";
+  const isVentusCircleActive =
+    showCommitFeedback && activeCircleSpell === "ventus";
+  const magicCircleGlowClass = isVentusCircleActive
+    ? "scale-[1.06] drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
+    : isMagicCircleGlowing
+      ? "scale-[1.03] drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
+      : "opacity-95";
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1074,26 +1088,118 @@ export default function JoyConPlayPage() {
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
         <div
-          className={`relative h-[460px] w-[460px] transition-all duration-500 ease-out ${
-            isListening
-              ? "scale-[1.03] drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
-              : "opacity-95"
-          }`}
+          className={`relative h-[460px] w-[460px] transition-all duration-500 ease-out ${magicCircleGlowClass}`}
         >
-          {isImmersiveListening && (
+          {isVentusCircleActive && (
+            <>
+              <div
+                className="absolute inset-[-30%] rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(153,255,103,0.28) 0%, rgba(88,235,116,0.2) 32%, rgba(29,80,42,0.08) 56%, rgba(8,22,36,0) 78%)",
+                  filter: "blur(24px)",
+                }}
+                aria-hidden="true"
+              />
+
+              <svg
+                viewBox="0 0 100 100"
+                className="absolute inset-[-10%] h-[120%] w-[120%]"
+                aria-hidden="true"
+              >
+                <g className="origin-center animate-[spin_9s_linear_infinite]">
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="45"
+                    ry="16"
+                    fill="none"
+                    stroke="rgba(173,255,128,0.8)"
+                    strokeWidth="1.2"
+                    strokeDasharray="5 5"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="40"
+                    ry="13"
+                    fill="none"
+                    stroke="rgba(124,255,144,0.72)"
+                    strokeWidth="1"
+                    transform="rotate(42 50 50)"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="34"
+                    ry="11"
+                    fill="none"
+                    stroke="rgba(196,255,173,0.66)"
+                    strokeWidth="0.9"
+                    transform="rotate(118 50 50)"
+                  />
+                </g>
+
+                <g className="origin-center animate-[spin_5.5s_linear_infinite_reverse]">
+                  {Array.from({ length: 18 }, (_, i) => {
+                    const angle = (i * 20 * Math.PI) / 180;
+                    const x = 50 + 47 * Math.cos(angle);
+                    const y = 50 + 47 * Math.sin(angle);
+                    return (
+                      <ellipse
+                        key={`ventus-leaf-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="1.15"
+                        ry="2.7"
+                        fill="rgba(178,255,137,0.88)"
+                        transform={`rotate(${i * 20 + 90} ${x} ${y})`}
+                      />
+                    );
+                  })}
+                </g>
+
+                <g className="origin-center animate-[spin_4.2s_linear_infinite]">
+                  <path
+                    d="M 22 50 C 31 25, 69 25, 78 50 C 69 75, 31 75, 22 50"
+                    fill="none"
+                    stroke="rgba(141,255,154,0.58)"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 50 22 C 75 31, 75 69, 50 78 C 25 69, 25 31, 50 22"
+                    fill="none"
+                    stroke="rgba(141,255,154,0.5)"
+                    strokeWidth="0.95"
+                    strokeLinecap="round"
+                  />
+                </g>
+
+                <circle cx="50" cy="50" r="8.3" fill="rgba(223,255,198,0.85)" />
+                <circle cx="50" cy="50" r="4.5" fill="rgba(255,255,235,0.95)" />
+              </svg>
+            </>
+          )}
+
+          {isImmersiveCircleGlowing && (
             <>
               <div
                 className="absolute inset-[-24%] rounded-full"
                 style={{
                   background:
-                    "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
+                    isVentusCircleActive
+                      ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
+                      : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
                   animation: "spin 6s linear infinite",
                   filter: "blur(18px)",
                 }}
                 aria-hidden="true"
               />
               <div
-                className="absolute inset-[-12%] rounded-full border border-[#ffd87f]/55"
+                className={`absolute inset-[-12%] rounded-full border ${
+                  isVentusCircleActive ? "border-[#a9ff84]/65" : "border-[#ffd87f]/55"
+                }`}
                 style={{
                   animation: "spin 8s linear infinite reverse, pulse 1.8s ease-in-out infinite",
                 }}
@@ -1102,18 +1208,22 @@ export default function JoyConPlayPage() {
             </>
           )}
 
-          {isListening && (
+          {isMagicCircleGlowing && (
             <>
               <div
                 className="absolute inset-[-18%] rounded-full animate-pulse"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
+                    isVentusCircleActive
+                      ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
+                      : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
                 }}
                 aria-hidden="true"
               />
               <div
-                className="absolute inset-[-6%] rounded-full border border-[#f5d77a]/55 animate-ping"
+                className={`absolute inset-[-6%] rounded-full border animate-ping ${
+                  isVentusCircleActive ? "border-[#b8ff9e]/65" : "border-[#f5d77a]/55"
+                }`}
                 style={{ animationDuration: "2.4s" }}
                 aria-hidden="true"
               />
@@ -1122,7 +1232,7 @@ export default function JoyConPlayPage() {
 
           <div
             className={`h-full w-full ${
-              isImmersiveListening ? "animate-[spin_12s_linear_infinite]" : ""
+              isImmersiveCircleGlowing ? "animate-[spin_12s_linear_infinite]" : ""
             }`}
           >
             <HeroMagicCircle />
