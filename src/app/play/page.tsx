@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Mic, MicOff } from "lucide-react";
+import { ChevronLeft, Mic, MicOff, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -25,9 +25,7 @@ import {
   getAutoOffEnabled,
 } from "@/features/settings/lib/auto-off-setting";
 import {
-  DEFAULT_SPELL_GESTURE_MAP,
   GestureIntentInput,
-  GestureType,
   IntentGateResult,
   SpellId,
 } from "@/features/orchestrator/types/intent";
@@ -51,12 +49,6 @@ const WAVE_GESTURE_RECOVERY_WINDOW_MS = 3000;
 type DispatchPhase = "idle" | "running" | "success" | "failed" | "timeout";
 type SpeechLatencyMode = "safe" | "fast";
 type PlayInputMode = "joycon" | "camera";
-type GestureDebugInfo = {
-  gestureType: GestureType | "unknown";
-  confidence: number | null;
-  recognizedAt: number;
-  mappedSpells: SpellId[];
-};
 
 // ── ビューポートの計算とスムージングヘルパー ──
 function adjustViewBounds(
@@ -244,11 +236,12 @@ export default function PlayPage() {
   const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
     null,
   );
-  const [lastGestureDebug, setLastGestureDebug] =
-    useState<GestureDebugInfo | null>(null);
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+  const [isTrailPreviewVisible, setIsTrailPreviewVisible] = useState(true);
+  const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
   const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
@@ -291,28 +284,7 @@ export default function PlayPage() {
   } | null>(null);
 
   const handleRecognizedGesture = (recognized: GestureResult, now: number) => {
-    if (recognized.type === "unknown") {
-      setLastGestureDebug({
-        gestureType: "unknown",
-        confidence: null,
-        recognizedAt: now,
-        mappedSpells: [],
-      });
-      return;
-    }
-
-    const mappedSpells = (
-      Object.entries(DEFAULT_SPELL_GESTURE_MAP) as [SpellId, GestureType][]
-    )
-      .filter(([, gestureType]) => gestureType === recognized.type)
-      .map(([spellId]) => spellId);
-
-    setLastGestureDebug({
-      gestureType: recognized.type,
-      confidence: recognized.confidence,
-      recognizedAt: now,
-      mappedSpells,
-    });
+    if (recognized.type === "unknown") return;
 
     const gestureInput = toGestureIntentInput(recognized, now);
     if (!gestureInput) return;
@@ -344,7 +316,6 @@ export default function PlayPage() {
     setPersistedSpellName(null);
     setShowCommitFeedback(false);
     setCommitLabel("");
-    setLastGestureDebug(null);
     recentGestureInputRef.current = null;
     lastGestureAtRef.current = 0;
     trailRef.current = [];
@@ -991,24 +962,7 @@ export default function PlayPage() {
   const isDrawingGesture = isJoyConMode
     ? (joyconState?.buttons.r ?? false)
     : isCameraDrawing;
-  const isCameraConnected = cameraStatus === "CONNECTED";
   const isWandDetected = Boolean(wandPoint?.detected);
-  const cameraConfidenceText = wandPoint
-    ? `${Math.round(wandPoint.confidence * 100)}%`
-    : "-";
-  const tipCoordinateText = wandPoint
-    ? `(${Math.round(wandPoint.tipX)}, ${Math.round(wandPoint.tipY)})`
-    : "-";
-
-  const dispatchStatusText = (() => {
-    if (dispatchPhase === "running") return dispatchMessage || "発動処理中...";
-    if (dispatchPhase === "success") return dispatchMessage || "発動成功";
-    if (dispatchPhase === "failed") return dispatchMessage || "発動失敗";
-    if (dispatchPhase === "timeout") {
-      return dispatchMessage || "発動タイムアウト";
-    }
-    return "待機中";
-  })();
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1019,8 +973,6 @@ export default function PlayPage() {
     if (isRejected) return "信頼度不足 - もう一度試してください";
     return "待機中...";
   })();
-
-  const inputModeLabel = isJoyConMode ? "Joy-Con慣性検知" : "杖の物体検出";
 
   const inputDeviceButtonLabel = (() => {
     if (isJoyConMode) {
@@ -1080,27 +1032,11 @@ export default function PlayPage() {
     }
     return "Phomemo接続済み";
   })();
-
-  const gestureDebugText = (() => {
-    if (!lastGestureDebug) {
-      return {
-        recognized: "まだ軌道認識はありません",
-        mapped: "対応魔法: -",
-      };
-    }
-
-    const confidenceText =
-      lastGestureDebug.confidence === null
-        ? "-"
-        : `${Math.round(lastGestureDebug.confidence * 100)}%`;
-    const recognized = `認識: ${lastGestureDebug.gestureType} (信頼度 ${confidenceText})`;
-    const mapped =
-      lastGestureDebug.mappedSpells.length > 0
-        ? `対応魔法: ${lastGestureDebug.mappedSpells.join(" / ")}`
-        : "対応魔法: なし";
-
-    return { recognized, mapped };
-  })();
+  const isPhomemoConnectedState =
+    phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING";
+  const isInputDeviceConnectedState = isJoyConMode
+    ? joyConStatus === "CONNECTED"
+    : cameraStatus === "CONNECTED";
 
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
@@ -1117,6 +1053,142 @@ export default function PlayPage() {
         className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
         aria-hidden="true"
       />
+
+      <button
+        type="button"
+        onClick={() => setIsInfoPanelOpen((prev) => !prev)}
+        aria-expanded={isInfoPanelOpen}
+        aria-controls="play-info-panel"
+        className="fixed right-6 top-10 z-40 inline-flex items-center gap-2 rounded-full border border-gold-dim/40 bg-stone/35 px-4 py-2 text-xs tracking-[0.18em] text-gold-bright/85 backdrop-blur-sm transition-all hover:border-gold-bright/70 hover:text-gold-bright"
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+        {isInfoPanelOpen ? "CLOSE" : "INFO"}
+      </button>
+
+      <aside
+        id="play-info-panel"
+        aria-hidden={!isInfoPanelOpen}
+        inert={!isInfoPanelOpen}
+        className={`fixed right-0 top-0 z-30 h-svh w-[min(88vw,360px)] border-l border-gold-dim/20 bg-[linear-gradient(180deg,rgba(10,19,30,0.88)_0%,rgba(6,12,22,0.95)_100%)] p-6 pt-24 backdrop-blur-md transition-all duration-300 ease-out ${
+          isInfoPanelOpen
+            ? "translate-x-0 opacity-100"
+            : "translate-x-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="space-y-4">
+          <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">
+            CONNECTION & STATUS
+          </p>
+
+          <div className="rounded-xl border border-gold-dim/20 bg-stone/10 p-3">
+            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+              DISPLAY
+            </p>
+            <div className="mt-2 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsTrailPreviewVisible((prev) => !prev)}
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                <span>軌道プレビュー</span>
+                <span>{isTrailPreviewVisible ? "表示" : "非表示"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsStatusDisplayVisible((prev) => !prev)}
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              >
+                <span>メイン状態表示</span>
+                <span>{isStatusDisplayVisible ? "表示" : "非表示"}</span>
+              </button>
+            </div>
+          </div>
+
+          {isSupported ? (
+            <button
+              onClick={handleSpeechLatencyModeToggle}
+              className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+            >
+              音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
+            </button>
+          ) : (
+            <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">
+              音声認識非対応のブラウザです
+            </p>
+          )}
+
+          <button
+            onClick={handlePhomemoToggle}
+            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+          >
+            {phomemoStatus === "CONNECTED" ||
+            phomemoStatus === "CONNECTING" ||
+            phomemoStatus === "PRINTING"
+              ? "Phomemo切断"
+              : "Phomemo接続"}
+          </button>
+
+          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-bright/85">
+            <span
+              aria-hidden="true"
+              className={`inline-block h-2.5 w-2.5 rounded-full ${
+                isPhomemoConnectedState
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]"
+              }`}
+            />
+            {phomemoStatusText}
+          </p>
+
+          <button
+            onClick={handleInputDeviceToggle}
+            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+          >
+            {inputDeviceButtonLabel}
+          </button>
+
+          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-bright/85">
+            <span
+              aria-hidden="true"
+              className={`inline-block h-2.5 w-2.5 rounded-full ${
+                isInputDeviceConnectedState
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]"
+              }`}
+            />
+            {inputDeviceStatusText}
+          </p>
+
+          {inputDeviceErrorMessage && (
+            <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
+              <p className="text-xs leading-relaxed tracking-wide text-red-200">
+                {inputDeviceErrorMessage}
+              </p>
+            </div>
+          )}
+
+          {dispatchPhase !== "idle" && (
+            <div
+              role="status"
+              aria-live="polite"
+              className={`rounded-xl border px-4 py-3 ${
+                dispatchPhase === "success"
+                  ? "border-emerald-400/40 bg-emerald-950/20"
+                  : dispatchPhase === "failed" || dispatchPhase === "timeout"
+                    ? "border-rose-400/40 bg-rose-950/20"
+                    : "border-gold-dim/30 bg-stone/20"
+              }`}
+            >
+              <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+                DISPATCH STATUS
+              </p>
+              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-bright/90">
+                {dispatchMessage}
+              </p>
+            </div>
+          )}
+        </div>
+      </aside>
 
       <FloatingParticles />
 
@@ -1161,105 +1233,111 @@ export default function PlayPage() {
               aria-hidden="true"
             />
 
-            <div className="mx-auto w-full max-w-[340px] h-[220px] rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm relative overflow-hidden">
-              <video
-                ref={videoRef}
-                className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
-                  isCameraMode ? "opacity-45" : "opacity-0"
-                }`}
-                playsInline
-                muted
-                autoPlay
-              />
-              {isCameraMode && (
-                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/30 to-black/45" />
-              )}
-              {showCommitFeedback && (
-                <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse" />
-              )}
-              <svg
-                viewBox="0 0 100 100"
-                className="absolute inset-0 h-full w-full"
-                preserveAspectRatio="xMidYMid meet"
-                aria-hidden="true"
-              >
-                <defs>
-                  <filter
-                    id="trailGlow"
-                    x="-40%"
-                    y="-40%"
-                    width="180%"
-                    height="180%"
-                  >
-                    <feGaussianBlur stdDeviation="1.8" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {trailPathPoints && (
-                  <>
-                    <polyline
-                      points={trailPathPoints}
-                      fill="none"
-                      stroke="rgba(212,175,55,0.35)"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      filter="url(#trailGlow)"
-                    />
-                    <polyline
-                      points={trailPathPoints}
-                      fill="none"
-                      stroke="rgba(255,244,182,0.9)"
-                      strokeWidth="0.9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </>
+            {isTrailPreviewVisible && (
+              <div className="mx-auto w-full max-w-[340px] h-[220px] rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm relative overflow-hidden">
+                <video
+                  ref={videoRef}
+                  className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
+                    isCameraMode ? "opacity-45" : "opacity-0"
+                  }`}
+                  playsInline
+                  muted
+                  autoPlay
+                />
+                {isCameraMode && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/30 to-black/45" />
                 )}
-              </svg>
-              <div className="absolute inset-x-0 bottom-2 text-center">
-                <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                  {isCameraMode ? "CAMERA + WAND TRAIL" : "WAND TRAIL PREVIEW"}
-                </p>
-              </div>
+                {showCommitFeedback && (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse" />
+                )}
+                <svg
+                  viewBox="0 0 100 100"
+                  className="absolute inset-0 h-full w-full"
+                  preserveAspectRatio="xMidYMid meet"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <filter
+                      id="trailGlow"
+                      x="-40%"
+                      y="-40%"
+                      width="180%"
+                      height="180%"
+                    >
+                      <feGaussianBlur stdDeviation="1.8" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
 
-              {isCameraMode && (
-                <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-gold-dim/35 bg-black/40 px-2 py-1 text-[10px] tracking-[0.15em] text-gold-dim/85">
-                  <span
-                    className={`inline-block h-2 w-2 rounded-full ${
-                      isWandDetected
-                        ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
-                        : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]"
-                    }`}
-                  />
-                  {isWandDetected ? "WAND DETECTED" : "SEARCHING WAND"}
+                  {trailPathPoints && (
+                    <>
+                      <polyline
+                        points={trailPathPoints}
+                        fill="none"
+                        stroke="rgba(212,175,55,0.35)"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        filter="url(#trailGlow)"
+                      />
+                      <polyline
+                        points={trailPathPoints}
+                        fill="none"
+                        stroke="rgba(255,244,182,0.9)"
+                        strokeWidth="0.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </>
+                  )}
+                </svg>
+                <div className="absolute inset-x-0 bottom-2 text-center">
+                  <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+                    {isCameraMode
+                      ? "CAMERA + WAND TRAIL"
+                      : "WAND TRAIL PREVIEW"}
+                  </p>
                 </div>
-              )}
-            </div>
+
+                {isCameraMode && (
+                  <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-gold-dim/35 bg-black/40 px-2 py-1 text-[10px] tracking-[0.15em] text-gold-dim/85">
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${
+                        isWandDetected
+                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
+                          : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]"
+                      }`}
+                    />
+                    {isWandDetected ? "WAND DETECTED" : "SEARCHING WAND"}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 音声認識状態表示 */}
-            <div
-              className={`px-10 py-6 rounded-full border bg-stone/20 backdrop-blur-sm shadow-xl transition-all ${
-                showCommitFeedback
-                  ? "border-gold-bright/60 shadow-[0_0_26px_rgba(212,175,55,0.45)]"
-                  : "border-gold-dim/15"
-              }`}
-            >
-              <p
-                className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}
+            {isStatusDisplayVisible && (
+              <div
+                className={`px-10 py-6 rounded-full border bg-stone/20 backdrop-blur-sm shadow-xl transition-all ${
+                  showCommitFeedback
+                    ? "border-gold-bright/60 shadow-[0_0_26px_rgba(212,175,55,0.45)]"
+                    : "border-gold-dim/15"
+                }`}
               >
-                {statusText}
-              </p>
-              {spellName && isWaitingForGesture && (
-                <p className="mt-2 text-sm tracking-widest text-gold-dim/80">
-                  「{spellName}」
+                <p
+                  className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}
+                >
+                  {statusText}
                 </p>
-              )}
-            </div>
+                {spellName && isWaitingForGesture && (
+                  <p className="mt-2 text-sm tracking-widest text-gold-dim/80">
+                    「{spellName}」
+                  </p>
+                )}
+              </div>
+            )}
 
             {showCommitFeedback && (
               <p className="text-sm tracking-widest text-gold-bright animate-pulse">
@@ -1273,24 +1351,23 @@ export default function PlayPage() {
                 <button
                   onClick={handleMicToggle}
                   aria-label={isListening ? "音声認識を停止" : "音声認識を開始"}
-                  className={`mx-auto flex items-center justify-center w-16 h-16 rounded-full border transition-all duration-300 ${
+                  className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 backdrop-blur-sm transition-all duration-300 ${
                     isListening
-                      ? "border-gold-bright bg-gold-bright/20 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                      : "border-gold-dim/40 bg-stone/20 hover:border-gold-bright/60 hover:bg-gold-dim/10"
+                      ? "border-gold-bright bg-gold-bright/25 shadow-[0_0_26px_rgba(212,175,55,0.5)]"
+                      : "border-gold-dim/70 bg-stone/45 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:border-gold-bright/75 hover:bg-stone/65 hover:shadow-[0_0_20px_rgba(212,175,55,0.25)]"
                   }`}
                 >
                   {isListening ? (
-                    <MicOff className="w-6 h-6 text-gold-bright" />
+                    <MicOff
+                      className="h-8 w-8 text-gold-bright"
+                      strokeWidth={2.25}
+                    />
                   ) : (
-                    <Mic className="w-6 h-6 text-gold-dim" />
+                    <Mic
+                      className="h-8 w-8 text-gold-bright/95"
+                      strokeWidth={2.25}
+                    />
                   )}
-                </button>
-                <button
-                  onClick={handleSpeechLatencyModeToggle}
-                  className="mx-auto px-4 py-1.5 rounded-full border border-gold-dim/30 text-[11px] tracking-[0.18em] uppercase text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
-                >
-                  音声判定モード:{" "}
-                  {speechLatencyMode === "safe" ? "安全" : "高速"}
                 </button>
               </>
             ) : (
@@ -1298,97 +1375,6 @@ export default function PlayPage() {
                 音声認識非対応のブラウザです
               </p>
             )}
-
-            <button
-              onClick={handlePhomemoToggle}
-              className="mx-auto px-6 py-2 rounded-full border border-gold-dim/40 text-sm tracking-widest text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
-            >
-              {phomemoStatus === "CONNECTED" ||
-              phomemoStatus === "CONNECTING" ||
-              phomemoStatus === "PRINTING"
-                ? "Phomemo切断"
-                : "Phomemo接続"}
-            </button>
-
-            <p className="text-xs tracking-widest text-gold-dim/70">
-              {phomemoStatusText}
-            </p>
-
-            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
-              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                INPUT MODE
-              </p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                {inputModeLabel}
-              </p>
-            </div>
-
-            <button
-              onClick={handleInputDeviceToggle}
-              className="mx-auto px-6 py-2 rounded-full border border-gold-dim/40 text-sm tracking-widest text-gold-dim hover:border-gold-bright/60 hover:text-gold-bright transition-colors"
-            >
-              {inputDeviceButtonLabel}
-            </button>
-
-            <p className="text-xs tracking-widest text-gold-dim/70">
-              {inputDeviceStatusText}
-            </p>
-
-            {inputDeviceErrorMessage && (
-              <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
-                <p className="text-xs leading-relaxed tracking-wide text-red-200">
-                  {inputDeviceErrorMessage}
-                </p>
-              </div>
-            )}
-
-            {isCameraMode && (
-              <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3 text-left">
-                <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                  CAMERA DEBUG
-                </p>
-                <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                  接続: {isCameraConnected ? "CONNECTED" : cameraStatus}
-                </p>
-                <p className="text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                  検出: {isWandDetected ? "DETECTED" : "NOT DETECTED"}
-                </p>
-                <p className="text-xs leading-relaxed tracking-wide text-gold-dim/80">
-                  信頼度: {cameraConfidenceText}
-                </p>
-                <p className="text-xs leading-relaxed tracking-wide text-gold-dim/75">
-                  杖先座標: {tipCoordinateText}
-                </p>
-              </div>
-            )}
-
-            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
-              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                DISPATCH STATE
-              </p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                {dispatchStatusText}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3">
-              <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
-                GESTURE DEBUG
-              </p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-dim/85">
-                {gestureDebugText.recognized}
-              </p>
-              <p className="text-xs leading-relaxed tracking-wide text-gold-dim/75">
-                {gestureDebugText.mapped}
-              </p>
-            </div>
-
-            <p className="text-[11px] leading-relaxed tracking-wide text-gold-dim/60">
-              コツ:{" "}
-              {isJoyConMode
-                ? "接続直後はレール側を下にして3秒静止すると安定します。呪文の後10秒以内に、R長押しで0.8〜1.5秒ほどV/M/L/Z/InvV/W（横一直線）を1回しっかり描いて離すと通りやすいです。"
-                : "カメラ接続後は杖先が見える位置で、0.8〜1.5秒ほどV/M/L/Z/InvV/W（横一直線）をはっきり描いて一瞬静止すると認識されやすいです。"}
-            </p>
           </div>
         </div>
       </div>
