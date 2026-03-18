@@ -96,7 +96,7 @@ export default function SpellsPage() {
         <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-10">
           <div className="w-full max-w-4xl h-full min-h-0">
             <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-[color:var(--gold)]/15 bg-black/20 backdrop-blur-sm">
-              <div className="h-full min-h-0 overflow-auto p-5 sm:p-8">
+              <div className="magic-scroll h-full min-h-0 overflow-auto p-5 sm:p-8">
                 <ul className="space-y-4" aria-label="呪文一覧">
                   {spells.map((spell) => {
                     const isSelected = spell.id === selectedSpellId;
