@@ -188,8 +188,8 @@ function recognizeZGesture(
 }
 
 /**
- * 波形判定（~）
- * 横方向へ進みながら、Y方向に2〜3回うねる軌跡を検出する
+ * W判定（横一直線）
+ * 横方向へまっすぐ進む軌跡を検出する
  */
 function recognizeWaveGesture(
   smoothedX: number[],
@@ -200,16 +200,9 @@ function recognizeWaveGesture(
   const n = smoothedX.length;
   if (n < 20) return null;
 
-  // 波は横長であることを優先
-  if (xSpan < 8 || xSpan < ySpan * 1.15) return null;
-
-  // 高低差が小さすぎるとただの水平線になる
-  if (ySpan < Math.max(4, xSpan * 0.12)) return null;
-
-  // Y方向のうねり回数（2〜3回）
-  const minChange = ySpan * 0.12;
-  const yChanges = countDirectionChanges(smoothedY, minChange);
-  if (yChanges < 2 || yChanges > 3) return null;
+  // 横幅が十分あり、縦ブレは小さいこと
+  if (xSpan < 8) return null;
+  if (ySpan > xSpan * 0.28) return null;
 
   // X方向は概ね単調に進む（大きな折り返しがない）
   let forward = 0;
@@ -224,16 +217,20 @@ function recognizeWaveGesture(
   const total = forward + backward;
   if (total === 0) return null;
   const monotonicity = Math.max(forward, backward) / total;
-  if (monotonicity < 0.72) return null;
+  if (monotonicity < 0.82) return null;
 
-  const waveCountScore = clamp01(1 - Math.abs(yChanges - 2.5) / 1.5);
-  const horizontalScore = clamp01(xSpan / Math.max(1, ySpan * 1.8));
-  const monotonicScore = clamp01((monotonicity - 0.72) / 0.28);
+  // Y方向の微小ノイズでの蛇行を抑える
+  const yChanges = countDirectionChanges(smoothedY, Math.max(1, ySpan * 0.18));
+  if (yChanges > 2) return null;
+
+  const straightness = clamp01(1 - ySpan / Math.max(1, xSpan * 0.28));
+  const horizontalScore = clamp01(xSpan / Math.max(8, ySpan * 2.2));
+  const monotonicScore = clamp01((monotonicity - 0.82) / 0.18);
   const confidence = clamp01(
-    waveCountScore * 0.35 + horizontalScore * 0.3 + monotonicScore * 0.35,
+    straightness * 0.45 + horizontalScore * 0.25 + monotonicScore * 0.3,
   );
 
-  return confidence > 0.42 ? { type: "W", confidence } : null;
+  return confidence > 0.45 ? { type: "W", confidence } : null;
 }
 
 /**
@@ -320,7 +317,7 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
   const invVResult = recognizeInvVGesture(smoothedY, ySpan);
   if (invVResult) return invVResult;
 
-  // --- 波形判定を実施（ウェーブ🌊） ---
+  // --- 横一直線判定を実施（ウェーブ🌊） ---
   if (xSpan >= 2) {
     const waveResult = recognizeWaveGesture(smoothedX, smoothedY, xSpan, ySpan);
     if (waveResult) return waveResult;
