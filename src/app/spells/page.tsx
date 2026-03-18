@@ -153,11 +153,12 @@ export default function SpellsPage() {
                                 <div className="relative overflow-hidden rounded-xl border border-[color:var(--gold)]/10 bg-stone/20 w-full aspect-[2/1]">
                                   <Image
                                     src={placeholderImageSrc}
-                                    alt={`${spell.name} のイメージ`}
+                                    alt=""
                                     fill
                                     className="object-contain p-2"
                                     sizes="(max-width: 640px) 100vw, 200px"
                                     priority={spell.id === "ventus"}
+                                    aria-hidden="true"
                                   />
                                 </div>
 
