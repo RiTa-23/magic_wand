@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/omikujiimage-manifest.json
- * Returns a list of .png images in the public/omikujiimage/ folder
+ * Returns a list of image files (.png, .jpg, .jpeg, .gif) in public/omikujiimage/
  */
 export async function GET() {
   try {
