@@ -5,7 +5,7 @@ import { FloatingParticles } from "@/components/floating-particles";
 import { WandIcon } from "@/components/wand-icon";
 
 const HOME_ROUTE: Route = "/home";
-const WAND_TEST_ROUTE: Route = "/test/wand";
+const JOYCON_TEST_ROUTE: Route = "/test/wand";
 
 export default function ConnectionPage() {
   const cardFocus =
@@ -90,7 +90,7 @@ export default function ConnectionPage() {
               </button>
 
               <Link
-                href={WAND_TEST_ROUTE}
+                href={JOYCON_TEST_ROUTE}
                 className={`${cardShell} ${cardFocus}`}
                 aria-label="joy-conの確認"
               >
