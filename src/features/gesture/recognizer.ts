@@ -9,6 +9,7 @@ export type TrailPoint = {
 export type GestureResult =
   | { type: "V"; confidence: number }
   | { type: "M"; confidence: number }
+  | { type: "L"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -21,6 +22,18 @@ function smoothY(trail: TrailPoint[], windowSize: number): number[] {
     const end = Math.min(trail.length, i + windowSize + 1);
     const slice = trail.slice(start, end);
     return slice.reduce((sum, p) => sum + p.rawY, 0) / slice.length;
+  });
+}
+
+/**
+ * 軌跡の X 座標を移動平均でスムージングする
+ */
+function smoothX(trail: TrailPoint[], windowSize: number): number[] {
+  return trail.map((_, i) => {
+    const start = Math.max(0, i - windowSize);
+    const end = Math.min(trail.length, i + windowSize + 1);
+    const slice = trail.slice(start, end);
+    return slice.reduce((sum, p) => sum + p.rawX, 0) / slice.length;
   });
 }
 
@@ -66,6 +79,72 @@ function calcYSpan(trail: TrailPoint[]): number {
 }
 
 /**
+ * 軌跡の全体的な X 幅（横方向のスパン）を計算する
+ */
+function calcXSpan(trail: TrailPoint[]): number {
+  const xs = trail.map((p) => p.rawX);
+  return Math.max(...xs) - Math.min(...xs);
+}
+
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
+
+/**
+ * L字判定
+ * 上から下へ伸びる縦線 + 下端で横に払う線 を検出する
+ */
+function recognizeLGesture(
+  smoothedX: number[],
+  smoothedY: number[],
+  xSpan: number,
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedY.length;
+  if (n < 20) return null;
+
+  const cornerIdx = smoothedY.reduce(
+    (best, y, idx) => (y > smoothedY[best] ? idx : best),
+    0,
+  );
+
+  // 角は序盤すぎず終盤すぎない位置にあること
+  const cornerPos = cornerIdx / Math.max(1, n - 1);
+  if (cornerPos < 0.3 || cornerPos > 0.9) return null;
+
+  const startX = smoothedX[0];
+  const startY = smoothedY[0];
+  const cornerX = smoothedX[cornerIdx];
+  const cornerY = smoothedY[cornerIdx];
+  const endX = smoothedX[n - 1];
+  const endY = smoothedY[n - 1];
+
+  const verticalDy = cornerY - startY;
+  const verticalDx = Math.abs(cornerX - startX);
+  const horizontalDx = Math.abs(endX - cornerX);
+  const horizontalDy = Math.abs(endY - cornerY);
+
+  const hasStrongVertical = verticalDy > ySpan * 0.45;
+  const hasStrongHorizontal = horizontalDx > xSpan * 0.45;
+  if (!hasStrongVertical || !hasStrongHorizontal) return null;
+
+  const verticalStraight = verticalDx <= xSpan * 0.5;
+  const horizontalStraight = horizontalDy <= ySpan * 0.35;
+  if (!verticalStraight || !horizontalStraight) return null;
+
+  const verticalityScore = clamp01(1 - verticalDx / Math.max(1, verticalDy));
+  const horizontalityScore = clamp01(
+    1 - horizontalDy / Math.max(1, horizontalDx),
+  );
+  const cornerScore = clamp01(1 - Math.abs(cornerPos - 0.65) / 0.65);
+  const confidence = clamp01(
+    verticalityScore * 0.45 + horizontalityScore * 0.45 + cornerScore * 0.1,
+  );
+
+  return { type: "L", confidence };
+}
+
+/**
  * 軌跡が V字 か M字 かを判定する
  * @param trail 軌跡の座標列
  * @returns 判定結果
@@ -76,11 +155,19 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
 
   // Y 方向の移動量が小さすぎる場合は判定しない
   const ySpan = calcYSpan(trail);
+  const xSpan = calcXSpan(trail);
   if (ySpan < 2) return { type: "unknown" };
 
   // スムージング（ウィンドウサイズ: 全体の約 10%）
   const windowSize = Math.max(3, Math.floor(trail.length * 0.1));
+  const smoothedX = smoothX(trail, windowSize);
   const smoothedY = smoothY(trail, windowSize);
+
+  // --- L字判定を先に実施（V字との誤分類を減らす） ---
+  if (xSpan >= 2) {
+    const lResult = recognizeLGesture(smoothedX, smoothedY, xSpan, ySpan);
+    if (lResult) return lResult;
+  }
 
   // 転換の最小変化量（Y スパンの 15% 以下の変化はノイズとみなす）
   const minChange = ySpan * 0.15;
