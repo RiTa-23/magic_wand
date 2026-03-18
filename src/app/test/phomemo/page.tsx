@@ -61,6 +61,7 @@ export default function PhomemoTestPage() {
     connect,
     disconnect,
     printTestPage,
+    printOmikujiWithRandomImage,
     isConnected,
   } = usePhomemo();
 
@@ -223,6 +224,29 @@ export default function PhomemoTestPage() {
               className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:transform-none"
             >
               {status === "PRINTING" ? "🖨️ 印刷中..." : "✨ テスト印刷する"}
+            </button>
+            <button
+              onClick={() => {
+                if (!isConnected) {
+                  setShowConnectModal(true);
+                  return;
+                }
+                printOmikujiWithRandomImage?.()
+                  .then(() => {
+                    setVoiceStatus("🎉 ランダムイメージ印刷完了！");
+                  })
+                  .catch((error) => {
+                    const message =
+                      error instanceof Error ? error.message : String(error);
+                    setVoiceStatus(`❌ 印刷に失敗: ${message}`);
+                  });
+              }}
+              disabled={!isConnected || status === "PRINTING"}
+              className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:transform-none"
+            >
+              {status === "PRINTING"
+                ? "🖨️ 印刷中..."
+                : "🎨 ランダムイメージ印刷"}
             </button>
           </div>
         </div>

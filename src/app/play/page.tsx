@@ -212,6 +212,7 @@ export default function PlayPage() {
     connect: connectPhomemo,
     disconnect: disconnectPhomemo,
     printTestPage,
+    printOmikujiWithRandomImage,
     isConnected: isPhomemoConnected,
   } = usePhomemo();
   const [gateResult, setGateResult] = useState<IntentGateResult | null>(null);
@@ -399,6 +400,7 @@ export default function PlayPage() {
       executeTapoSpell: executeSpell,
       isPrinterConnected: () => isPhomemoConnected,
       printOmikuji: printTestPage,
+      printOmikujiWithRandomImage,
       autoOffEnabled,
     })
       .then((result) => {
