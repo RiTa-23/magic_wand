@@ -9,7 +9,7 @@ const WAND_TEST_ROUTE: Route = "/test/wand";
 
 export default function ConnectionPage() {
   const cardBase =
-    "group flex h-64 w-56 flex-col items-center rounded-xl border border-gold-dim/20 bg-stone/25 p-6 shadow-lg backdrop-blur-sm transition-transform duration-300 hover:scale-[1.03] active:scale-95 sm:w-64";
+    "group flex h-72 w-64 flex-col items-center rounded-xl border border-gold-dim/20 bg-stone/25 p-7 shadow-lg backdrop-blur-sm transition-transform duration-300 hover:scale-[1.03] active:scale-95 sm:h-80 sm:w-72";
 
   const cardFocus =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40";
@@ -43,8 +43,8 @@ export default function ConnectionPage() {
 
         {/* Center buttons */}
         <div className="flex-1 min-h-0 flex items-center justify-center py-6 sm:py-10">
-          <div className="mx-auto w-full max-w-3xl">
-            <div className="flex flex-col items-center justify-center gap-y-8 sm:flex-row sm:gap-y-0 sm:gap-x-12">
+          <div className="mx-auto w-full max-w-3xl lg:max-w-4xl">
+            <div className="flex flex-col items-center justify-center gap-y-8 sm:flex-row sm:gap-y-0 sm:gap-x-16 lg:gap-x-20 xl:gap-x-24">
               <button
                 type="button"
                 className={`${cardBase} ${cardFocus}`}
@@ -52,8 +52,8 @@ export default function ConnectionPage() {
               >
                 <div className="flex w-full flex-1 flex-col items-center">
                   <div className="mt-auto flex flex-col items-center justify-center space-y-4 pb-1">
-                    <WandIcon className="h-20 w-20 text-gold" />
-                    <span className="text-sm font-bold tracking-[0.25em] text-gold-bright">
+                    <WandIcon className="h-24 w-24 text-gold" />
+                    <span className="text-base font-bold tracking-[0.25em] text-gold-bright">
                       {"杖の確認"}
                     </span>
                   </div>
@@ -67,8 +67,8 @@ export default function ConnectionPage() {
               >
                 <div className="flex w-full flex-1 flex-col items-center">
                   <div className="mt-auto flex flex-col items-center justify-center space-y-4 pb-1">
-                    <Gamepad2 className="h-20 w-20 text-gold" />
-                    <span className="text-sm font-bold tracking-[0.25em] text-gold-bright">
+                    <Gamepad2 className="h-24 w-24 text-gold" />
+                    <span className="text-base font-bold tracking-[0.25em] text-gold-bright">
                       {"joy-conの確認"}
                     </span>
                   </div>
