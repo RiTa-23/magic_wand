@@ -207,12 +207,21 @@ export default function JoyConPlayPage() {
   } = useJoyCon();
 
   // ── 音声認識 ──
-  const [speechLatencyMode, setSpeechLatencyMode] = useState<SpeechLatencyMode>("safe");
+  const [speechLatencyMode, setSpeechLatencyMode] =
+    useState<SpeechLatencyMode>("safe");
   const { status, finalSpellMatch, start, stop, isSupported } = useSpeech(
     undefined,
     speechLatencyMode === "fast"
-      ? { finalBufferWindowMs: 1200, interimMatchThreshold: 0.7, interimCommitThreshold: 0.8 }
-      : { finalBufferWindowMs: 1500, interimMatchThreshold: 0.8, interimCommitThreshold: 1.0 },
+      ? {
+          finalBufferWindowMs: 1200,
+          interimMatchThreshold: 0.7,
+          interimCommitThreshold: 0.8,
+        }
+      : {
+          finalBufferWindowMs: 1500,
+          interimMatchThreshold: 0.8,
+          interimCommitThreshold: 1.0,
+        },
   );
 
   // ── IoT ──
@@ -237,7 +246,9 @@ export default function JoyConPlayPage() {
 
   // ── UI状態 ──
   const [gateResult, setGateResult] = useState<IntentGateResult | null>(null);
-  const [persistedSpellName, setPersistedSpellName] = useState<string | null>(null);
+  const [persistedSpellName, setPersistedSpellName] = useState<string | null>(
+    null,
+  );
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
@@ -246,10 +257,16 @@ export default function JoyConPlayPage() {
   const [isStatusDisplayVisible, setIsStatusDisplayVisible] = useState(true);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
-  const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<string | null>(null);
-  const [calibrationState, setCalibrationState] = useState<"idle" | "calibrating" | "done">("idle");
+  const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
+    string | null
+  >(null);
+  const [calibrationState, setCalibrationState] = useState<
+    "idle" | "calibrating" | "done"
+  >("idle");
   const [calibrationProgress, setCalibrationProgress] = useState(0);
-  const [autoOffEnabled, setAutoOffEnabledState] = useState(DEFAULT_AUTO_OFF_ENABLED);
+  const [autoOffEnabled, setAutoOffEnabledState] = useState(
+    DEFAULT_AUTO_OFF_ENABLED,
+  );
 
   // ── Refs ──
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
@@ -263,10 +280,19 @@ export default function JoyConPlayPage() {
   const lastDispatchAtRef = useRef(0);
   const lastHandledCommitRef = useRef("");
   const recentGestureInputRef = useRef<GestureIntentInput | null>(null);
-  const calibrationPrevAccelRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const calibrationPrevAccelRef = useRef<{
+    x: number;
+    y: number;
+    z: number;
+  } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
-  const viewBoundsRef = useRef<{ minX: number; maxX: number; minY: number; maxY: number } | null>(null);
+  const viewBoundsRef = useRef<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } | null>(null);
 
   // ── ジェスチャーハンドラー ──
   const handleRecognizedGesture = (recognized: GestureResult, now: number) => {
@@ -294,7 +320,9 @@ export default function JoyConPlayPage() {
   // ── Joy-Conエラー検知 ──
   useEffect(() => {
     if (joyConStatus === "ERROR") {
-      setInputDeviceErrorMessage("Joy-Con接続に失敗しました。再接続してもう一度お試しください。");
+      setInputDeviceErrorMessage(
+        "Joy-Con接続に失敗しました。再接続してもう一度お試しください。",
+      );
       return;
     }
     if (joyConStatus === "CONNECTED") {
@@ -338,9 +366,12 @@ export default function JoyConPlayPage() {
       spellId === "wave" &&
       voiceResult.status === "waiting_for_gesture" &&
       recentGestureInputRef.current?.gestureType === "W" &&
-      Date.now() - recentGestureInputRef.current.timestamp <= WAVE_GESTURE_RECOVERY_WINDOW_MS
+      Date.now() - recentGestureInputRef.current.timestamp <=
+        WAVE_GESTURE_RECOVERY_WINDOW_MS
     ) {
-      const recoveredGestureResult = gate.current.pushGesture(recentGestureInputRef.current);
+      const recoveredGestureResult = gate.current.pushGesture(
+        recentGestureInputRef.current,
+      );
       if (recoveredGestureResult.status === "committed") {
         setGateResult(recoveredGestureResult);
         stop();
@@ -362,7 +393,11 @@ export default function JoyConPlayPage() {
 
   // ── ジェスチャー待ち → 音声認識自動開始 ──
   useEffect(() => {
-    if (gateResult?.status === "waiting_for_voice" && status === "IDLE" && isSupported) {
+    if (
+      gateResult?.status === "waiting_for_voice" &&
+      status === "IDLE" &&
+      isSupported
+    ) {
       start();
     }
   }, [gateResult?.status, isSupported, start, status]);
@@ -370,7 +405,9 @@ export default function JoyConPlayPage() {
   // ── コミットフィードバック表示 ──
   useEffect(() => {
     if (gateResult?.status !== "committed" || !gateResult.commit) return;
-    setCommitLabel(`${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`);
+    setCommitLabel(
+      `${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`,
+    );
     setShowCommitFeedback(true);
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
@@ -391,16 +428,23 @@ export default function JoyConPlayPage() {
     lastHandledCommitRef.current = commitKey;
 
     const now = Date.now();
-    if (isDispatchingRef.current || now - lastDispatchAtRef.current < DISPATCH_COOLDOWN_MS) {
+    if (
+      isDispatchingRef.current ||
+      now - lastDispatchAtRef.current < DISPATCH_COOLDOWN_MS
+    ) {
       setDispatchPhase("running");
-      setDispatchMessage("発動処理が進行中です。少し待ってからもう一度お試しください。");
+      setDispatchMessage(
+        "発動処理が進行中です。少し待ってからもう一度お試しください。",
+      );
       return;
     }
 
     isDispatchingRef.current = true;
     setDispatchPhase("running");
     setDispatchMessage(
-      commit.spellId === "kyua_uppu_rapa_pa" ? "おみくじを印刷しています..." : "Tapo魔法を実行しています...",
+      commit.spellId === "kyua_uppu_rapa_pa"
+        ? "おみくじを印刷しています..."
+        : "Tapo魔法を実行しています...",
     );
 
     dispatchCommittedIntent(commit, {
@@ -571,7 +615,12 @@ export default function JoyConPlayPage() {
       // 描画領域の枠
       ctx.strokeStyle = "rgba(255,255,255,0.1)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(PADDING, PADDING, CANVAS_WIDTH - PADDING * 2, CANVAS_HEIGHT - PADDING * 2);
+      ctx.strokeRect(
+        PADDING,
+        PADDING,
+        CANVAS_WIDTH - PADDING * 2,
+        CANVAS_HEIGHT - PADDING * 2,
+      );
 
       // 十字線
       ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -590,16 +639,38 @@ export default function JoyConPlayPage() {
       const trail = trailRef.current;
       const color = "168, 85, 247"; // purple for IMU
 
-      const extraPoints = [{ rawX: imuPosRef.current.x, rawY: imuPosRef.current.y }];
-      const { minX, maxX, minY, maxY } = adjustViewBounds(trail, extraPoints, viewBoundsRef, 200, 0.15);
+      const extraPoints = [
+        { rawX: imuPosRef.current.x, rawY: imuPosRef.current.y },
+      ];
+      const { minX, maxX, minY, maxY } = adjustViewBounds(
+        trail,
+        extraPoints,
+        viewBoundsRef,
+        200,
+        0.15,
+      );
 
       // 軌跡描画
       if (trail.length > 1) {
         for (let i = 1; i < trail.length; i++) {
           const age = (now - trail[i].t) / 5000;
           const alpha = Math.max(0, 1 - age);
-          const p0 = toCanvasCoords(trail[i - 1].rawX, trail[i - 1].rawY, minX, maxX, minY, maxY);
-          const p1 = toCanvasCoords(trail[i].rawX, trail[i].rawY, minX, maxX, minY, maxY);
+          const p0 = toCanvasCoords(
+            trail[i - 1].rawX,
+            trail[i - 1].rawY,
+            minX,
+            maxX,
+            minY,
+            maxY,
+          );
+          const p1 = toCanvasCoords(
+            trail[i].rawX,
+            trail[i].rawY,
+            minX,
+            maxX,
+            minY,
+            maxY,
+          );
           ctx.strokeStyle = `rgba(${color}, ${alpha * 0.7})`;
           ctx.lineWidth = Math.max(1, (1 - age) * 3);
           ctx.beginPath();
@@ -613,7 +684,10 @@ export default function JoyConPlayPage() {
       const { cx: curX, cy: curY } = toCanvasCoords(
         imuPosRef.current.x,
         imuPosRef.current.y,
-        minX, maxX, minY, maxY,
+        minX,
+        maxX,
+        minY,
+        maxY,
       );
       drawDot(ctx, curX, curY, color);
 
@@ -668,7 +742,9 @@ export default function JoyConPlayPage() {
         setInputDeviceErrorMessage(null);
       } catch (error) {
         console.error("Failed to disconnect Joy-Con:", error);
-        setInputDeviceErrorMessage("Joy-Con切断に失敗しました。再度お試しください。");
+        setInputDeviceErrorMessage(
+          "Joy-Con切断に失敗しました。再度お試しください。",
+        );
       }
       return;
     }
@@ -677,12 +753,18 @@ export default function JoyConPlayPage() {
       setInputDeviceErrorMessage(null);
     } catch (error) {
       console.error("Failed to connect Joy-Con:", error);
-      setInputDeviceErrorMessage("Joy-Con接続に失敗しました。再度お試しください。");
+      setInputDeviceErrorMessage(
+        "Joy-Con接続に失敗しました。再度お試しください。",
+      );
     }
   };
 
   const handlePhomemoToggle = async () => {
-    if (phomemoStatus === "CONNECTED" || phomemoStatus === "CONNECTING" || phomemoStatus === "PRINTING") {
+    if (
+      phomemoStatus === "CONNECTED" ||
+      phomemoStatus === "CONNECTING" ||
+      phomemoStatus === "PRINTING"
+    ) {
       await disconnectPhomemo();
       return;
     }
@@ -731,19 +813,30 @@ export default function JoyConPlayPage() {
     if (phomemoStatus === "CONNECTING") return "Phomemo接続中...";
     if (phomemoStatus === "DISCONNECTED") return "Phomemo未接続";
     if (phomemoStatus === "PRINTING") return "Phomemo印刷中...";
-    if (phomemoStatus === "ERROR") return phomemoErrorMessage || "Phomemoエラー";
+    if (phomemoStatus === "ERROR")
+      return phomemoErrorMessage || "Phomemoエラー";
     return "Phomemo接続済み";
   })();
 
-  const isPhomemoConnectedState = phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING";
+  const isPhomemoConnectedState =
+    phomemoStatus === "CONNECTED" || phomemoStatus === "PRINTING";
   const isJoyConConnected = joyConStatus === "CONNECTED";
 
   return (
     <main className="relative min-h-svh w-full overflow-hidden bg-background text-foreground">
       {/* Background layers */}
-      <div className="fixed inset-0 bg-background opacity-30" aria-hidden="true" />
-      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80" aria-hidden="true" />
-      <div className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]" aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-background opacity-30"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
+        aria-hidden="true"
+      />
 
       {/* INFO パネルトグル */}
       <button
@@ -769,10 +862,14 @@ export default function JoyConPlayPage() {
         }`}
       >
         <div className="space-y-4">
-          <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">CONNECTION & STATUS</p>
+          <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">
+            CONNECTION & STATUS
+          </p>
 
           <div className="rounded-xl border border-gold-dim/20 bg-stone/10 p-3">
-            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">DISPLAY</p>
+            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+              DISPLAY
+            </p>
             <div className="mt-2 space-y-2">
               <button
                 type="button"
@@ -796,13 +893,19 @@ export default function JoyConPlayPage() {
           {/* 音声判定モード */}
           {isSupported ? (
             <button
-              onClick={() => setSpeechLatencyMode((prev) => (prev === "safe" ? "fast" : "safe"))}
+              onClick={() =>
+                setSpeechLatencyMode((prev) =>
+                  prev === "safe" ? "fast" : "safe",
+                )
+              }
               className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
             >
               音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
             </button>
           ) : (
-            <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">音声認識非対応のブラウザです</p>
+            <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">
+              音声認識非対応のブラウザです
+            </p>
           )}
 
           {/* Phomemo */}
@@ -810,7 +913,9 @@ export default function JoyConPlayPage() {
             onClick={handlePhomemoToggle}
             className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
           >
-            {phomemoStatus === "CONNECTED" || phomemoStatus === "CONNECTING" || phomemoStatus === "PRINTING"
+            {phomemoStatus === "CONNECTED" ||
+            phomemoStatus === "CONNECTING" ||
+            phomemoStatus === "PRINTING"
               ? "Phomemo切断"
               : "Phomemo接続"}
           </button>
@@ -831,7 +936,9 @@ export default function JoyConPlayPage() {
             onClick={handleJoyConToggle}
             className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
           >
-            {joyConStatus === "CONNECTED" || joyConStatus === "CONNECTING" ? "Joy-Con切断" : "Joy-Con接続"}
+            {joyConStatus === "CONNECTED" || joyConStatus === "CONNECTING"
+              ? "Joy-Con切断"
+              : "Joy-Con接続"}
           </button>
           <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-bright/85">
             <span
@@ -847,7 +954,9 @@ export default function JoyConPlayPage() {
 
           {inputDeviceErrorMessage && (
             <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
-              <p className="text-xs leading-relaxed tracking-wide text-red-200">{inputDeviceErrorMessage}</p>
+              <p className="text-xs leading-relaxed tracking-wide text-red-200">
+                {inputDeviceErrorMessage}
+              </p>
             </div>
           )}
 
@@ -864,8 +973,12 @@ export default function JoyConPlayPage() {
                     : "border-gold-dim/30 bg-stone/20"
               }`}
             >
-              <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">DISPATCH STATUS</p>
-              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-bright/90">{dispatchMessage}</p>
+              <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
+                DISPATCH STATUS
+              </p>
+              <p className="mt-1 text-xs leading-relaxed tracking-wide text-gold-bright/90">
+                {dispatchMessage}
+              </p>
             </div>
           )}
         </div>
@@ -887,13 +1000,19 @@ export default function JoyConPlayPage() {
           className="absolute top-10 left-10 group flex items-center gap-2 text-gold-dim transition-colors hover:text-gold-bright"
         >
           <ChevronLeft className="w-5 h-5" />
-          <span className="text-xs uppercase tracking-widest text-shadow-glow">Back</span>
+          <span className="text-xs uppercase tracking-widest text-shadow-glow">
+            Back
+          </span>
         </Link>
 
         {/* Title */}
         <header className="absolute top-10 left-1/2 -translate-x-1/2 text-center">
-          <h1 className="text-2xl font-bold tracking-[0.4em] text-gold-bright uppercase">Play</h1>
-          <p className="mt-4 text-sm font-serif tracking-[0.15em] text-gold-dim/60">Joy-Conモード</p>
+          <h1 className="text-2xl font-bold tracking-[0.4em] text-gold-bright uppercase">
+            Play
+          </h1>
+          <p className="mt-4 text-sm font-serif tracking-[0.15em] text-gold-dim/60">
+            Joy-Conモード
+          </p>
         </header>
 
         {/* Center content */}
@@ -921,7 +1040,13 @@ export default function JoyConPlayPage() {
                   aria-hidden="true"
                 >
                   <defs>
-                    <filter id="trailGlow" x="-40%" y="-40%" width="180%" height="180%">
+                    <filter
+                      id="trailGlow"
+                      x="-40%"
+                      y="-40%"
+                      width="180%"
+                      height="180%"
+                    >
                       <feGaussianBlur stdDeviation="1.8" result="blur" />
                       <feMerge>
                         <feMergeNode in="blur" />
@@ -953,7 +1078,9 @@ export default function JoyConPlayPage() {
                   )}
                 </svg>
                 <div className="absolute inset-x-0 bottom-2 text-center">
-                  <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">WAND TRAIL PREVIEW</p>
+                  <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+                    WAND TRAIL PREVIEW
+                  </p>
                 </div>
               </div>
             )}
@@ -967,17 +1094,23 @@ export default function JoyConPlayPage() {
                     : "border-gold-dim/15"
                 }`}
               >
-                <p className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}>
+                <p
+                  className={`text-lg font-bold tracking-[0.2em] text-gold-bright ${isListening ? "animate-pulse" : ""}`}
+                >
                   {statusText}
                 </p>
                 {spellName && isWaitingForGesture && (
-                  <p className="mt-2 text-sm tracking-widest text-gold-dim/80">「{spellName}」</p>
+                  <p className="mt-2 text-sm tracking-widest text-gold-dim/80">
+                    「{spellName}」
+                  </p>
                 )}
               </div>
             )}
 
             {showCommitFeedback && (
-              <p className="text-sm tracking-widest text-gold-bright animate-pulse">COMMITTED: {commitLabel}</p>
+              <p className="text-sm tracking-widest text-gold-bright animate-pulse">
+                COMMITTED: {commitLabel}
+              </p>
             )}
 
             {/* マイクボタン */}
@@ -992,13 +1125,21 @@ export default function JoyConPlayPage() {
                 }`}
               >
                 {isListening ? (
-                  <MicOff className="h-8 w-8 text-gold-bright" strokeWidth={2.25} />
+                  <MicOff
+                    className="h-8 w-8 text-gold-bright"
+                    strokeWidth={2.25}
+                  />
                 ) : (
-                  <Mic className="h-8 w-8 text-gold-bright/95" strokeWidth={2.25} />
+                  <Mic
+                    className="h-8 w-8 text-gold-bright/95"
+                    strokeWidth={2.25}
+                  />
                 )}
               </button>
             ) : (
-              <p className="text-xs text-gold-dim/50 tracking-widest">音声認識非対応のブラウザです</p>
+              <p className="text-xs text-gold-dim/50 tracking-widest">
+                音声認識非対応のブラウザです
+              </p>
             )}
           </div>
         </div>
