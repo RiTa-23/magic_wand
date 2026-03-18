@@ -9,9 +9,9 @@ import {
   VoiceIntentInput,
 } from "../types/intent";
 
-const DEFAULT_TIME_WINDOW_MS = 2500;
-const DEFAULT_VOICE_CONFIDENCE_THRESHOLD = 0.8;
-const DEFAULT_GESTURE_CONFIDENCE_THRESHOLD = 0.7;
+const DEFAULT_TIME_WINDOW_MS = 10000;
+const DEFAULT_VOICE_CONFIDENCE_THRESHOLD = 0.6;
+const DEFAULT_GESTURE_CONFIDENCE_THRESHOLD = 0.45;
 
 export class IntentGate {
   private readonly timeWindowMs: number;

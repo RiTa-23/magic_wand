@@ -23,7 +23,7 @@ export function useSpeech(
   spells: SpellEntry[] = SPELL_DICTIONARY,
   options: UseSpeechOptions = {},
 ) {
-  const FINAL_BUFFER_WINDOW_MS = options.finalBufferWindowMs ?? 2200;
+  const FINAL_BUFFER_WINDOW_MS = options.finalBufferWindowMs ?? 1500;
   const INTERIM_MATCH_THRESHOLD = options.interimMatchThreshold ?? 0.8;
   const INTERIM_COMMIT_THRESHOLD = options.interimCommitThreshold ?? 1.0;
   const FATAL_SPEECH_ERRORS = new Set([

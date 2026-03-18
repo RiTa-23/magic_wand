@@ -27,8 +27,9 @@ const GESTURE_COOLDOWN_MS = 800;
 const GYRO_SENSITIVITY = 0.12;
 const GYRO_DEADZONE = 15;
 const TRAIL_MIN_POINTS = 20;
-const INTENT_WINDOW_MS = 7000;
-const GESTURE_CONFIDENCE_THRESHOLD = 0.55;
+const INTENT_WINDOW_MS = 10000; // 音声・ジェスチャーのマッチングウィンドウ: 10秒
+const GESTURE_CONFIDENCE_THRESHOLD = 0.45; // ジェスチャー信頼度: 45%以上で判定
+const VOICE_CONFIDENCE_THRESHOLD = 0.6; // 音声信頼度: 60%以上で判定
 const TRAIL_MAX_RENDER_POINTS = 90;
 const CALIBRATION_DURATION_MS = 3000;
 const CALIBRATION_ACCEL_THRESHOLD = 500;
@@ -169,6 +170,7 @@ export default function PlayPage() {
   const gate = useRef(
     new IntentGate({
       timeWindowMs: INTENT_WINDOW_MS,
+      voiceConfidenceThreshold: VOICE_CONFIDENCE_THRESHOLD,
       gestureConfidenceThreshold: GESTURE_CONFIDENCE_THRESHOLD,
     }),
   );
@@ -178,12 +180,12 @@ export default function PlayPage() {
     undefined,
     speechLatencyMode === "fast"
       ? {
-          finalBufferWindowMs: 1800,
+          finalBufferWindowMs: 1200,
           interimMatchThreshold: 0.7,
           interimCommitThreshold: 0.8,
         }
       : {
-          finalBufferWindowMs: 2200,
+          finalBufferWindowMs: 1500,
           interimMatchThreshold: 0.8,
           interimCommitThreshold: 1.0,
         },
