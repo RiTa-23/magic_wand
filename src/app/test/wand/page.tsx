@@ -1,11 +1,16 @@
 "use client";
 
+import { ChevronLeft } from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useJoyCon } from "@/features/device/api/useJoyCon";
 import {
   recognizeGesture,
   type GestureResult,
 } from "@/features/gesture/recognizer";
+
+const CONNECTION_CHECK_ROUTE: Route = "/connection-check";
 
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
@@ -593,6 +598,14 @@ export default function WandTrackingPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
       <div className="max-w-4xl mx-auto">
+        <Link
+          href={CONNECTION_CHECK_ROUTE}
+          className="inline-flex items-center gap-2 text-gray-300 transition-colors hover:text-white"
+          aria-label="接続確認画面へ戻る"
+        >
+          <ChevronLeft className="h-5 w-5" />
+          <span className="text-xs uppercase tracking-widest">Back</span>
+        </Link>
         <h1 className="text-2xl font-bold mb-4">🪄 杖トラッキングテスト</h1>
 
         {/* 接続 + モード切替 */}
