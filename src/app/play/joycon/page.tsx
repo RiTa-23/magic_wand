@@ -849,6 +849,8 @@ export default function JoyConPlayPage() {
   const isRejected = gateResult?.status === "rejected";
   const spellName = persistedSpellName;
   const isDrawingGesture = joyconState?.buttons.r ?? false;
+  const isImmersiveListening =
+    isListening && castingSyncMode === "immersive";
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1071,8 +1073,60 @@ export default function JoyConPlayPage() {
 
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
-        <div className="w-[460px] h-[460px]">
-          <HeroMagicCircle />
+        <div
+          className={`relative h-[460px] w-[460px] transition-all duration-500 ease-out ${
+            isListening
+              ? "scale-[1.03] drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
+              : "opacity-95"
+          }`}
+        >
+          {isImmersiveListening && (
+            <>
+              <div
+                className="absolute inset-[-24%] rounded-full"
+                style={{
+                  background:
+                    "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
+                  animation: "spin 6s linear infinite",
+                  filter: "blur(18px)",
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-[-12%] rounded-full border border-[#ffd87f]/55"
+                style={{
+                  animation: "spin 8s linear infinite reverse, pulse 1.8s ease-in-out infinite",
+                }}
+                aria-hidden="true"
+              />
+            </>
+          )}
+
+          {isListening && (
+            <>
+              <div
+                className="absolute inset-[-18%] rounded-full animate-pulse"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-[-6%] rounded-full border border-[#f5d77a]/55 animate-ping"
+                style={{ animationDuration: "2.4s" }}
+                aria-hidden="true"
+              />
+            </>
+          )}
+
+          <div
+            className={`h-full w-full ${
+              isImmersiveListening ? "animate-[spin_12s_linear_infinite]" : ""
+            }`}
+          >
+            <HeroMagicCircle />
+          </div>
         </div>
       </div>
 
