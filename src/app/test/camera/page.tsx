@@ -4,6 +4,8 @@ import { ChevronLeft } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { FloatingParticles } from "@/components/floating-particles";
+import { WandIcon } from "@/components/wand-icon";
 import { useWandDetector } from "@/features/camera/api/useWandDetector";
 import { useCameraGesture } from "@/features/camera/api/useCameraGesture";
 
@@ -369,265 +371,336 @@ export default function CameraWandTestPage() {
   const isConnected = status === "CONNECTED";
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
+    <main className="relative h-svh w-full overflow-hidden overscroll-none bg-[color:var(--background)] text-[color:var(--foreground)]">
+      {/* Background layers (match Home/Spells ambience) */}
+      <div
+        className="fixed inset-0"
+        style={{ background: "var(--background)", opacity: 0.3 }}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15), rgba(0,0,0,0.35))",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
+        aria-hidden="true"
+      />
+
+      <FloatingParticles />
+
       {/* ジェスチャー判定トースト */}
       {gestureToast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-[fadeSlideIn_0.3s_ease-out]">
-          <div className="px-6 py-3 rounded-xl bg-gray-800/90 border border-cyan-500/50 shadow-lg shadow-cyan-500/20 backdrop-blur-sm">
-            <p className="text-sm font-semibold text-cyan-300">
+          <div className="px-6 py-3 rounded-xl bg-black/60 border border-gold/25 shadow-lg backdrop-blur-sm">
+            <p className="text-sm font-semibold text-gold-bright">
               {gestureToast}
             </p>
           </div>
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto">
-        <Link
-          href={CONNECTION_CHECK_ROUTE}
-          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 transition-colors hover:text-cyan-200"
-          aria-label="接続確認画面へ戻る"
-        >
-          <ChevronLeft className="h-5 w-5" />
-          接続確認へ戻る
-        </Link>
-        <h1 className="text-2xl font-bold mb-4">カメラ杖検出テスト</h1>
-
-        {/* 接続ボタン + ステータス */}
-        <div className="flex items-center gap-4 mb-6 flex-wrap">
-          {status === "DISCONNECTED" || status === "ERROR" ? (
-            <button
-              onClick={connect}
-              className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-            >
-              カメラを接続
-            </button>
-          ) : (
-            <button
-              onClick={disconnect}
-              className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-            >
-              切断
-            </button>
-          )}
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              status === "CONNECTED"
-                ? "bg-green-900/50 text-green-400"
-                : status === "INITIALIZING"
-                  ? "bg-yellow-900/50 text-yellow-400"
-                  : status === "ERROR"
-                    ? "bg-red-900/50 text-red-400"
-                    : "bg-gray-800 text-gray-400"
-            }`}
+      <div className="relative z-20 h-full overflow-hidden px-6 sm:px-10 flex flex-col">
+        {/* Top area */}
+        <div className="relative pt-8 sm:pt-10 flex-none">
+          <Link
+            href={CONNECTION_CHECK_ROUTE}
+            className="absolute left-0 top-8 sm:top-10 group flex items-center gap-2 text-gold-dim transition-colors hover:text-gold-bright"
+            aria-label="接続確認画面へ戻る"
           >
-            {status}
-          </span>
-
-          {status === "INITIALIZING" && (
-            <span className="text-green-400 text-sm animate-pulse">
-              モデル読み込み中...
+            <ChevronLeft className="h-5 w-5" />
+            <span className="text-xs uppercase tracking-widest text-shadow-glow">
+              Back
             </span>
-          )}
+          </Link>
+
+          <header className="text-center">
+            <WandIcon className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-gold opacity-80" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-[0.4em] text-gold-bright uppercase">
+              WAND CHECK
+            </h1>
+          </header>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-          {/* メインエリア */}
-          <div className="space-y-4">
-            {/* トレイルキャンバス */}
-            <div className="relative">
-              <canvas
-                ref={canvasRef}
-                width={CANVAS_WIDTH}
-                height={CANVAS_HEIGHT}
-                className="w-full rounded-xl border border-gray-800 bg-gray-900"
-                style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
-              />
-            </div>
-
-            {/* カメラプレビュー */}
-            <div className="relative rounded-xl border border-gray-800 overflow-hidden bg-gray-900">
-              <video
-                ref={videoRef}
-                className="w-full"
-                style={{
-                  aspectRatio: "640/480",
-                  transform: "scaleX(-1)",
-                  display: isConnected ? "block" : "none",
-                }}
-                playsInline
-                muted
-              />
-              {!isConnected && (
-                <div
-                  className="flex items-center justify-center bg-gray-900"
-                  style={{ aspectRatio: "640/480" }}
-                >
-                  <p className="text-gray-500 text-sm">
-                    {status === "INITIALIZING"
-                      ? "カメラ・モデル初期化中..."
-                      : "カメラを接続してください"}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* サイドパネル */}
-          <div className="space-y-4">
-            {/* 杖先座標 */}
-            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-              <h2 className="text-sm font-semibold text-gray-400 mb-3">
-                杖先 (tip)
-              </h2>
-              <div className="space-y-2 font-mono">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-gray-800 rounded p-2">
-                    <span className="text-gray-500 text-xs">X</span>
-                    <p className="text-green-400 text-lg font-bold">
-                      {wandPoint?.detected ? Math.round(wandPoint.tipX) : "—"}
-                    </p>
-                  </div>
-                  <div className="bg-gray-800 rounded p-2">
-                    <span className="text-gray-500 text-xs">Y</span>
-                    <p className="text-green-400 text-lg font-bold">
-                      {wandPoint?.detected ? Math.round(wandPoint.tipY) : "—"}
-                    </p>
-                  </div>
-                </div>
-                <div className="bg-gray-800/50 rounded p-2 text-xs">
-                  <span className="text-gray-500">信頼度</span>
-                  <p className="text-green-400">
-                    {wandPoint?.detected
-                      ? wandPoint.tipConfidence.toFixed(3)
-                      : "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 手元座標 */}
-            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-              <h2 className="text-sm font-semibold text-gray-400 mb-3">
-                手元 (grip)
-              </h2>
-              <div className="grid grid-cols-2 gap-2 text-sm font-mono">
-                <div className="bg-gray-800 rounded p-2">
-                  <span className="text-gray-500 text-xs">X</span>
-                  <p className="text-yellow-400 text-lg font-bold">
-                    {wandPoint?.detected ? Math.round(wandPoint.gripX) : "—"}
-                  </p>
-                </div>
-                <div className="bg-gray-800 rounded p-2">
-                  <span className="text-gray-500 text-xs">Y</span>
-                  <p className="text-yellow-400 text-lg font-bold">
-                    {wandPoint?.detected ? Math.round(wandPoint.gripY) : "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 検出信頼度 */}
-            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-              <h2 className="text-sm font-semibold text-gray-400 mb-2">
-                検出信頼度
-              </h2>
-              <p className="text-3xl font-bold text-white font-mono">
-                {wandPoint?.detected ? wandPoint.confidence.toFixed(3) : "—"}
-              </p>
-            </div>
-
-            {/* BBox情報 */}
-            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-              <h2 className="text-sm font-semibold text-gray-400 mb-2">BBox</h2>
-              <div className="text-xs font-mono space-y-1">
-                <p>
-                  x:{" "}
-                  <span className="text-gray-300">
-                    {wandPoint?.detected
-                      ? Math.round(wandPoint.boundingBox.x)
-                      : "—"}
-                  </span>
-                  {"  "}y:{" "}
-                  <span className="text-gray-300">
-                    {wandPoint?.detected
-                      ? Math.round(wandPoint.boundingBox.y)
-                      : "—"}
-                  </span>
-                </p>
-                <p>
-                  w:{" "}
-                  <span className="text-gray-300">
-                    {wandPoint?.detected
-                      ? Math.round(wandPoint.boundingBox.width)
-                      : "—"}
-                  </span>
-                  {"  "}h:{" "}
-                  <span className="text-gray-300">
-                    {wandPoint?.detected
-                      ? Math.round(wandPoint.boundingBox.height)
-                      : "—"}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            {/* ジェスチャー認識 */}
-            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-              <h2 className="text-sm font-semibold text-gray-400 mb-2">
-                ジェスチャー認識
-              </h2>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full ${
-                      isDrawing ? "bg-green-400 animate-pulse" : "bg-gray-600"
-                    }`}
-                  />
-                  <span className="text-xs text-gray-400">
-                    {isDrawing ? "描画中..." : "待機中"}
-                  </span>
-                </div>
-                {lastGesture ? (
-                  <div className="bg-gray-800 rounded p-3">
-                    <p
-                      className={`text-3xl font-bold text-center ${
-                        lastGesture.type === "V"
-                          ? "text-cyan-400"
-                          : lastGesture.type === "M"
-                            ? "text-purple-400"
-                            : "text-gray-500"
-                      }`}
+        {/* Content */}
+        <div className="flex-1 min-h-0 overflow-hidden py-6 sm:py-10">
+          <div className="mx-auto w-full max-w-5xl h-full min-h-0">
+            <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-gold/15 bg-black/20 backdrop-blur-sm">
+              <div className="magic-scroll h-full min-h-0 overflow-auto p-5 sm:p-8">
+                {/* 接続ボタン + ステータス */}
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                  {status === "DISCONNECTED" || status === "ERROR" ? (
+                    <button
+                      onClick={connect}
+                      className="px-5 py-2 rounded-lg border border-gold/25 bg-gold/10 text-gold-bright text-sm font-medium tracking-[0.14em] transition-colors hover:bg-gold/15"
                     >
-                      {lastGesture.type === "unknown" ? "?" : lastGesture.type}
-                    </p>
-                    {"confidence" in lastGesture && (
-                      <p className="text-xs text-gray-400 text-center mt-1">
-                        信頼度: {lastGesture.confidence.toFixed(3)}
-                      </p>
-                    )}
+                      カメラを接続
+                    </button>
+                  ) : (
+                    <button
+                      onClick={disconnect}
+                      className="px-5 py-2 rounded-lg border border-gold-dim/20 bg-stone/40 text-foreground/85 text-sm font-medium tracking-[0.14em] transition-colors hover:border-gold/30 hover:bg-stone/50"
+                    >
+                      切断
+                    </button>
+                  )}
+
+                  <span
+                    className={
+                      "px-3 py-1 rounded-full text-xs font-semibold tracking-[0.14em] border bg-stone/40 " +
+                      (status === "CONNECTED"
+                        ? "border-gold/25 text-gold-bright"
+                        : status === "INITIALIZING"
+                          ? "border-gold-dim/25 text-gold-dim"
+                          : status === "ERROR"
+                            ? "border-destructive/30 text-destructive"
+                            : "border-gold/10 text-foreground/60")
+                    }
+                  >
+                    {status}
+                  </span>
+
+                  {status === "INITIALIZING" && (
+                    <span className="text-gold-dim text-sm animate-pulse tracking-[0.14em]">
+                      モデル読み込み中...
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+                  {/* メインエリア */}
+                  <div className="space-y-4">
+                    {/* トレイルキャンバス */}
+                    <div className="relative overflow-hidden rounded-xl border border-gold/15 bg-black/10">
+                      <canvas
+                        ref={canvasRef}
+                        width={CANVAS_WIDTH}
+                        height={CANVAS_HEIGHT}
+                        className="w-full"
+                        style={{
+                          aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
+                        }}
+                      />
+                    </div>
+
+                    {/* カメラプレビュー */}
+                    <div className="relative overflow-hidden rounded-xl border border-gold/15 bg-black/10">
+                      <video
+                        ref={videoRef}
+                        className="w-full"
+                        style={{
+                          aspectRatio: "640/480",
+                          transform: "scaleX(-1)",
+                          display: isConnected ? "block" : "none",
+                        }}
+                        playsInline
+                        muted
+                      />
+                      {!isConnected && (
+                        <div
+                          className="flex items-center justify-center"
+                          style={{ aspectRatio: "640/480" }}
+                        >
+                          <p className="text-foreground/55 text-sm tracking-[0.12em]">
+                            {status === "INITIALIZING"
+                              ? "カメラ・モデル初期化中..."
+                              : "カメラを接続してください"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-gray-600 text-sm italic">
-                    杖を動かしてジェスチャーを描いてください
-                  </p>
-                )}
+
+                  {/* サイドパネル */}
+                  <div className="space-y-4">
+                    {/* 杖先座標 */}
+                    <div className="p-4 rounded-xl border border-gold/15 bg-black/10">
+                      <h2 className="text-xs font-semibold text-gold-dim/80 tracking-[0.2em] mb-3">
+                        杖先 (tip)
+                      </h2>
+                      <div className="space-y-2 font-mono">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="rounded-lg border border-gold/10 bg-stone/30 p-2">
+                            <span className="text-foreground/55 text-[11px] tracking-[0.18em]">
+                              X
+                            </span>
+                            <p className="text-gold-bright text-lg font-bold">
+                              {wandPoint?.detected
+                                ? Math.round(wandPoint.tipX)
+                                : "—"}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-gold/10 bg-stone/30 p-2">
+                            <span className="text-foreground/55 text-[11px] tracking-[0.18em]">
+                              Y
+                            </span>
+                            <p className="text-gold-bright text-lg font-bold">
+                              {wandPoint?.detected
+                                ? Math.round(wandPoint.tipY)
+                                : "—"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-gold/10 bg-stone/20 p-2 text-xs">
+                          <span className="text-foreground/55 tracking-[0.14em]">
+                            信頼度
+                          </span>
+                          <p className="text-gold-dim">
+                            {wandPoint?.detected
+                              ? wandPoint.tipConfidence.toFixed(3)
+                              : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 手元座標 */}
+                    <div className="p-4 rounded-xl border border-gold/15 bg-black/10">
+                      <h2 className="text-xs font-semibold text-gold-dim/80 tracking-[0.2em] mb-3">
+                        手元 (grip)
+                      </h2>
+                      <div className="grid grid-cols-2 gap-2 text-sm font-mono">
+                        <div className="rounded-lg border border-gold/10 bg-stone/30 p-2">
+                          <span className="text-foreground/55 text-[11px] tracking-[0.18em]">
+                            X
+                          </span>
+                          <p className="text-parchment text-lg font-bold">
+                            {wandPoint?.detected
+                              ? Math.round(wandPoint.gripX)
+                              : "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-gold/10 bg-stone/30 p-2">
+                          <span className="text-foreground/55 text-[11px] tracking-[0.18em]">
+                            Y
+                          </span>
+                          <p className="text-parchment text-lg font-bold">
+                            {wandPoint?.detected
+                              ? Math.round(wandPoint.gripY)
+                              : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 検出信頼度 */}
+                    <div className="p-4 rounded-xl border border-gold/15 bg-black/10">
+                      <h2 className="text-xs font-semibold text-gold-dim/80 tracking-[0.2em] mb-2">
+                        検出信頼度
+                      </h2>
+                      <p className="text-3xl font-bold text-foreground font-mono">
+                        {wandPoint?.detected
+                          ? wandPoint.confidence.toFixed(3)
+                          : "—"}
+                      </p>
+                    </div>
+
+                    {/* BBox情報 */}
+                    <div className="p-4 rounded-xl border border-gold/15 bg-black/10">
+                      <h2 className="text-xs font-semibold text-gold-dim/80 tracking-[0.2em] mb-2">
+                        BBox
+                      </h2>
+                      <div className="text-xs font-mono space-y-1 text-foreground/70">
+                        <p>
+                          x:{" "}
+                          <span className="text-foreground/85">
+                            {wandPoint?.detected
+                              ? Math.round(wandPoint.boundingBox.x)
+                              : "—"}
+                          </span>
+                          {"  "}y:{" "}
+                          <span className="text-foreground/85">
+                            {wandPoint?.detected
+                              ? Math.round(wandPoint.boundingBox.y)
+                              : "—"}
+                          </span>
+                        </p>
+                        <p>
+                          w:{" "}
+                          <span className="text-foreground/85">
+                            {wandPoint?.detected
+                              ? Math.round(wandPoint.boundingBox.width)
+                              : "—"}
+                          </span>
+                          {"  "}h:{" "}
+                          <span className="text-foreground/85">
+                            {wandPoint?.detected
+                              ? Math.round(wandPoint.boundingBox.height)
+                              : "—"}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* ジェスチャー認識 */}
+                    <div className="p-4 rounded-xl border border-gold/15 bg-black/10">
+                      <h2 className="text-xs font-semibold text-gold-dim/80 tracking-[0.2em] mb-2">
+                        ジェスチャー認識
+                      </h2>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={
+                              "inline-block w-2 h-2 rounded-full " +
+                              (isDrawing
+                                ? "bg-gold-bright animate-pulse"
+                                : "bg-stone-light")
+                            }
+                          />
+                          <span className="text-xs text-foreground/60 tracking-[0.14em]">
+                            {isDrawing ? "描画中..." : "待機中"}
+                          </span>
+                        </div>
+                        {lastGesture ? (
+                          <div className="rounded-lg border border-gold/10 bg-stone/25 p-3">
+                            <p
+                              className={
+                                "text-3xl font-bold text-center " +
+                                (lastGesture.type === "unknown"
+                                  ? "text-foreground/40"
+                                  : "text-gold-bright")
+                              }
+                            >
+                              {lastGesture.type === "unknown"
+                                ? "?"
+                                : lastGesture.type}
+                            </p>
+                            {"confidence" in lastGesture && (
+                              <p className="text-xs text-foreground/60 text-center mt-1 tracking-[0.14em]">
+                                信頼度: {lastGesture.confidence.toFixed(3)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-foreground/45 text-sm italic">
+                            杖を動かしてジェスチャーを描いてください
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 軌跡クリア */}
+                    <button
+                      onClick={() => {
+                        trailRef.current = [];
+                        viewBoundsRef.current = null;
+                        resetGesture();
+                      }}
+                      className="w-full px-4 py-2 rounded-lg border border-gold/15 bg-stone/30 hover:bg-stone/40 hover:border-gold/30 text-foreground/80 text-sm tracking-[0.16em] transition-colors"
+                    >
+                      軌跡をクリア
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* 軌跡クリア */}
-            <button
-              onClick={() => {
-                trailRef.current = [];
-                viewBoundsRef.current = null;
-                resetGesture();
-              }}
-              className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
-            >
-              軌跡をクリア
-            </button>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
