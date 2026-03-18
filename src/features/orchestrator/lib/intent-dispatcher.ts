@@ -12,6 +12,7 @@ const TAPO_SPELL_NAME_BY_ID: Record<
   aguamenti: "Aguamenti",
   nox: "Nox",
   raiden: "Raiden",
+  wave: "Wave",
 };
 
 const AUTO_OFF_CAPABLE_SPELLS = new Set([

@@ -79,4 +79,21 @@ describe("dispatchCommittedIntent", () => {
     expect(message).toContain("Mofurun Omikuji");
     expect(message.length).toBeGreaterThan(10);
   });
+
+  it("wave呪文を Wave としてディスパッチする", async () => {
+    const executeTapoSpell = vi
+      .fn()
+      .mockResolvedValue({ success: true, message: "Wave success" });
+
+    const result = await dispatchCommittedIntent(createCommit("wave"), {
+      executeTapoSpell,
+      isPrinterConnected: () => true,
+      printOmikuji: vi.fn(),
+      timeoutMs: 100,
+    });
+
+    expect(executeTapoSpell).toHaveBeenCalledWith("Wave");
+    expect(result.ok).toBe(true);
+    expect(result.target).toBe("tapo");
+  });
 });

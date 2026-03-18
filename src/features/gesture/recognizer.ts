@@ -12,6 +12,7 @@ export type GestureResult =
   | { type: "L"; confidence: number }
   | { type: "Z"; confidence: number }
   | { type: "InvV"; confidence: number }
+  | { type: "Wave"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -186,6 +187,55 @@ function recognizeZGesture(
 }
 
 /**
+ * 波形判定（~）
+ * 横方向へ進みながら、Y方向に2〜3回うねる軌跡を検出する
+ */
+function recognizeWaveGesture(
+  smoothedX: number[],
+  smoothedY: number[],
+  xSpan: number,
+  ySpan: number,
+): GestureResult | null {
+  const n = smoothedX.length;
+  if (n < 20) return null;
+
+  // 波は横長であることを優先
+  if (xSpan < 8 || xSpan < ySpan * 1.15) return null;
+
+  // 高低差が小さすぎるとただの水平線になる
+  if (ySpan < Math.max(4, xSpan * 0.12)) return null;
+
+  // Y方向のうねり回数（2〜3回）
+  const minChange = ySpan * 0.12;
+  const yChanges = countDirectionChanges(smoothedY, minChange);
+  if (yChanges < 2 || yChanges > 3) return null;
+
+  // X方向は概ね単調に進む（大きな折り返しがない）
+  let forward = 0;
+  let backward = 0;
+  for (let i = 1; i < n; i++) {
+    const dx = smoothedX[i] - smoothedX[i - 1];
+    if (Math.abs(dx) < xSpan * 0.01) continue;
+    if (dx > 0) forward++;
+    else backward++;
+  }
+
+  const total = forward + backward;
+  if (total === 0) return null;
+  const monotonicity = Math.max(forward, backward) / total;
+  if (monotonicity < 0.72) return null;
+
+  const waveCountScore = clamp01(1 - Math.abs(yChanges - 2.5) / 1.5);
+  const horizontalScore = clamp01(xSpan / Math.max(1, ySpan * 1.8));
+  const monotonicScore = clamp01((monotonicity - 0.72) / 0.28);
+  const confidence = clamp01(
+    waveCountScore * 0.35 + horizontalScore * 0.3 + monotonicScore * 0.35,
+  );
+
+  return confidence > 0.42 ? { type: "Wave", confidence } : null;
+}
+
+/**
  * 逆V字判定（∧の形、頂点が上）
  * 中央付近で上方向の頂点を作り、始点/終点が下側にある形を検出する
  */
@@ -212,7 +262,6 @@ function recognizeInvVGesture(
   if (apexPos < 0.2 || apexPos > 0.8) return null;
 
   const apexY = smoothedY[apexIdx];
-  const minY = Math.min(...smoothedY);
   const maxY = Math.max(...smoothedY);
 
   // 頂点の左右で十分に下方向へ降りていること（両脚がある）
@@ -269,6 +318,12 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
   // --- 逆V字判定を実施（炎🔥） ---
   const invVResult = recognizeInvVGesture(smoothedY, ySpan);
   if (invVResult) return invVResult;
+
+  // --- 波形判定を実施（ウェーブ🌊） ---
+  if (xSpan >= 2) {
+    const waveResult = recognizeWaveGesture(smoothedX, smoothedY, xSpan, ySpan);
+    if (waveResult) return waveResult;
+  }
 
   // --- Z字判定を実施（雷マーク⚡） ---
   if (xSpan >= 2) {

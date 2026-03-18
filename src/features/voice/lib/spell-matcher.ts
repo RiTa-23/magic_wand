@@ -82,6 +82,12 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     ],
     action: "lightning_on",
   },
+  {
+    id: "wave",
+    name: "ウェーブ",
+    keywords: ["ウェーブ", "うぇーぶ", "うえーぶ", "wave", "ウェイブ"],
+    action: "wave_on",
+  },
 ];
 
 function normalizeForMatch(text: string): string {

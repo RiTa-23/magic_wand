@@ -79,6 +79,7 @@ const SPELL_PORT = {
 
 /** オートOFFのデフォルト待機時間（ミリ秒） */
 const DEFAULT_AUTO_OFF_MS = 5000;
+const DEFAULT_WAVE_INTERVAL_MS = 1000;
 const CHILD_DEVICES_CACHE_TTL_MS = 15000;
 
 let childDevicesCache: {
@@ -110,6 +111,15 @@ async function getCachedChildDevices(
 
 function clearChildDevicesCache() {
   childDevicesCache = null;
+}
+
+function sleep(ms: number) {
+  if (IS_TEST_ENV) {
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function isAuthError(error: unknown): boolean {
@@ -448,6 +458,42 @@ export async function castNox() {
   }
 }
 
+/**
+ * 魔法: ウェーブ - すべてのポートを約1秒間隔で順番にON
+ */
+export async function castWave(intervalMs = DEFAULT_WAVE_INTERVAL_MS) {
+  try {
+    console.log("🌊 ウェーブ発動！ポートを順番にONにします");
+    const p300 = await getTapoClient();
+    const childDevices = await getCachedChildDevices(p300);
+
+    if (childDevices.length === 0) {
+      console.warn("⚠️ 子デバイスが見つかりません");
+      return { success: false, message: "子デバイスが見つかりません" };
+    }
+
+    for (let i = 0; i < childDevices.length; i += 1) {
+      const child = childDevices[i];
+      console.log(
+        `🌊 [${i + 1}/${childDevices.length}] ${child.nickname || child.device_id} をON`,
+      );
+      await p300.turnOn(child.device_id);
+      if (i < childDevices.length - 1) {
+        await sleep(intervalMs);
+      }
+    }
+
+    return {
+      success: true,
+      message: `ウェーブ成功！${childDevices.length}個のポートを${Math.round(intervalMs / 1000)}秒間隔で順番にONにしました🌊`,
+    };
+  } catch (error) {
+    console.error("❌ ウェーブ失敗:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: `ウェーブ失敗: ${errorMessage}` };
+  }
+}
+
 // ========================================
 // デバッグ・情報取得
 // ========================================
@@ -518,6 +564,7 @@ export async function getDeviceStatus() {
  * - `"IncendioOff"` - 炎OFF
  * - `"Aguamenti"` - 水ON（ポート3）
  * - `"AguamentiOff"` - 水OFF
+ * - `"Wave"` - 全ポートを順番にON
  * - `"Maxima"` - 全ポートON
  * - `"Nox"` - 全ポートOFF
  *
@@ -557,6 +604,8 @@ export async function executeSpell(spellName: string) {
       return await castRaiden();
     case "RaidenOff":
       return await releaseRaiden();
+    case "Wave":
+      return await castWave();
     case "Maxima":
       return await castMaxima();
     case "Nox":
