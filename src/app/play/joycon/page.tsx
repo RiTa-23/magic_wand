@@ -298,6 +298,7 @@ export default function JoyConPlayPage() {
   const lastDispatchAtRef = useRef(0);
   const lastHandledCommitRef = useRef("");
   const recentGestureInputRef = useRef<GestureIntentInput | null>(null);
+  const speechStartedByRRef = useRef(false);
   const calibrationPrevAccelRef = useRef<{
     x: number;
     y: number;
@@ -528,6 +529,7 @@ export default function JoyConPlayPage() {
       imuPosRef.current = { x: 0, y: 0 };
       viewBoundsRef.current = null;
       prevRPressedRef.current = false;
+      speechStartedByRRef.current = false;
       return;
     }
 
@@ -604,6 +606,20 @@ export default function JoyConPlayPage() {
     imuPosRef.current.y -= pitch * GYRO_SENSITIVITY;
 
     const isRPressed = joyconState.buttons.r;
+    const startedPress = isRPressed && !prevRPressedRef.current;
+
+    if (startedPress && isSupported && status === "IDLE") {
+      start();
+      speechStartedByRRef.current = true;
+    }
+
+    if (!isRPressed && prevRPressedRef.current && speechStartedByRRef.current) {
+      if (status === "LISTENING") {
+        stop();
+      }
+      speechStartedByRRef.current = false;
+    }
+
     if (isRPressed) {
       const now = performance.now();
       trailRef.current.push({
@@ -630,7 +646,15 @@ export default function JoyConPlayPage() {
     }
 
     prevRPressedRef.current = isRPressed;
-  }, [calibrationState, joyConStatus, joyconState]);
+  }, [
+    calibrationState,
+    isSupported,
+    joyConStatus,
+    joyconState,
+    start,
+    status,
+    stop,
+  ]);
 
   // ── キャンバス描画 ──
   useEffect(() => {
