@@ -28,7 +28,7 @@ export async function GET() {
         error: "Failed to read omikujiimage directory",
         details: message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

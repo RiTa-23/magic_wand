@@ -1,7 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { PhomemoBluetooth } from "./phomemo-bluetooth";
 import { PhomemoStatus, PhomemoState } from "../types/phomemo";
-import { renderCanvasImage, loadImageFromUrl } from "@/features/phomemo/lib/imageProcessor";
+import {
+  renderCanvasImage,
+  loadImageFromUrl,
+} from "@/features/phomemo/lib/imageProcessor";
 import { encodeImageDataToPhomemo } from "@/features/phomemo/lib/phomemoEncoder";
 
 /**
@@ -101,9 +104,7 @@ export function usePhomemo() {
 
     try {
       // public/omikujiimage/ フォルダのファイル一覧を取得
-      const manifestResponse = await fetch(
-        "/api/omikujiimage-manifest.json"
-      );
+      const manifestResponse = await fetch("/api/omikujiimage-manifest.json");
       if (!manifestResponse.ok) {
         throw new Error("画像マニフェストの読み込みに失敗しました");
       }
@@ -131,8 +132,7 @@ export function usePhomemo() {
 
       // 画像のアスペクト比を保ったまま、キャンバスサイズを計算
       const maxWidth = 576;
-      const imageAspectRatio =
-        img.naturalWidth / img.naturalHeight;
+      const imageAspectRatio = img.naturalWidth / img.naturalHeight;
       const canvasWidth = maxWidth;
       const canvasHeight = Math.round(maxWidth / imageAspectRatio);
 

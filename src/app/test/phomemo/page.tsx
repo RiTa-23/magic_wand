@@ -236,14 +236,17 @@ export default function PhomemoTestPage() {
                     setVoiceStatus("🎉 ランダムイメージ印刷完了！");
                   })
                   .catch((error) => {
-                    const message = error instanceof Error ? error.message : String(error);
+                    const message =
+                      error instanceof Error ? error.message : String(error);
                     setVoiceStatus(`❌ 印刷に失敗: ${message}`);
                   });
               }}
               disabled={!isConnected || status === "PRINTING"}
               className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:transform-none"
             >
-              {status === "PRINTING" ? "🖨️ 印刷中..." : "🎨 ランダムイメージ印刷"}
+              {status === "PRINTING"
+                ? "🖨️ 印刷中..."
+                : "🎨 ランダムイメージ印刷"}
             </button>
           </div>
         </div>
