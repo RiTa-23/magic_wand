@@ -1061,7 +1061,7 @@ export default function PlayPage() {
         onClick={() => setIsInfoPanelOpen((prev) => !prev)}
         aria-expanded={isInfoPanelOpen}
         aria-controls="play-info-panel"
-        className="fixed right-6 top-10 z-40 inline-flex items-center gap-2 rounded-full border border-gold-dim/40 bg-stone/35 px-4 py-2 text-xs tracking-[0.18em] text-gold-dim backdrop-blur-sm transition-all hover:border-gold-bright/60 hover:text-gold-bright"
+        className="fixed right-6 top-10 z-40 inline-flex items-center gap-2 rounded-full border border-gold-dim/40 bg-stone/35 px-4 py-2 text-xs tracking-[0.18em] text-gold-bright/85 backdrop-blur-sm transition-all hover:border-gold-bright/70 hover:text-gold-bright"
       >
         <SlidersHorizontal className="h-4 w-4" />
         {isInfoPanelOpen ? "CLOSE" : "INFO"}
@@ -1076,19 +1076,19 @@ export default function PlayPage() {
         }`}
       >
         <div className="space-y-4">
-          <p className="text-[11px] tracking-[0.22em] text-gold-dim/70">
+          <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">
             CONNECTION & STATUS
           </p>
 
           <div className="rounded-xl border border-gold-dim/20 bg-stone/10 p-3">
-            <p className="text-[10px] tracking-[0.2em] text-gold-dim/70">
+            <p className="text-[10px] tracking-[0.2em] text-gold-bright/80">
               DISPLAY
             </p>
             <div className="mt-2 space-y-2">
               <button
                 type="button"
                 onClick={() => setIsTrailPreviewVisible((prev) => !prev)}
-                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
               >
                 <span>軌道プレビュー</span>
                 <span>{isTrailPreviewVisible ? "表示" : "非表示"}</span>
@@ -1096,7 +1096,7 @@ export default function PlayPage() {
               <button
                 type="button"
                 onClick={() => setIsStatusDisplayVisible((prev) => !prev)}
-                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+                className="inline-flex w-full items-center justify-between rounded-lg border border-gold-dim/25 px-3 py-2 text-xs tracking-[0.12em] text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
               >
                 <span>メイン状態表示</span>
                 <span>{isStatusDisplayVisible ? "表示" : "非表示"}</span>
@@ -1107,19 +1107,19 @@ export default function PlayPage() {
           {isSupported ? (
             <button
               onClick={handleSpeechLatencyModeToggle}
-              className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+              className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
             >
               音声判定モード: {speechLatencyMode === "safe" ? "安全" : "高速"}
             </button>
           ) : (
-            <p className="text-xs leading-relaxed tracking-wide text-gold-dim/60">
+            <p className="text-xs leading-relaxed tracking-wide text-gold-bright/75">
               音声認識非対応のブラウザです
             </p>
           )}
 
           <button
             onClick={handlePhomemoToggle}
-            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
           >
             {phomemoStatus === "CONNECTED" ||
             phomemoStatus === "CONNECTING" ||
@@ -1128,7 +1128,7 @@ export default function PlayPage() {
               : "Phomemo接続"}
           </button>
 
-          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-dim/70">
+          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-bright/85">
             <span
               aria-hidden="true"
               className={`inline-block h-2.5 w-2.5 rounded-full ${
@@ -1142,12 +1142,12 @@ export default function PlayPage() {
 
           <button
             onClick={handleInputDeviceToggle}
-            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-dim transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+            className="w-full rounded-full border border-gold-dim/40 px-4 py-2 text-sm tracking-widest text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
           >
             {inputDeviceButtonLabel}
           </button>
 
-          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-dim/70">
+          <p className="inline-flex items-center gap-2 text-xs tracking-widest text-gold-bright/85">
             <span
               aria-hidden="true"
               className={`inline-block h-2.5 w-2.5 rounded-full ${
