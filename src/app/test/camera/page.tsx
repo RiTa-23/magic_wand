@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useWandDetector } from "@/features/camera/api/useWandDetector";
+import { useCameraGesture } from "@/features/camera/api/useCameraGesture";
 
 // キャンバスの表示サイズ
 const CANVAS_WIDTH = 640;
@@ -128,6 +129,8 @@ function drawDot(
 export default function CameraWandTestPage() {
   const { status, wandPoint, videoRef, connect, disconnect } =
     useWandDetector();
+  const { lastGesture, isDrawing, resetGesture } =
+    useCameraGesture(wandPoint);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<{ rawX: number; rawY: number; t: number }[]>([]);
@@ -171,8 +174,9 @@ export default function CameraWandTestPage() {
       trailRef.current = [];
       lastTimestampRef.current = 0;
       viewBoundsRef.current = null;
+      resetGesture();
     }
-  }, [status]);
+  }, [status, resetGesture]);
 
   // ── キャンバス描画（CONNECTED/INITIALIZING時のみループ） ──
   useEffect(() => {
@@ -541,11 +545,59 @@ export default function CameraWandTestPage() {
               </div>
             )}
 
+            {/* ジェスチャー認識 */}
+            <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
+              <h2 className="text-sm font-semibold text-gray-400 mb-2">
+                ジェスチャー認識
+              </h2>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full ${
+                      isDrawing
+                        ? "bg-green-400 animate-pulse"
+                        : "bg-gray-600"
+                    }`}
+                  />
+                  <span className="text-xs text-gray-400">
+                    {isDrawing ? "描画中..." : "待機中"}
+                  </span>
+                </div>
+                {lastGesture ? (
+                  <div className="bg-gray-800 rounded p-3">
+                    <p
+                      className={`text-3xl font-bold text-center ${
+                        lastGesture.type === "V"
+                          ? "text-cyan-400"
+                          : lastGesture.type === "M"
+                            ? "text-purple-400"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      {lastGesture.type === "unknown"
+                        ? "?"
+                        : lastGesture.type}
+                    </p>
+                    {"confidence" in lastGesture && (
+                      <p className="text-xs text-gray-400 text-center mt-1">
+                        信頼度: {lastGesture.confidence.toFixed(3)}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-600 text-sm italic">
+                    杖を動かしてジェスチャーを描いてください
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* 軌跡クリア */}
             <button
               onClick={() => {
                 trailRef.current = [];
                 viewBoundsRef.current = null;
+                resetGesture();
               }}
               className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
             >
