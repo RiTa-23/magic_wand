@@ -251,6 +251,9 @@ export default function PlayPage() {
   const [commitLabel, setCommitLabel] = useState("");
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
   const [dispatchMessage, setDispatchMessage] = useState("");
+  const [inputDeviceErrorMessage, setInputDeviceErrorMessage] = useState<
+    string | null
+  >(null);
   const [calibrationState, setCalibrationState] = useState<
     "idle" | "calibrating" | "done"
   >("idle");
@@ -380,6 +383,34 @@ export default function PlayPage() {
     joyConStatus,
     resetCameraGesture,
   ]);
+
+  useEffect(() => {
+    if (isJoyConMode && joyConStatus === "ERROR") {
+      setInputDeviceErrorMessage(
+        "Joy-Con接続に失敗しました。再接続してもう一度お試しください。",
+      );
+      return;
+    }
+
+    if (isJoyConMode && joyConStatus === "CONNECTED") {
+      setInputDeviceErrorMessage(null);
+    }
+  }, [isJoyConMode, joyConStatus]);
+
+  useEffect(() => {
+    if (!isCameraMode) return;
+
+    if (cameraStatus === "ERROR") {
+      setInputDeviceErrorMessage(
+        "カメラ接続に失敗しました。権限設定と他アプリの使用状況を確認してください。",
+      );
+      return;
+    }
+
+    if (cameraStatus === "CONNECTED") {
+      setInputDeviceErrorMessage(null);
+    }
+  }, [cameraStatus, isCameraMode]);
 
   useEffect(() => {
     if (joyConStatus === "CONNECTED") {
@@ -880,29 +911,62 @@ export default function PlayPage() {
   const handleInputDeviceToggle = async () => {
     if (isJoyConMode) {
       if (joyConStatus === "CONNECTED" || joyConStatus === "CONNECTING") {
-        await disconnect();
-        gate.current.clear();
-        setGateResult(null);
-        trailRef.current = [];
-        setTrailPathPoints("");
+        try {
+          await disconnect();
+          gate.current.clear();
+          setGateResult(null);
+          trailRef.current = [];
+          setTrailPathPoints("");
+          setInputDeviceErrorMessage(null);
+        } catch (error) {
+          console.error("Failed to disconnect Joy-Con:", error);
+          setInputDeviceErrorMessage(
+            "Joy-Con切断に失敗しました。再度お試しください。",
+          );
+        }
         return;
       }
 
-      await connect();
+      try {
+        await connect();
+        setInputDeviceErrorMessage(null);
+      } catch (error) {
+        console.error("Failed to connect Joy-Con:", error);
+        setInputDeviceErrorMessage(
+          "Joy-Con接続に失敗しました。再度お試しください。",
+        );
+      }
       return;
     }
 
     if (cameraStatus === "CONNECTED" || cameraStatus === "INITIALIZING") {
-      disconnectCamera();
-      gate.current.clear();
-      setGateResult(null);
-      cameraTrailRef.current = [];
-      setTrailPathPoints("");
-      resetCameraGesture();
+      try {
+        await Promise.resolve(disconnectCamera());
+        gate.current.clear();
+        setGateResult(null);
+        cameraTrailRef.current = [];
+        setTrailPathPoints("");
+        resetCameraGesture();
+        setInputDeviceErrorMessage(null);
+      } catch (error) {
+        console.error("Failed to disconnect camera:", error);
+        setInputDeviceErrorMessage(
+          "カメラ切断に失敗しました。再度お試しください。",
+        );
+      }
       return;
     }
 
-    await connectCamera();
+    try {
+      await connectCamera();
+      setInputDeviceErrorMessage(null);
+    } catch (error) {
+      console.error("Failed to connect camera:", error);
+      setInputDeviceErrorMessage(
+        "カメラ接続に失敗しました。再度お試しください。",
+      );
+      resetCameraGesture();
+    }
   };
 
   const handlePhomemoToggle = async () => {
@@ -1269,6 +1333,14 @@ export default function PlayPage() {
             <p className="text-xs tracking-widest text-gold-dim/70">
               {inputDeviceStatusText}
             </p>
+
+            {inputDeviceErrorMessage && (
+              <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3">
+                <p className="text-xs leading-relaxed tracking-wide text-red-200">
+                  {inputDeviceErrorMessage}
+                </p>
+              </div>
+            )}
 
             {isCameraMode && (
               <div className="rounded-xl border border-gold-dim/20 bg-stone/10 px-4 py-3 text-left">
