@@ -8,7 +8,7 @@ export type SpellId =
   | "raiden"
   | "wave";
 
-export type GestureType = "V" | "M" | "L" | "Z" | "InvV" | "W";
+export type GestureType = "V" | "M" | "L" | "Z" | "InvV" | "W" | "Down";
 
 export interface VoiceIntentInput {
   spellId: SpellId;
@@ -60,7 +60,7 @@ export const DEFAULT_SPELL_GESTURE_MAP: Record<SpellId, GestureType> = {
   ventus: "V",
   lumos: "L",
   incendio: "InvV",
-  aguamenti: "V",
+  aguamenti: "Down",
   nox: "M",
   kyua_uppu_rapa_pa: "M",
   raiden: "Z",

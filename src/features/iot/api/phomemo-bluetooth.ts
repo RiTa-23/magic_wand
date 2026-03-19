@@ -191,14 +191,19 @@ export class PhomemoBluetooth {
       };
     }
 
+    if (this.status === "PRINTING") {
+      return {
+        success: false,
+        message: "既に印刷処理が進行中です。完了するまでお待ちください",
+      };
+    }
+
     if (data.length === 0) {
       return {
         success: false,
         message: "印刷データが空です",
       };
     }
-
-    const previousStatus = this.status;
 
     try {
       this.status = "PRINTING";
@@ -233,12 +238,6 @@ export class PhomemoBluetooth {
         success: false,
         message: this.getErrorMessage(error),
       };
-    } finally {
-      if (this.server?.connected && this.status !== "ERROR") {
-        this.status =
-          previousStatus === "PRINTING" ? "CONNECTED" : previousStatus;
-        this.emitStateChange();
-      }
     }
   }
 
