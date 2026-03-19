@@ -676,7 +676,7 @@ export default function CameraPlayPage() {
     if (cameraStatus === "INITIALIZING") return "カメラ初期化中...";
     if (cameraStatus === "DISCONNECTED") return "カメラ未接続";
     if (cameraStatus === "ERROR") return "カメラ接続エラー";
-    if (isDrawing) return "軌道入力中 (杖の動きを検出中)...";
+    if (isDrawing) return "軌道入力中 (スペースキー長押し中)...";
     if (isWaitingForVoice) return "軌道受付済";
     if (isRejected && gateResult?.reasonCode === "window_timeout") {
       return "受付時間切れ - 先に呪文か軌道のどちらかをやり直してください";
@@ -684,7 +684,7 @@ export default function CameraPlayPage() {
     if (isRejected && gateResult?.reasonCode === "gesture_confidence_too_low") {
       return "軌道信頼度不足";
     }
-    return "接続済み (杖を振って軌道入力)";
+    return "接続済み (スペースキー長押しで軌道入力)";
   })();
 
   const phomemoStatusText = (() => {
