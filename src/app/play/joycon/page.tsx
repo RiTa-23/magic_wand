@@ -894,6 +894,22 @@ export default function JoyConPlayPage() {
   const isRejected = gateResult?.status === "rejected";
   const spellName = persistedSpellName;
   const isDrawingGesture = joyconState?.buttons.r ?? false;
+  const SPELL_DISPLAY_INFO: Record<string, { name: string; color: string }> = {
+    ventus: { name: "Ventus", color: "rgba(163,255,112,0.95)" },
+    lumos: { name: "Lumos", color: "rgba(255,246,189,0.95)" },
+    incendio: { name: "Incendio", color: "rgba(255,140,80,0.95)" },
+    aguamenti: { name: "Aguamenti", color: "rgba(80,200,255,0.95)" },
+    raiden: { name: "Raiden", color: "rgba(146,236,255,0.95)" },
+    wave: { name: "Wave", color: "rgba(255,255,255,0.95)" },
+    nox: { name: "Nox", color: "rgba(180,180,220,0.95)" },
+    kyua_uppu_rapa_pa: {
+      name: "キュアップ・ラパパ！",
+      color: "rgba(255,100,210,0.95)",
+    },
+  };
+  const activeSpellInfo = activeCircleSpell
+    ? (SPELL_DISPLAY_INFO[activeCircleSpell] ?? null)
+    : null;
   const isMagicCircleGlowing =
     (isListening && enableCircleGlowOnRButton) || showCommitFeedback;
   const isImmersiveCircleGlowing =
@@ -1156,6 +1172,30 @@ export default function JoyConPlayPage() {
       </aside>
 
       <FloatingParticles />
+
+      {/* 魔法名表示 — 発動成功時に画面上部へ */}
+      {showCommitFeedback && activeSpellInfo && (
+        <div className="fixed inset-x-0 top-24 z-30 flex flex-col items-center pointer-events-none">
+          <p className="text-[9px] tracking-[0.65em] uppercase text-gold-dim/50 mb-2">
+            Spell Cast
+          </p>
+          <p
+            className="text-5xl font-bold tracking-[0.3em] uppercase"
+            style={{
+              color: activeSpellInfo.color,
+              textShadow: `0 0 28px ${activeSpellInfo.color}, 0 0 56px ${activeSpellInfo.color.replace("0.95", "0.35")}`,
+            }}
+          >
+            {activeSpellInfo.name}
+          </p>
+          <div
+            className="mt-3 h-px w-28"
+            style={{
+              background: `linear-gradient(to right, transparent, ${activeSpellInfo.color}, transparent)`,
+            }}
+          />
+        </div>
+      )}
 
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
@@ -2115,12 +2155,6 @@ export default function JoyConPlayPage() {
                   </p>
                 )}
               </div>
-            )}
-
-            {showCommitFeedback && (
-              <p className="text-sm tracking-widest text-gold-bright animate-pulse">
-                COMMITTED: {commitLabel}
-              </p>
             )}
 
             {/* マイクボタン */}
