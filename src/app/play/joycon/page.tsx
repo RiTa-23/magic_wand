@@ -905,11 +905,15 @@ export default function JoyConPlayPage() {
     showCommitFeedback && activeCircleSpell === "wave";
   const isAguamentiCircleActive =
     showCommitFeedback && activeCircleSpell === "aguamenti";
+  const isOmikujiCircleActive =
+    showCommitFeedback && activeCircleSpell === "kyua_uppu_rapa_pa";
   const magicCircleGlowClass = isWaveCircleActive
     ? "opacity-100 drop-shadow-[0_0_92px_rgba(255,255,255,0.75)]"
     : isAguamentiCircleActive
       ? "opacity-100 drop-shadow-[0_0_74px_rgba(80,200,255,0.64)]"
-      : isVentusCircleActive
+      : isOmikujiCircleActive
+        ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,80,200,0.68)]"
+        : isVentusCircleActive
         ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
         : isLumosCircleActive
         ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
@@ -1460,6 +1464,138 @@ export default function JoyConPlayPage() {
             </AnchoredCircleLayer>
           </AnchoredCircleLayer>
 
+          {/* Omikuji Circle — おみくじ魔法陣（キュアップ・ラパパ！） */}
+          <AnchoredCircleLayer
+            sizePercent={100}
+            className={`transition-all duration-700 ease-out ${
+              isOmikujiCircleActive
+                ? "opacity-100 scale-100 blur-0"
+                : "opacity-0 scale-[0.95] blur-[1.8px]"
+            }`}
+          >
+            <AnchoredCircleLayer
+              sizePercent={168}
+              className="rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(255,80,200,0.36) 0%, rgba(220,50,180,0.22) 32%, rgba(255,180,230,0.1) 58%, rgba(8,22,36,0) 80%)",
+                filter: "blur(24px)",
+              }}
+            >
+              <></>
+            </AnchoredCircleLayer>
+
+            <AnchoredCircleLayer sizePercent={130}>
+              <svg viewBox="0 0 100 100" className="h-full w-full">
+                {/* Layer 1: 4葉クローバー（18s CW） */}
+                <g className="origin-center animate-[spin_18s_linear_infinite]">
+                  <ellipse
+                    cx="50"
+                    cy="33"
+                    rx="13"
+                    ry="17"
+                    fill="rgba(255,80,200,0.22)"
+                    stroke="rgba(255,180,235,0.84)"
+                    strokeWidth="1.2"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="67"
+                    rx="13"
+                    ry="17"
+                    fill="rgba(255,80,200,0.22)"
+                    stroke="rgba(255,180,235,0.84)"
+                    strokeWidth="1.2"
+                  />
+                  <ellipse
+                    cx="33"
+                    cy="50"
+                    rx="17"
+                    ry="13"
+                    fill="rgba(255,80,200,0.22)"
+                    stroke="rgba(255,180,235,0.84)"
+                    strokeWidth="1.2"
+                  />
+                  <ellipse
+                    cx="67"
+                    cy="50"
+                    rx="17"
+                    ry="13"
+                    fill="rgba(255,80,200,0.22)"
+                    stroke="rgba(255,180,235,0.84)"
+                    strokeWidth="1.2"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="7.5"
+                    fill="rgba(255,100,210,0.50)"
+                    stroke="rgba(255,210,242,0.72)"
+                    strokeWidth="1.0"
+                  />
+                </g>
+
+                {/* Layer 2: 8角星（9s CCW） */}
+                <g className="origin-center animate-[spin_9s_linear_infinite_reverse]">
+                  <polygon
+                    points="50,12 56,35 77,23 65,44 88,50 65,56 77,77 56,65 50,88 44,65 23,77 35,56 12,50 35,44 23,23 44,35"
+                    fill="none"
+                    stroke="rgba(255,140,225,0.66)"
+                    strokeWidth="0.85"
+                    strokeLinejoin="round"
+                  />
+                </g>
+
+                {/* Layer 3: 外周リング + 16個のキラキラ（5.5s CW） */}
+                <g className="origin-center animate-[spin_5.5s_linear_infinite]">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="34"
+                    fill="none"
+                    stroke="rgba(255,120,220,0.72)"
+                    strokeWidth="1.05"
+                    strokeDasharray="3 4"
+                  />
+                  {Array.from({ length: 16 }, (_, i) => {
+                    const angle = (i * 22.5 * Math.PI) / 180;
+                    const r = i % 2 === 0 ? 41 : 39;
+                    const x = Number((50 + r * Math.sin(angle)).toFixed(2));
+                    const y = Number((50 - r * Math.cos(angle)).toFixed(2));
+                    return (
+                      <circle
+                        key={`omikuji-sparkle-${i}`}
+                        cx={x}
+                        cy={y}
+                        r={i % 2 === 0 ? 1.3 : 0.7}
+                        fill="rgba(255,210,242,0.92)"
+                      />
+                    );
+                  })}
+                </g>
+
+                {/* Layer 4: 内側リング（3.2s CCW） */}
+                <g className="origin-center animate-[spin_3.2s_linear_infinite_reverse]">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="26"
+                    fill="none"
+                    stroke="rgba(255,160,232,0.68)"
+                    strokeWidth="0.95"
+                    strokeDasharray="2 4"
+                  />
+                </g>
+
+                {/* Center: ピンクの中心核（pulse 1.2s） */}
+                <g className="origin-center animate-[pulse_1.2s_ease-in-out_infinite]">
+                  <circle cx="50" cy="50" r="11.5" fill="rgba(255,80,200,0.86)" />
+                  <circle cx="50" cy="50" r="6.5" fill="rgba(255,230,248,0.96)" />
+                </g>
+              </svg>
+            </AnchoredCircleLayer>
+          </AnchoredCircleLayer>
+
           {/* Aguamenti Circle — 水魔法陣 */}
           <AnchoredCircleLayer
             sizePercent={100}
@@ -1714,7 +1850,9 @@ export default function JoyConPlayPage() {
                     ? "conic-gradient(from 0deg, rgba(255,140,80,0.22), rgba(80,185,255,0.2), rgba(130,235,255,0.2), rgba(255,245,130,0.18), rgba(150,255,100,0.2), rgba(255,140,80,0.22))"
                     : isAguamentiCircleActive
                       ? "conic-gradient(from 0deg, rgba(80,200,255,0.24), rgba(40,140,220,0.18), rgba(160,235,255,0.2), rgba(80,200,255,0.24))"
-                      : isVentusCircleActive
+                      : isOmikujiCircleActive
+                        ? "conic-gradient(from 0deg, rgba(255,80,200,0.26), rgba(220,50,180,0.2), rgba(255,180,235,0.22), rgba(255,80,200,0.26))"
+                        : isVentusCircleActive
                       ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
                       : isLumosCircleActive
                         ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
@@ -1734,7 +1872,9 @@ export default function JoyConPlayPage() {
                     ? "border-white/72"
                     : isAguamentiCircleActive
                       ? "border-[#50c8ff]/70"
-                      : isVentusCircleActive
+                      : isOmikujiCircleActive
+                        ? "border-[#ff50c8]/70"
+                        : isVentusCircleActive
                       ? "border-[#a9ff84]/65"
                       : isLumosCircleActive
                         ? "border-[#fff1ac]/70"
@@ -1762,7 +1902,9 @@ export default function JoyConPlayPage() {
                     ? "radial-gradient(circle, rgba(255,255,255,0.38) 0%, rgba(200,235,255,0.24) 30%, rgba(150,255,200,0.14) 55%, rgba(13,30,46,0) 74%)"
                     : isAguamentiCircleActive
                       ? "radial-gradient(circle, rgba(80,200,255,0.36) 0%, rgba(40,140,220,0.22) 40%, rgba(13,30,46,0) 74%)"
-                      : isVentusCircleActive
+                      : isOmikujiCircleActive
+                        ? "radial-gradient(circle, rgba(255,80,200,0.38) 0%, rgba(220,50,180,0.22) 40%, rgba(13,30,46,0) 74%)"
+                        : isVentusCircleActive
                       ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
                       : isLumosCircleActive
                         ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
@@ -1780,7 +1922,9 @@ export default function JoyConPlayPage() {
                     ? "border-white/80"
                     : isAguamentiCircleActive
                       ? "border-[#a0e8ff]/72"
-                      : isVentusCircleActive
+                      : isOmikujiCircleActive
+                        ? "border-[#ffb0e8]/75"
+                        : isVentusCircleActive
                       ? "border-[#b8ff9e]/65"
                       : isLumosCircleActive
                         ? "border-[#fff4bf]/70"
