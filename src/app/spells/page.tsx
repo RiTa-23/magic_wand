@@ -58,6 +58,8 @@ export default function SpellsPage() {
         raiden: "/spellimage/lightning.png",
         wave: "/spellimage/wave.png",
         incendio: "/spellimage/fire.jpg",
+        kyua_uppu_rapa_pa: "/spellimage/print.png",
+        aguamenti: "/spellimage/mizu.png",
       }) as Record<string, string>,
     [],
   );
