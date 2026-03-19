@@ -485,7 +485,7 @@ export default function JoyConPlayPage() {
     );
     setShowCommitFeedback(true);
     const feedbackDuration =
-      gateResult.commit.spellId === "aguamenti" ? 1000 : 4000;
+      gateResult.commit.spellId === "aguamenti" ? 2000 : 4000;
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
       setActiveCircleSpell(null);

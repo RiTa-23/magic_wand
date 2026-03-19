@@ -81,7 +81,7 @@ const SPELL_PORT = {
 const DEFAULT_AUTO_OFF_MS = 5000;
 const DEFAULT_WAVE_INTERVAL_MS = 1000;
 /** アグアメンティ（水）ポートの最大ON時間 — あふれ防止のため短めに設定 */
-const AGUAMENTI_AUTO_OFF_MS = 1000;
+const AGUAMENTI_AUTO_OFF_MS = 2000;
 const CHILD_DEVICES_CACHE_TTL_MS = 15000;
 
 let childDevicesCache: {
