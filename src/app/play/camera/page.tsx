@@ -3,7 +3,7 @@
 import { ChevronLeft, Mic, MicOff, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { HeroMagicCircle } from "@/components/hero-magic-circle";
+import { SpellCircleOverlay } from "@/components/spell-circle-overlay";
 import { useWandDetector } from "@/features/camera/api/useWandDetector";
 import { useCameraGesture } from "@/features/camera/api/useCameraGesture";
 import { usePhomemo } from "@/features/iot/api/usePhomemo";
@@ -213,6 +213,10 @@ export default function CameraPlayPage() {
     null,
   );
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
+  const [showFailureFeedback, setShowFailureFeedback] = useState(false);
+  const [activeCircleSpell, setActiveCircleSpell] = useState<string | null>(
+    null,
+  );
   const [commitLabel, setCommitLabel] = useState("");
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [dispatchPhase, setDispatchPhase] = useState<DispatchPhase>("idle");
@@ -223,6 +227,7 @@ export default function CameraPlayPage() {
   const [autoOffEnabled, setAutoOffEnabledState] = useState(
     DEFAULT_AUTO_OFF_ENABLED,
   );
+  const [isTrailVisible, setIsTrailVisible] = useState(true);
 
   // ── Refs ──
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -358,17 +363,35 @@ export default function CameraPlayPage() {
   // ── コミットフィードバック表示 ──
   useEffect(() => {
     if (gateResult?.status !== "committed" || !gateResult.commit) return;
+    setActiveCircleSpell(gateResult.commit.spellId);
     setCommitLabel(
       `${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`,
     );
     setShowCommitFeedback(true);
+    const feedbackDuration =
+      gateResult.commit.spellId === "aguamenti" ? 2000 : 4000;
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
+      setActiveCircleSpell(null);
       setCommitLabel("");
       gate.current.clear();
       setGateResult(null);
       setPersistedSpellName(null);
-    }, 1800);
+    }, feedbackDuration);
+    return () => window.clearTimeout(timerId);
+  }, [gateResult]);
+
+  // ── 失敗フィードバック ──
+  useEffect(() => {
+    const isFailure =
+      gateResult?.status === "rejected" ||
+      gateResult?.reasonCode === "spell_gesture_mismatch";
+    if (!isFailure) return;
+    setShowFailureFeedback(true);
+    const timerId = window.setTimeout(
+      () => setShowFailureFeedback(false),
+      1600,
+    );
     return () => window.clearTimeout(timerId);
   }, [gateResult]);
 
@@ -430,6 +453,7 @@ export default function CameraPlayPage() {
   // ── キャンバス描画（test/cameraベース） ──
   useEffect(() => {
     if (cameraStatus !== "CONNECTED" && cameraStatus !== "INITIALIZING") return;
+    if (!isTrailVisible) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -591,7 +615,7 @@ export default function CameraPlayPage() {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = 0;
     };
-  }, [cameraStatus]);
+  }, [cameraStatus, isTrailVisible]);
 
   // ── ハンドラー ──
   const handleMicToggle = () => {
@@ -742,6 +766,14 @@ export default function CameraPlayPage() {
           <p className="text-[11px] tracking-[0.22em] text-gold-bright/85">
             CONNECTION & STATUS
           </p>
+
+          {/* 軌跡表示 */}
+          <button
+            onClick={() => setIsTrailVisible((prev) => !prev)}
+            className="w-full rounded-full border border-gold-dim/30 px-4 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-bright/90 transition-colors hover:border-gold-bright/60 hover:text-gold-bright"
+          >
+            軌跡表示: {isTrailVisible ? "ON" : "OFF"}
+          </button>
 
           {/* 音声判定モード */}
           {isSupported ? (
@@ -929,12 +961,11 @@ export default function CameraPlayPage() {
         )}
       </div>
 
-      {/* Center magic circle */}
-      <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
-        <div className="w-[460px] h-[460px]">
-          <HeroMagicCircle />
-        </div>
-      </div>
+      <SpellCircleOverlay
+        showCommitFeedback={showCommitFeedback}
+        showFailureFeedback={showFailureFeedback}
+        activeCircleSpell={activeCircleSpell}
+      />
 
       <div className="relative z-20 min-h-svh px-10">
         {/* Back Link */}
@@ -962,18 +993,20 @@ export default function CameraPlayPage() {
         <div className="min-h-svh flex items-center justify-center">
           <div className="w-full max-w-2xl text-center space-y-6">
             {/* 軌道キャンバス（中央配置） */}
-            <div className="relative w-full max-w-2xl mx-auto rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm overflow-hidden">
-              <canvas
-                ref={canvasRef}
-                width={CANVAS_WIDTH}
-                height={CANVAS_HEIGHT}
-                className="w-full rounded-2xl"
-                style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
-              />
-              {showCommitFeedback && (
-                <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse rounded-2xl" />
-              )}
-            </div>
+            {isTrailVisible && (
+              <div className="relative w-full max-w-2xl mx-auto rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm overflow-hidden">
+                <canvas
+                  ref={canvasRef}
+                  width={CANVAS_WIDTH}
+                  height={CANVAS_HEIGHT}
+                  className="w-full rounded-2xl"
+                  style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
+                />
+                {showCommitFeedback && (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse rounded-2xl" />
+                )}
+              </div>
+            )}
 
             {/* 音声認識状態表示 */}
             <div
