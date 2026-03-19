@@ -490,7 +490,7 @@ export default function JoyConPlayPage() {
       gate.current.clear();
       setGateResult(null);
       setPersistedSpellName(null);
-    }, 2400);
+    }, 4000);
     return () => window.clearTimeout(timerId);
   }, [gateResult]);
 
