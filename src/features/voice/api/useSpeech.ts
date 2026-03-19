@@ -166,9 +166,11 @@ export function useSpeech(
         }
       },
       onError: (err) => {
-        console.error("Speech Recognition Error:", err);
         if (FATAL_SPEECH_ERRORS.has(err?.error)) {
+          console.error("Speech Recognition Error:", err);
           setStatus("ERROR");
+        } else {
+          console.debug("Speech Recognition (non-fatal):", err?.error ?? err);
         }
       },
       onEnd: () => {

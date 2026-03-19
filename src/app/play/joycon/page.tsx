@@ -289,6 +289,7 @@ export default function JoyConPlayPage() {
   );
   const [trailPathPoints, setTrailPathPoints] = useState("");
   const [showCommitFeedback, setShowCommitFeedback] = useState(false);
+  const [showFailureFeedback, setShowFailureFeedback] = useState(false);
   const [commitLabel, setCommitLabel] = useState("");
   const [activeCircleSpell, setActiveCircleSpell] = useState<SpellId | null>(
     null,
@@ -491,6 +492,14 @@ export default function JoyConPlayPage() {
       setGateResult(null);
       setPersistedSpellName(null);
     }, 4000);
+    return () => window.clearTimeout(timerId);
+  }, [gateResult]);
+
+  // ── 失敗フィードバック ──
+  useEffect(() => {
+    if (gateResult?.status !== "rejected") return;
+    setShowFailureFeedback(true);
+    const timerId = window.setTimeout(() => setShowFailureFeedback(false), 1600);
     return () => window.clearTimeout(timerId);
   }, [gateResult]);
 
@@ -891,11 +900,15 @@ export default function JoyConPlayPage() {
     showCommitFeedback && activeCircleSpell === "raiden";
   const isWaveCircleActive =
     showCommitFeedback && activeCircleSpell === "wave";
+  const isAguamentiCircleActive =
+    showCommitFeedback && activeCircleSpell === "aguamenti";
   const magicCircleGlowClass = isWaveCircleActive
     ? "opacity-100 drop-shadow-[0_0_92px_rgba(255,255,255,0.75)]"
-    : isVentusCircleActive
-      ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
-      : isLumosCircleActive
+    : isAguamentiCircleActive
+      ? "opacity-100 drop-shadow-[0_0_74px_rgba(80,200,255,0.64)]"
+      : isVentusCircleActive
+        ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
+        : isLumosCircleActive
         ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
         : isRaidenCircleActive
           ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
@@ -1136,7 +1149,11 @@ export default function JoyConPlayPage() {
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
         <div
-          className={`relative h-[460px] w-[460px] transition-[filter,opacity] duration-500 ease-out ${magicCircleGlowClass}`}
+          className={`relative h-[460px] w-[460px] transition-[filter,opacity] duration-500 ease-out ${
+            showFailureFeedback
+              ? "opacity-100 drop-shadow-[0_0_60px_rgba(180,40,40,0.7)]"
+              : magicCircleGlowClass
+          }`}
         >
           <AnchoredCircleLayer
             sizePercent={100}
@@ -1440,6 +1457,114 @@ export default function JoyConPlayPage() {
             </AnchoredCircleLayer>
           </AnchoredCircleLayer>
 
+          {/* Aguamenti Circle — 水魔法陣 */}
+          <AnchoredCircleLayer
+            sizePercent={100}
+            className={`transition-all duration-700 ease-out ${
+              isAguamentiCircleActive
+                ? "opacity-100 scale-100 blur-0"
+                : "opacity-0 scale-[0.95] blur-[1.8px]"
+            }`}
+          >
+            <AnchoredCircleLayer
+              sizePercent={166}
+              className="rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(80,200,255,0.34) 0%, rgba(40,140,220,0.22) 34%, rgba(160,230,255,0.1) 58%, rgba(8,22,36,0) 80%)",
+                filter: "blur(24px)",
+              }}
+            >
+              <></>
+            </AnchoredCircleLayer>
+
+            <AnchoredCircleLayer sizePercent={130}>
+              <svg viewBox="0 0 100 100" className="h-full w-full">
+                {/* Layer 1: 水滴が外周を流れる (8s CW) */}
+                <g className="origin-center animate-[spin_8s_linear_infinite]">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const angle = (i * 30 * Math.PI) / 180;
+                    const x = Number((50 + 40 * Math.cos(angle)).toFixed(3));
+                    const y = Number((50 + 40 * Math.sin(angle)).toFixed(3));
+                    return (
+                      <ellipse
+                        key={`aguamenti-drop-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="1.4"
+                        ry="2.8"
+                        fill="rgba(120,220,255,0.88)"
+                        transform={`rotate(${i * 30 + 90} ${x} ${y})`}
+                      />
+                    );
+                  })}
+                </g>
+
+                {/* Layer 2: 波紋リング (4.5s CCW) */}
+                <g className="origin-center animate-[spin_4.5s_linear_infinite_reverse]">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="34"
+                    fill="none"
+                    stroke="rgba(80,200,255,0.78)"
+                    strokeWidth="1.1"
+                    strokeDasharray="4 3"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="27"
+                    fill="none"
+                    stroke="rgba(160,235,255,0.70)"
+                    strokeWidth="0.95"
+                    strokeDasharray="2.5 4"
+                  />
+                </g>
+
+                {/* Layer 3: ゆっくり流れる波形の楕円 (13s CW) */}
+                <g className="origin-center animate-[spin_13s_linear_infinite]">
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="44"
+                    ry="14"
+                    fill="none"
+                    stroke="rgba(100,210,255,0.72)"
+                    strokeWidth="1.0"
+                    strokeDasharray="6 4"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="38"
+                    ry="11"
+                    fill="none"
+                    stroke="rgba(140,225,255,0.62)"
+                    strokeWidth="0.9"
+                    transform="rotate(55 50 50)"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy="50"
+                    rx="32"
+                    ry="9"
+                    fill="none"
+                    stroke="rgba(180,240,255,0.54)"
+                    strokeWidth="0.85"
+                    transform="rotate(110 50 50)"
+                  />
+                </g>
+
+                {/* Center: 水面の輝き (pulse 1.3s) */}
+                <g className="origin-center animate-[pulse_1.3s_ease-in-out_infinite]">
+                  <circle cx="50" cy="50" r="11.5" fill="rgba(80,200,255,0.82)" />
+                  <circle cx="50" cy="50" r="6.5" fill="rgba(200,245,255,0.96)" />
+                </g>
+              </svg>
+            </AnchoredCircleLayer>
+          </AnchoredCircleLayer>
+
           {/* Wave Circle — 五属性（火・水・雷・光・風）の究極魔法陣 */}
           <AnchoredCircleLayer
             sizePercent={100}
@@ -1584,7 +1709,9 @@ export default function JoyConPlayPage() {
                 style={{
                   background: isWaveCircleActive
                     ? "conic-gradient(from 0deg, rgba(255,140,80,0.22), rgba(80,185,255,0.2), rgba(130,235,255,0.2), rgba(255,245,130,0.18), rgba(150,255,100,0.2), rgba(255,140,80,0.22))"
-                    : isVentusCircleActive
+                    : isAguamentiCircleActive
+                      ? "conic-gradient(from 0deg, rgba(80,200,255,0.24), rgba(40,140,220,0.18), rgba(160,235,255,0.2), rgba(80,200,255,0.24))"
+                      : isVentusCircleActive
                       ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
                       : isLumosCircleActive
                         ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
@@ -1602,7 +1729,9 @@ export default function JoyConPlayPage() {
                 className={`absolute inset-[-12%] rounded-full border ${
                   isWaveCircleActive
                     ? "border-white/72"
-                    : isVentusCircleActive
+                    : isAguamentiCircleActive
+                      ? "border-[#50c8ff]/70"
+                      : isVentusCircleActive
                       ? "border-[#a9ff84]/65"
                       : isLumosCircleActive
                         ? "border-[#fff1ac]/70"
@@ -1628,7 +1757,9 @@ export default function JoyConPlayPage() {
                 style={{
                   background: isWaveCircleActive
                     ? "radial-gradient(circle, rgba(255,255,255,0.38) 0%, rgba(200,235,255,0.24) 30%, rgba(150,255,200,0.14) 55%, rgba(13,30,46,0) 74%)"
-                    : isVentusCircleActive
+                    : isAguamentiCircleActive
+                      ? "radial-gradient(circle, rgba(80,200,255,0.36) 0%, rgba(40,140,220,0.22) 40%, rgba(13,30,46,0) 74%)"
+                      : isVentusCircleActive
                       ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
                       : isLumosCircleActive
                         ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
@@ -1644,7 +1775,9 @@ export default function JoyConPlayPage() {
                 className={`absolute inset-[-6%] rounded-full border animate-ping ${
                   isWaveCircleActive
                     ? "border-white/80"
-                    : isVentusCircleActive
+                    : isAguamentiCircleActive
+                      ? "border-[#a0e8ff]/72"
+                      : isVentusCircleActive
                       ? "border-[#b8ff9e]/65"
                       : isLumosCircleActive
                         ? "border-[#fff4bf]/70"
@@ -1659,6 +1792,29 @@ export default function JoyConPlayPage() {
               />
             </>
           )}
+
+          {/* 失敗エフェクト */}
+          <div
+            className={`absolute inset-0 rounded-full transition-opacity duration-300 pointer-events-none ${
+              showFailureFeedback ? "opacity-100" : "opacity-0"
+            }`}
+            aria-hidden="true"
+          >
+            <div
+              className="absolute inset-[-20%] rounded-full animate-pulse"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(200,30,30,0.32) 0%, rgba(160,20,20,0.18) 40%, rgba(13,30,46,0) 72%)",
+              }}
+            />
+            <div
+              className="absolute inset-[-8%] rounded-full"
+              style={{
+                border: "1px solid rgba(220,60,60,0.6)",
+                animation: "ping 0.7s ease-out 2",
+              }}
+            />
+          </div>
 
           <div className="h-full w-full">
             <HeroMagicCircle />
