@@ -497,7 +497,10 @@ export default function JoyConPlayPage() {
 
   // ── 失敗フィードバック ──
   useEffect(() => {
-    if (gateResult?.status !== "rejected") return;
+    const isFailure =
+      gateResult?.status === "rejected" ||
+      gateResult?.reasonCode === "spell_gesture_mismatch";
+    if (!isFailure) return;
     setShowFailureFeedback(true);
     const timerId = window.setTimeout(() => setShowFailureFeedback(false), 1600);
     return () => window.clearTimeout(timerId);
