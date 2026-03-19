@@ -910,9 +910,7 @@ export default function CameraPlayPage() {
             style={{ aspectRatio: "640/480" }}
           >
             <p className="text-gold-dim/50 text-[10px] text-center px-2">
-              {cameraStatus === "INITIALIZING"
-                ? "初期化中..."
-                : "カメラ未接続"}
+              {cameraStatus === "INITIALIZING" ? "初期化中..." : "カメラ未接続"}
             </p>
           </div>
         )}

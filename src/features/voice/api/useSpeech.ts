@@ -160,10 +160,18 @@ export function useSpeech(
       },
       onError: (err) => {
         if (FATAL_SPEECH_ERRORS.has(err?.error)) {
-          console.error("Speech Recognition Fatal Error:", err?.error, err?.message);
+          console.error(
+            "Speech Recognition Fatal Error:",
+            err?.error,
+            err?.message,
+          );
           setStatus("ERROR");
         } else {
-          console.warn("Speech Recognition Error (non-fatal):", err?.error, err?.message);
+          console.warn(
+            "Speech Recognition Error (non-fatal):",
+            err?.error,
+            err?.message,
+          );
         }
       },
       onEnd: () => {
