@@ -80,6 +80,8 @@ const SPELL_PORT = {
 /** オートOFFのデフォルト待機時間（ミリ秒） */
 const DEFAULT_AUTO_OFF_MS = 5000;
 const DEFAULT_WAVE_INTERVAL_MS = 1000;
+/** アグアメンティ（水）ポートの最大ON時間 — あふれ防止のため短めに設定 */
+const AGUAMENTI_AUTO_OFF_MS = 2000;
 const CHILD_DEVICES_CACHE_TTL_MS = 15000;
 
 let childDevicesCache: {
@@ -350,7 +352,7 @@ export async function castIncendioAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
  * 魔法: アグアメンティ（オートOFF）- ポート3をONにし、指定秒後にOFF
  * @param durationMs - ONのままにする時間（デフォルト: 5秒）
  */
-export async function castAguamentiAuto(durationMs = DEFAULT_AUTO_OFF_MS) {
+export async function castAguamentiAuto(durationMs = AGUAMENTI_AUTO_OFF_MS) {
   return castPortWithAutoOff(
     SPELL_PORT.AGUAMENTI,
     "アグアメンティ",
@@ -478,20 +480,45 @@ export async function castWave(intervalMs = DEFAULT_WAVE_INTERVAL_MS) {
         `🌊 [${i + 1}/${childDevices.length}] ${child.nickname || child.device_id} をON`,
       );
       await p300.turnOn(child.device_id);
+      // アグアメンティ（水）ポートはあふれ防止のため1秒後に自動OFF
+      if (i === SPELL_PORT.AGUAMENTI) {
+        scheduleAutoOff(
+          SPELL_PORT.AGUAMENTI,
+          AGUAMENTI_AUTO_OFF_MS,
+          async () => {
+            await togglePort(
+              SPELL_PORT.AGUAMENTI,
+              false,
+              "アグアメンティ自動解除(Wave)",
+              "⏱️",
+            );
+          },
+        );
+      }
       if (i < childDevices.length - 1) {
         await sleep(intervalMs);
       }
     }
 
-    // ONが完了したら、同じ順序でOFFして波の消灯を作る
+    // ONが完了したら、逆順でOFFして波が引くような消灯を作る
     await sleep(intervalMs);
-    for (let i = 0; i < childDevices.length; i += 1) {
+    for (let i = childDevices.length - 1; i >= 0; i -= 1) {
       const child = childDevices[i];
       console.log(
         `🌊 [${i + 1}/${childDevices.length}] ${child.nickname || child.device_id} をOFF`,
       );
-      await p300.turnOff(child.device_id);
-      if (i < childDevices.length - 1) {
+      // アグアメンティは togglePort 経由でOFF（スケジュール済みタイマーのキャンセルも兼ねる）
+      if (i === SPELL_PORT.AGUAMENTI) {
+        await togglePort(
+          SPELL_PORT.AGUAMENTI,
+          false,
+          "アグアメンティ解除(Wave)",
+          "💧",
+        );
+      } else {
+        await p300.turnOff(child.device_id);
+      }
+      if (i > 0) {
         await sleep(intervalMs);
       }
     }
