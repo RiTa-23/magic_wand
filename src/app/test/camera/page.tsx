@@ -4,7 +4,6 @@ import { ChevronLeft } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FloatingParticles } from "@/components/floating-particles";
 import { WandIcon } from "@/components/wand-icon";
 import { useWandDetector } from "@/features/camera/api/useWandDetector";
 import { useCameraGesture } from "@/features/camera/api/useCameraGesture";
@@ -372,26 +371,8 @@ export default function CameraWandTestPage() {
 
   return (
     <main className="relative h-svh w-full overflow-hidden overscroll-none bg-[color:var(--background)] text-[color:var(--foreground)]">
-      {/* Background layers (match Home/Spells ambience) */}
-      <div
-        className="fixed inset-0"
-        style={{ background: "var(--background)", opacity: 0.3 }}
-        aria-hidden="true"
-      />
-      <div
-        className="fixed inset-0"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15), rgba(0,0,0,0.35))",
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="fixed inset-0 shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.6)]"
-        aria-hidden="true"
-      />
-
-      <FloatingParticles />
+      {/* NOTE: This page runs real-time camera + model inference.
+          Disable heavy background glow/particles to reduce GPU load. */}
 
       {/* ジェスチャー判定トースト */}
       {gestureToast && (
