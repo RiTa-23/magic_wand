@@ -85,7 +85,10 @@ export function usePhomemo() {
     const encoded = encodeImageDataToPhomemo(imageData, { threshold: 170 });
     const result = await phomemoRef.current.print(encoded);
     if (!result.success) {
-      console.error("印刷失敗:", result.message);
+      // 既に進行中の場合は無視、それ以外はログ
+      if (!result.message.includes("既に印刷処理が進行中")) {
+        console.error("印刷失敗:", result.message);
+      }
       return;
     }
 
@@ -171,8 +174,11 @@ export function usePhomemo() {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error("おみくじ印刷エラー:", message);
-      throw error;
+      // 既に進行中の場合は無視、それ以外はログ
+      if (!message.includes("既に印刷処理が進行中")) {
+        console.error("おみくじ印刷エラー:", message);
+      }
+      // エラーを投げずに、呼び出し側で処理できるようにする
     }
   }, []);
 

@@ -117,6 +117,19 @@ export class SpeechRecognitionAPI {
       this.isStarted = true;
       this.recognition.start();
     } catch (e) {
+      const message =
+        e instanceof Error ? e.message.toLowerCase() : String(e).toLowerCase();
+      const alreadyStarted =
+        message.includes("already started") ||
+        message.includes("invalidstateerror");
+
+      if (alreadyStarted) {
+        // ブラウザ実装差で start 競合時に投げられることがあるため、稼働中として扱う
+        this.isStarted = true;
+        console.debug("Speech recognition start skipped (already started).");
+        return;
+      }
+
       this.isStarted = false;
       console.error("Failed to start speech recognition:", e);
     }

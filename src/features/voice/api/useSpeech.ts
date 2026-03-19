@@ -44,6 +44,7 @@ export function useSpeech(
   const hasDispatchedMatchRef = useRef(false);
   const recentFinalTranscriptRef = useRef("");
   const recentFinalTimestampRef = useRef(0);
+  const isStartingRef = useRef(false);
 
   const collectCandidates = useCallback(
     (res: SpeechResult) => {
@@ -96,6 +97,12 @@ export function useSpeech(
       setStatus("ERROR");
       return;
     }
+
+    if (isStartingRef.current || speechRecognitionAPI.isActive()) {
+      return;
+    }
+
+    isStartingRef.current = true;
 
     setSpellMatch(null);
     setFinalSpellMatch(null);
@@ -159,9 +166,11 @@ export function useSpeech(
         }
       },
       onError: (err) => {
-        console.error("Speech Recognition Error:", err);
         if (FATAL_SPEECH_ERRORS.has(err?.error)) {
+          console.error("Speech Recognition Error:", err);
           setStatus("ERROR");
+        } else {
+          console.debug("Speech Recognition (non-fatal):", err?.error ?? err);
         }
       },
       onEnd: () => {
@@ -171,6 +180,7 @@ export function useSpeech(
 
     // エンジン開始
     speechRecognitionAPI.start();
+    isStartingRef.current = false;
     removeListenerRef.current = removeListener;
   }, [
     FINAL_BUFFER_WINDOW_MS,
@@ -185,6 +195,7 @@ export function useSpeech(
    * 音声認識の停止
    */
   const stop = useCallback(() => {
+    isStartingRef.current = false;
     speechRecognitionAPI.stop();
     hasDispatchedMatchRef.current = false;
     recentFinalTranscriptRef.current = "";
