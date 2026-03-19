@@ -889,17 +889,21 @@ export default function JoyConPlayPage() {
     showCommitFeedback && activeCircleSpell === "incendio";
   const isRaidenCircleActive =
     showCommitFeedback && activeCircleSpell === "raiden";
-  const magicCircleGlowClass = isVentusCircleActive
-    ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
-    : isLumosCircleActive
-      ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
-      : isRaidenCircleActive
-        ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
-        : isIncendioCircleActive
-          ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
-          : isMagicCircleGlowing
-            ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
-            : "opacity-95";
+  const isWaveCircleActive =
+    showCommitFeedback && activeCircleSpell === "wave";
+  const magicCircleGlowClass = isWaveCircleActive
+    ? "opacity-100 drop-shadow-[0_0_92px_rgba(255,255,255,0.75)]"
+    : isVentusCircleActive
+      ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
+      : isLumosCircleActive
+        ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
+        : isRaidenCircleActive
+          ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
+          : isIncendioCircleActive
+            ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
+            : isMagicCircleGlowing
+              ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
+              : "opacity-95";
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1436,20 +1440,159 @@ export default function JoyConPlayPage() {
             </AnchoredCircleLayer>
           </AnchoredCircleLayer>
 
+          {/* Wave Circle — 五属性（火・水・雷・光・風）の究極魔法陣 */}
+          <AnchoredCircleLayer
+            sizePercent={100}
+            className={`transition-all duration-700 ease-out ${
+              isWaveCircleActive
+                ? "opacity-100 scale-100 blur-0"
+                : "opacity-0 scale-[0.95] blur-[1.8px]"
+            }`}
+          >
+            {/* 虹色の背景グロー */}
+            <AnchoredCircleLayer
+              sizePercent={178}
+              className="rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(255,255,255,0.26) 0%, rgba(255,150,80,0.16) 18%, rgba(80,185,255,0.14) 35%, rgba(130,235,255,0.12) 50%, rgba(255,245,130,0.1) 65%, rgba(150,255,100,0.08) 78%, rgba(8,22,36,0) 92%)",
+                filter: "blur(30px)",
+              }}
+            >
+              <></>
+            </AnchoredCircleLayer>
+
+            <AnchoredCircleLayer sizePercent={136}>
+              <svg viewBox="0 0 100 100" className="h-full w-full">
+                {/* Layer 1: 五属性の紋章がゆっくり周回 (20s CW) */}
+                <g className="origin-center animate-[spin_20s_linear_infinite]">
+                  {/* 火 (0° = 上) — 炎の形 */}
+                  <path
+                    d="M 50 8 C 53 13, 53 18, 50 22 C 47 18, 47 13, 50 8"
+                    fill="rgba(255,150,80,0.90)"
+                  />
+                  {/* 水 (72°) — 水滴の形 */}
+                  <path
+                    d="M 50 8 L 52 14 C 53.5 17, 53.5 20, 50 22 C 46.5 20, 46.5 17, 48 14 Z"
+                    fill="rgba(80,185,255,0.90)"
+                    transform="rotate(72 50 50)"
+                  />
+                  {/* 雷 (144°) — 稲妻の形 */}
+                  <path
+                    d="M 51 8 L 53 14 L 51.5 14 L 54 21 L 47.5 15 L 49.5 15 L 48 8 Z"
+                    fill="rgba(130,235,255,0.90)"
+                    transform="rotate(144 50 50)"
+                  />
+                  {/* 光 (216°) — 五芒星の形 */}
+                  <path
+                    d="M 50 8 L 51.2 12.5 L 55.5 11.5 L 52.5 15 L 54.5 19.5 L 50 17 L 45.5 19.5 L 47.5 15 L 44.5 11.5 L 48.8 12.5 Z"
+                    fill="rgba(255,245,130,0.90)"
+                    transform="rotate(216 50 50)"
+                  />
+                  {/* 風 (288°) — 葉の形 */}
+                  <path
+                    d="M 47 9 C 54 11, 56 18, 51 22 C 46 19, 45 13, 47 9"
+                    fill="rgba(150,255,100,0.90)"
+                    transform="rotate(288 50 50)"
+                  />
+                </g>
+
+                {/* Layer 2: ペンタグラム (12s CCW) */}
+                <g className="origin-center animate-[spin_12s_linear_infinite_reverse]">
+                  {/* 外側の五芒星 r=38 */}
+                  <path
+                    d="M 50 12 L 72 81 L 14 38 L 86 38 L 28 81 Z"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.50)"
+                    strokeWidth="0.85"
+                    strokeDasharray="3 2"
+                    strokeLinejoin="round"
+                  />
+                  {/* 内側の五芒星 r=22 */}
+                  <path
+                    d="M 50 28 L 63 68 L 29 43 L 71 43 L 37 68 Z"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.36)"
+                    strokeWidth="0.7"
+                    strokeDasharray="2 3"
+                    strokeLinejoin="round"
+                  />
+                </g>
+
+                {/* Layer 3: 五属性の色付きアーク (7s CW) */}
+                <g className="origin-center animate-[spin_7s_linear_infinite]">
+                  {(
+                    [
+                      { color: "rgba(255,140,80,0.85)", rotation: -90 },
+                      { color: "rgba(80,185,255,0.85)", rotation: -18 },
+                      { color: "rgba(130,235,255,0.85)", rotation: 54 },
+                      { color: "rgba(255,245,130,0.85)", rotation: 126 },
+                      { color: "rgba(150,255,100,0.85)", rotation: 198 },
+                    ] as { color: string; rotation: number }[]
+                  ).map(({ color, rotation }, i) => (
+                    <circle
+                      key={`wave-arc-outer-${i}`}
+                      cx="50"
+                      cy="50"
+                      r="33"
+                      fill="none"
+                      stroke={color}
+                      strokeWidth="2.0"
+                      strokeDasharray="37.5 170"
+                      transform={`rotate(${rotation} 50 50)`}
+                    />
+                  ))}
+                </g>
+
+                {/* Layer 4: 内側のリング (3.5s CCW) */}
+                <g className="origin-center animate-[spin_3.5s_linear_infinite_reverse]">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="24"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.65)"
+                    strokeWidth="1.05"
+                    strokeDasharray="2 5"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="18"
+                    fill="none"
+                    stroke="rgba(220,245,255,0.55)"
+                    strokeWidth="0.9"
+                    strokeDasharray="1.5 4"
+                  />
+                </g>
+
+                {/* Center: 虹色の中心核 (pulse 1.0s) */}
+                <g className="origin-center animate-[pulse_1.0s_ease-in-out_infinite]">
+                  <circle cx="50" cy="50" r="13" fill="rgba(255,255,255,0.20)" />
+                  <circle cx="50" cy="50" r="9.5" fill="rgba(255,255,255,0.52)" />
+                  <circle cx="50" cy="50" r="6" fill="rgba(255,255,255,0.90)" />
+                  <circle cx="50" cy="50" r="3" fill="rgba(255,255,255,1)" />
+                </g>
+              </svg>
+            </AnchoredCircleLayer>
+          </AnchoredCircleLayer>
+
           {isImmersiveCircleGlowing && (
             <>
               <div
                 className="absolute inset-[-24%] rounded-full"
                 style={{
-                  background: isVentusCircleActive
-                    ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
-                    : isLumosCircleActive
-                      ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
-                      : isRaidenCircleActive
-                        ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
-                        : isIncendioCircleActive
-                          ? "conic-gradient(from 0deg, rgba(255,143,91,0.24), rgba(255,75,50,0.18), rgba(255,222,132,0.2), rgba(255,143,91,0.24))"
-                          : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
+                  background: isWaveCircleActive
+                    ? "conic-gradient(from 0deg, rgba(255,140,80,0.22), rgba(80,185,255,0.2), rgba(130,235,255,0.2), rgba(255,245,130,0.18), rgba(150,255,100,0.2), rgba(255,140,80,0.22))"
+                    : isVentusCircleActive
+                      ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
+                      : isLumosCircleActive
+                        ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
+                        : isRaidenCircleActive
+                          ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
+                          : isIncendioCircleActive
+                            ? "conic-gradient(from 0deg, rgba(255,143,91,0.24), rgba(255,75,50,0.18), rgba(255,222,132,0.2), rgba(255,143,91,0.24))"
+                            : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
                   animation: "spin 6s linear infinite",
                   filter: "blur(18px)",
                 }}
@@ -1457,15 +1600,17 @@ export default function JoyConPlayPage() {
               />
               <div
                 className={`absolute inset-[-12%] rounded-full border ${
-                  isVentusCircleActive
-                    ? "border-[#a9ff84]/65"
-                    : isLumosCircleActive
-                      ? "border-[#fff1ac]/70"
-                      : isRaidenCircleActive
-                        ? "border-[#a9eeff]/72"
-                        : isIncendioCircleActive
-                          ? "border-[#ffb47f]/70"
-                          : "border-[#ffd87f]/55"
+                  isWaveCircleActive
+                    ? "border-white/72"
+                    : isVentusCircleActive
+                      ? "border-[#a9ff84]/65"
+                      : isLumosCircleActive
+                        ? "border-[#fff1ac]/70"
+                        : isRaidenCircleActive
+                          ? "border-[#a9eeff]/72"
+                          : isIncendioCircleActive
+                            ? "border-[#ffb47f]/70"
+                            : "border-[#ffd87f]/55"
                 }`}
                 style={{
                   animation:
@@ -1481,29 +1626,33 @@ export default function JoyConPlayPage() {
               <div
                 className="absolute inset-[-18%] rounded-full animate-pulse"
                 style={{
-                  background: isVentusCircleActive
-                    ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
-                    : isLumosCircleActive
-                      ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
-                      : isRaidenCircleActive
-                        ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
-                        : isIncendioCircleActive
-                          ? "radial-gradient(circle, rgba(255,146,98,0.34) 0%, rgba(255,90,61,0.2) 40%, rgba(13,30,46,0) 74%)"
-                          : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
+                  background: isWaveCircleActive
+                    ? "radial-gradient(circle, rgba(255,255,255,0.38) 0%, rgba(200,235,255,0.24) 30%, rgba(150,255,200,0.14) 55%, rgba(13,30,46,0) 74%)"
+                    : isVentusCircleActive
+                      ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
+                      : isLumosCircleActive
+                        ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
+                        : isRaidenCircleActive
+                          ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
+                          : isIncendioCircleActive
+                            ? "radial-gradient(circle, rgba(255,146,98,0.34) 0%, rgba(255,90,61,0.2) 40%, rgba(13,30,46,0) 74%)"
+                            : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
                 }}
                 aria-hidden="true"
               />
               <div
                 className={`absolute inset-[-6%] rounded-full border animate-ping ${
-                  isVentusCircleActive
-                    ? "border-[#b8ff9e]/65"
-                    : isLumosCircleActive
-                      ? "border-[#fff4bf]/70"
-                      : isRaidenCircleActive
-                        ? "border-[#ccf5ff]/74"
-                        : isIncendioCircleActive
-                          ? "border-[#ffd1a0]/70"
-                          : "border-[#f5d77a]/55"
+                  isWaveCircleActive
+                    ? "border-white/80"
+                    : isVentusCircleActive
+                      ? "border-[#b8ff9e]/65"
+                      : isLumosCircleActive
+                        ? "border-[#fff4bf]/70"
+                        : isRaidenCircleActive
+                          ? "border-[#ccf5ff]/74"
+                          : isIncendioCircleActive
+                            ? "border-[#ffd1a0]/70"
+                            : "border-[#f5d77a]/55"
                 }`}
                 style={{ animationDuration: "2.4s" }}
                 aria-hidden="true"
