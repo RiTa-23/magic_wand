@@ -502,7 +502,10 @@ export default function JoyConPlayPage() {
       gateResult?.reasonCode === "spell_gesture_mismatch";
     if (!isFailure) return;
     setShowFailureFeedback(true);
-    const timerId = window.setTimeout(() => setShowFailureFeedback(false), 1600);
+    const timerId = window.setTimeout(
+      () => setShowFailureFeedback(false),
+      1600,
+    );
     return () => window.clearTimeout(timerId);
   }, [gateResult]);
 
@@ -901,8 +904,7 @@ export default function JoyConPlayPage() {
     showCommitFeedback && activeCircleSpell === "incendio";
   const isRaidenCircleActive =
     showCommitFeedback && activeCircleSpell === "raiden";
-  const isWaveCircleActive =
-    showCommitFeedback && activeCircleSpell === "wave";
+  const isWaveCircleActive = showCommitFeedback && activeCircleSpell === "wave";
   const isAguamentiCircleActive =
     showCommitFeedback && activeCircleSpell === "aguamenti";
   const isOmikujiCircleActive =
@@ -914,16 +916,16 @@ export default function JoyConPlayPage() {
       : isOmikujiCircleActive
         ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,80,200,0.68)]"
         : isVentusCircleActive
-        ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
-        : isLumosCircleActive
-        ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
-        : isRaidenCircleActive
-          ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
-          : isIncendioCircleActive
-            ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
-            : isMagicCircleGlowing
-              ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
-              : "opacity-95";
+          ? "opacity-100 drop-shadow-[0_0_66px_rgba(163,255,112,0.56)]"
+          : isLumosCircleActive
+            ? "opacity-100 drop-shadow-[0_0_72px_rgba(255,246,189,0.62)]"
+            : isRaidenCircleActive
+              ? "opacity-100 drop-shadow-[0_0_78px_rgba(117,226,255,0.66)]"
+              : isIncendioCircleActive
+                ? "opacity-100 drop-shadow-[0_0_76px_rgba(255,117,66,0.64)]"
+                : isMagicCircleGlowing
+                  ? "opacity-100 drop-shadow-[0_0_42px_rgba(255,224,130,0.35)]"
+                  : "opacity-95";
 
   const statusText = (() => {
     if (status === "ERROR") return "エラーが発生しました";
@@ -1589,8 +1591,18 @@ export default function JoyConPlayPage() {
 
                 {/* Center: ピンクの中心核（pulse 1.2s） */}
                 <g className="origin-center animate-[pulse_1.2s_ease-in-out_infinite]">
-                  <circle cx="50" cy="50" r="11.5" fill="rgba(255,80,200,0.86)" />
-                  <circle cx="50" cy="50" r="6.5" fill="rgba(255,230,248,0.96)" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="11.5"
+                    fill="rgba(255,80,200,0.86)"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="6.5"
+                    fill="rgba(255,230,248,0.96)"
+                  />
                 </g>
               </svg>
             </AnchoredCircleLayer>
@@ -1697,8 +1709,18 @@ export default function JoyConPlayPage() {
 
                 {/* Center: 水面の輝き (pulse 1.3s) */}
                 <g className="origin-center animate-[pulse_1.3s_ease-in-out_infinite]">
-                  <circle cx="50" cy="50" r="11.5" fill="rgba(80,200,255,0.82)" />
-                  <circle cx="50" cy="50" r="6.5" fill="rgba(200,245,255,0.96)" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="11.5"
+                    fill="rgba(80,200,255,0.82)"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="6.5"
+                    fill="rgba(200,245,255,0.96)"
+                  />
                 </g>
               </svg>
             </AnchoredCircleLayer>
@@ -1832,8 +1854,18 @@ export default function JoyConPlayPage() {
 
                 {/* Center: 虹色の中心核 (pulse 1.0s) */}
                 <g className="origin-center animate-[pulse_1.0s_ease-in-out_infinite]">
-                  <circle cx="50" cy="50" r="13" fill="rgba(255,255,255,0.20)" />
-                  <circle cx="50" cy="50" r="9.5" fill="rgba(255,255,255,0.52)" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="13"
+                    fill="rgba(255,255,255,0.20)"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="9.5"
+                    fill="rgba(255,255,255,0.52)"
+                  />
                   <circle cx="50" cy="50" r="6" fill="rgba(255,255,255,0.90)" />
                   <circle cx="50" cy="50" r="3" fill="rgba(255,255,255,1)" />
                 </g>
@@ -1853,14 +1885,14 @@ export default function JoyConPlayPage() {
                       : isOmikujiCircleActive
                         ? "conic-gradient(from 0deg, rgba(255,80,200,0.26), rgba(220,50,180,0.2), rgba(255,180,235,0.22), rgba(255,80,200,0.26))"
                         : isVentusCircleActive
-                      ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
-                      : isLumosCircleActive
-                        ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
-                        : isRaidenCircleActive
-                          ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
-                          : isIncendioCircleActive
-                            ? "conic-gradient(from 0deg, rgba(255,143,91,0.24), rgba(255,75,50,0.18), rgba(255,222,132,0.2), rgba(255,143,91,0.24))"
-                            : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
+                          ? "conic-gradient(from 0deg, rgba(167,255,123,0.23), rgba(81,240,125,0.16), rgba(167,255,123,0.23))"
+                          : isLumosCircleActive
+                            ? "conic-gradient(from 0deg, rgba(255,242,173,0.26), rgba(255,255,236,0.18), rgba(255,242,173,0.26))"
+                            : isRaidenCircleActive
+                              ? "conic-gradient(from 0deg, rgba(168,241,255,0.24), rgba(114,194,255,0.2), rgba(220,250,255,0.16), rgba(168,241,255,0.24))"
+                              : isIncendioCircleActive
+                                ? "conic-gradient(from 0deg, rgba(255,143,91,0.24), rgba(255,75,50,0.18), rgba(255,222,132,0.2), rgba(255,143,91,0.24))"
+                                : "conic-gradient(from 0deg, rgba(255,214,120,0.18), rgba(92,255,229,0.12), rgba(255,214,120,0.18))",
                   animation: "spin 6s linear infinite",
                   filter: "blur(18px)",
                 }}
@@ -1875,14 +1907,14 @@ export default function JoyConPlayPage() {
                       : isOmikujiCircleActive
                         ? "border-[#ff50c8]/70"
                         : isVentusCircleActive
-                      ? "border-[#a9ff84]/65"
-                      : isLumosCircleActive
-                        ? "border-[#fff1ac]/70"
-                        : isRaidenCircleActive
-                          ? "border-[#a9eeff]/72"
-                          : isIncendioCircleActive
-                            ? "border-[#ffb47f]/70"
-                            : "border-[#ffd87f]/55"
+                          ? "border-[#a9ff84]/65"
+                          : isLumosCircleActive
+                            ? "border-[#fff1ac]/70"
+                            : isRaidenCircleActive
+                              ? "border-[#a9eeff]/72"
+                              : isIncendioCircleActive
+                                ? "border-[#ffb47f]/70"
+                                : "border-[#ffd87f]/55"
                 }`}
                 style={{
                   animation:
@@ -1905,14 +1937,14 @@ export default function JoyConPlayPage() {
                       : isOmikujiCircleActive
                         ? "radial-gradient(circle, rgba(255,80,200,0.38) 0%, rgba(220,50,180,0.22) 40%, rgba(13,30,46,0) 74%)"
                         : isVentusCircleActive
-                      ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
-                      : isLumosCircleActive
-                        ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
-                        : isRaidenCircleActive
-                          ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
-                          : isIncendioCircleActive
-                            ? "radial-gradient(circle, rgba(255,146,98,0.34) 0%, rgba(255,90,61,0.2) 40%, rgba(13,30,46,0) 74%)"
-                            : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
+                          ? "radial-gradient(circle, rgba(164,255,121,0.28) 0%, rgba(95,235,120,0.16) 40%, rgba(13,30,46,0) 74%)"
+                          : isLumosCircleActive
+                            ? "radial-gradient(circle, rgba(255,245,184,0.32) 0%, rgba(255,235,167,0.2) 40%, rgba(13,30,46,0) 74%)"
+                            : isRaidenCircleActive
+                              ? "radial-gradient(circle, rgba(152,234,255,0.34) 0%, rgba(95,186,255,0.2) 40%, rgba(13,30,46,0) 74%)"
+                              : isIncendioCircleActive
+                                ? "radial-gradient(circle, rgba(255,146,98,0.34) 0%, rgba(255,90,61,0.2) 40%, rgba(13,30,46,0) 74%)"
+                                : "radial-gradient(circle, rgba(255,226,138,0.22) 0%, rgba(84,255,238,0.12) 38%, rgba(13,30,46,0) 72%)",
                 }}
                 aria-hidden="true"
               />
@@ -1925,14 +1957,14 @@ export default function JoyConPlayPage() {
                       : isOmikujiCircleActive
                         ? "border-[#ffb0e8]/75"
                         : isVentusCircleActive
-                      ? "border-[#b8ff9e]/65"
-                      : isLumosCircleActive
-                        ? "border-[#fff4bf]/70"
-                        : isRaidenCircleActive
-                          ? "border-[#ccf5ff]/74"
-                          : isIncendioCircleActive
-                            ? "border-[#ffd1a0]/70"
-                            : "border-[#f5d77a]/55"
+                          ? "border-[#b8ff9e]/65"
+                          : isLumosCircleActive
+                            ? "border-[#fff4bf]/70"
+                            : isRaidenCircleActive
+                              ? "border-[#ccf5ff]/74"
+                              : isIncendioCircleActive
+                                ? "border-[#ffd1a0]/70"
+                                : "border-[#f5d77a]/55"
                 }`}
                 style={{ animationDuration: "2.4s" }}
                 aria-hidden="true"
