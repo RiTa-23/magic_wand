@@ -167,10 +167,19 @@ export function useSpeech(
       },
       onError: (err) => {
         if (FATAL_SPEECH_ERRORS.has(err?.error)) {
-          console.error("Speech Recognition Error:", err);
+          console.error(
+            "Speech Recognition Fatal Error:",
+            err?.error,
+            err?.message,
+          );
           setStatus("ERROR");
         } else {
-          console.debug("Speech Recognition (non-fatal):", err?.error ?? err);
+          console.warn(
+            "Speech Recognition Error (non-fatal):",
+            err?.error,
+            err?.message,
+          );
+          setStatus("IDLE");
         }
       },
       onEnd: () => {

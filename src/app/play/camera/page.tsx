@@ -665,7 +665,7 @@ export default function CameraPlayPage() {
   const statusText = (() => {
     if (speechStatus === "ERROR") return "エラーが発生しました";
     if (isListening) return "聴いています...";
-    if (isWaitingForGesture) return "呪文受付済 - 杖を振ってください";
+    if (isWaitingForGesture) return "呪文受付済 - スペースキー長押しで軌道入力";
     if (isWaitingForVoice) return "軌道受付済 - 呪文を唱えてください";
     if (isCommitted) return "魔法発動成功！";
     if (isRejected) return "信頼度不足 - もう一度試してください";
@@ -676,7 +676,7 @@ export default function CameraPlayPage() {
     if (cameraStatus === "INITIALIZING") return "カメラ初期化中...";
     if (cameraStatus === "DISCONNECTED") return "カメラ未接続";
     if (cameraStatus === "ERROR") return "カメラ接続エラー";
-    if (isDrawing) return "軌道入力中 (杖の動きを検出中)...";
+    if (isDrawing) return "軌道入力中 (スペースキー長押し中)...";
     if (isWaitingForVoice) return "軌道受付済";
     if (isRejected && gateResult?.reasonCode === "window_timeout") {
       return "受付時間切れ - 先に呪文か軌道のどちらかをやり直してください";
@@ -684,7 +684,7 @@ export default function CameraPlayPage() {
     if (isRejected && gateResult?.reasonCode === "gesture_confidence_too_low") {
       return "軌道信頼度不足";
     }
-    return "接続済み (杖を振って軌道入力)";
+    return "接続済み (スペースキー長押しで軌道入力)";
   })();
 
   const phomemoStatusText = (() => {
@@ -891,6 +891,44 @@ export default function CameraPlayPage() {
         </div>
       </aside>
 
+      {/* カメラプレビュー（左下固定） */}
+      <div className="fixed left-6 bottom-6 z-30 w-48 rounded-xl border border-gold-dim/20 overflow-hidden bg-stone/10 shadow-lg">
+        <video
+          ref={videoRef}
+          className="w-full"
+          style={{
+            aspectRatio: "640/480",
+            transform: "scaleX(-1)",
+            display: isConnected ? "block" : "none",
+          }}
+          playsInline
+          muted
+        />
+        {!isConnected && (
+          <div
+            className="flex items-center justify-center bg-stone/10"
+            style={{ aspectRatio: "640/480" }}
+          >
+            <p className="text-gold-dim/50 text-[10px] text-center px-2">
+              {cameraStatus === "INITIALIZING" ? "初期化中..." : "カメラ未接続"}
+            </p>
+          </div>
+        )}
+        {/* 杖検出インジケーター（接続中のみ表示） */}
+        {isConnected && (
+          <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-gold-dim/35 bg-black/50 px-1.5 py-0.5 text-[9px] tracking-[0.1em] text-gold-dim/85">
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                isWandDetected
+                  ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]"
+                  : "bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]"
+              }`}
+            />
+            {isWandDetected ? "DETECTED" : "SEARCHING"}
+          </div>
+        )}
+      </div>
+
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
         <div className="w-[460px] h-[460px]">
@@ -923,8 +961,8 @@ export default function CameraPlayPage() {
         {/* Center content */}
         <div className="min-h-svh flex items-center justify-center">
           <div className="w-full max-w-2xl text-center space-y-6">
-            {/* 軌道キャンバス（test/cameraベース） */}
-            <div className="relative mx-auto rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm overflow-hidden">
+            {/* 軌道キャンバス（中央配置） */}
+            <div className="relative w-full max-w-2xl mx-auto rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm overflow-hidden">
               <canvas
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
@@ -934,44 +972,6 @@ export default function CameraPlayPage() {
               />
               {showCommitFeedback && (
                 <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse rounded-2xl" />
-              )}
-              {/* 杖検出インジケーター */}
-              <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-gold-dim/35 bg-black/40 px-2 py-1 text-[10px] tracking-[0.15em] text-gold-dim/85">
-                <span
-                  className={`inline-block h-2 w-2 rounded-full ${
-                    isWandDetected
-                      ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
-                      : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]"
-                  }`}
-                />
-                {isWandDetected ? "WAND DETECTED" : "SEARCHING WAND"}
-              </div>
-            </div>
-
-            {/* カメラプレビュー（小さく表示） */}
-            <div className="relative mx-auto max-w-[320px] rounded-xl border border-gold-dim/20 overflow-hidden bg-stone/10">
-              <video
-                ref={videoRef}
-                className="w-full"
-                style={{
-                  aspectRatio: "640/480",
-                  transform: "scaleX(-1)",
-                  display: isConnected ? "block" : "none",
-                }}
-                playsInline
-                muted
-              />
-              {!isConnected && (
-                <div
-                  className="flex items-center justify-center bg-stone/10"
-                  style={{ aspectRatio: "640/480" }}
-                >
-                  <p className="text-gold-dim/50 text-sm">
-                    {cameraStatus === "INITIALIZING"
-                      ? "カメラ・モデル初期化中..."
-                      : "カメラを接続してください"}
-                  </p>
-                </div>
               )}
             </div>
 
