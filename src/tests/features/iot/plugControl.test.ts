@@ -154,10 +154,11 @@ describe("IoT Plug Control Tests", () => {
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(2, "child-1");
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(3, "child-2");
       expect(mockTapoDevice.turnOn).toHaveBeenNthCalledWith(4, "child-3");
-      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(1, "child-0");
-      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(2, "child-1");
-      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(3, "child-2");
-      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(4, "child-3");
+      // OFFは逆順（波が引くような演出）
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(1, "child-3");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(2, "child-2");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(3, "child-1");
+      expect(mockTapoDevice.turnOff).toHaveBeenNthCalledWith(4, "child-0");
     });
 
     it("castMaxima: すべてのポートをONにできる", async () => {
