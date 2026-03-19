@@ -189,25 +189,22 @@ export default function CameraPlayPage() {
   const speechStartedBySpaceRef = useRef(false);
   const speechStatusRef = useRef(speechStatus);
   speechStatusRef.current = speechStatus;
-  const { lastGesture, isDrawing, resetGesture } = useCameraGesture(
-    wandPoint,
-    {
-      onRecordStart: () => {
-        if (isSupported && speechStatusRef.current === "IDLE") {
-          start();
-          speechStartedBySpaceRef.current = true;
-        }
-      },
-      onRecordEnd: () => {
-        if (speechStartedBySpaceRef.current) {
-          if (speechStatusRef.current === "LISTENING") {
-            stop();
-          }
-          speechStartedBySpaceRef.current = false;
-        }
-      },
+  const { lastGesture, isDrawing, resetGesture } = useCameraGesture(wandPoint, {
+    onRecordStart: () => {
+      if (isSupported && speechStatusRef.current === "IDLE") {
+        start();
+        speechStartedBySpaceRef.current = true;
+      }
     },
-  );
+    onRecordEnd: () => {
+      if (speechStartedBySpaceRef.current) {
+        if (speechStatusRef.current === "LISTENING") {
+          stop();
+        }
+        speechStartedBySpaceRef.current = false;
+      }
+    },
+  });
 
   // ── IoT ──
   const {
