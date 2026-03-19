@@ -29,6 +29,10 @@ export class WandDetector {
   // 検出信頼度しきい値
   private readonly SCORE_THRESHOLD = 0.5;
 
+  // 連続エラーカウント
+  private consecutiveErrors: number = 0;
+  private readonly MAX_CONSECUTIVE_ERRORS = 5;
+
   // コールバック
   onWandDetection: ((result: WandDetectionResult) => void) | null = null;
   onError: ((error: unknown) => void) | null = null;
@@ -208,6 +212,7 @@ export class WandDetector {
   start(): void {
     if (this.running) return;
     this.running = true;
+    this.consecutiveErrors = 0;
 
     const detect = async () => {
       if (!this.running || !this.session || !this.videoElement) return;
@@ -221,6 +226,7 @@ export class WandDetector {
         const results = await this.session.run(feeds);
         outputTensor = Object.values(results)[0];
         const detection = this.postprocess(outputTensor);
+        this.consecutiveErrors = 0;
 
         const now = performance.now();
 
@@ -263,9 +269,23 @@ export class WandDetector {
           });
         }
       } catch (e) {
-        console.error("Detection loop error:", e);
-        this.running = false;
-        this.onError?.(e);
+        this.consecutiveErrors++;
+        console.warn(
+          `Detection loop error (${this.consecutiveErrors}/${this.MAX_CONSECUTIVE_ERRORS}):`,
+          e,
+        );
+
+        if (this.consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
+          console.error("Too many consecutive detection errors, stopping.");
+          this.running = false;
+          this.onError?.(e);
+          return;
+        }
+
+        // 散発的なWASMエラーはスキップして次フレームへ
+        if (this.running) {
+          this.animFrameId = requestAnimationFrame(detect);
+        }
         return;
       } finally {
         inputTensor?.dispose();
