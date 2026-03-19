@@ -891,6 +891,44 @@ export default function CameraPlayPage() {
         </div>
       </aside>
 
+      {/* カメラプレビュー（左下固定） */}
+      <div className="fixed left-6 bottom-6 z-30 w-48 rounded-xl border border-gold-dim/20 overflow-hidden bg-stone/10 shadow-lg">
+        <video
+          ref={videoRef}
+          className="w-full"
+          style={{
+            aspectRatio: "640/480",
+            transform: "scaleX(-1)",
+            display: isConnected ? "block" : "none",
+          }}
+          playsInline
+          muted
+        />
+        {!isConnected && (
+          <div
+            className="flex items-center justify-center bg-stone/10"
+            style={{ aspectRatio: "640/480" }}
+          >
+            <p className="text-gold-dim/50 text-[10px] text-center px-2">
+              {cameraStatus === "INITIALIZING"
+                ? "初期化中..."
+                : "カメラ未接続"}
+            </p>
+          </div>
+        )}
+        {/* 杖検出インジケーター */}
+        <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-gold-dim/35 bg-black/50 px-1.5 py-0.5 text-[9px] tracking-[0.1em] text-gold-dim/85">
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              isWandDetected
+                ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]"
+                : "bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]"
+            }`}
+          />
+          {isWandDetected ? "DETECTED" : "SEARCHING"}
+        </div>
+      </div>
+
       {/* Center magic circle */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
         <div className="w-[460px] h-[460px]">
@@ -923,8 +961,8 @@ export default function CameraPlayPage() {
         {/* Center content */}
         <div className="min-h-svh flex items-center justify-center">
           <div className="w-full max-w-2xl text-center space-y-6">
-            {/* 軌道キャンバス（test/cameraベース） */}
-            <div className="relative mx-auto rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm overflow-hidden">
+            {/* 軌道キャンバス（中央配置） */}
+            <div className="relative w-full max-w-2xl mx-auto rounded-2xl border border-gold-dim/20 bg-stone/10 backdrop-blur-sm overflow-hidden">
               <canvas
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
@@ -934,44 +972,6 @@ export default function CameraPlayPage() {
               />
               {showCommitFeedback && (
                 <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(255,244,182,0.25)_0%,_rgba(212,175,55,0.08)_40%,_transparent_75%)] animate-pulse rounded-2xl" />
-              )}
-              {/* 杖検出インジケーター */}
-              <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-gold-dim/35 bg-black/40 px-2 py-1 text-[10px] tracking-[0.15em] text-gold-dim/85">
-                <span
-                  className={`inline-block h-2 w-2 rounded-full ${
-                    isWandDetected
-                      ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
-                      : "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]"
-                  }`}
-                />
-                {isWandDetected ? "WAND DETECTED" : "SEARCHING WAND"}
-              </div>
-            </div>
-
-            {/* カメラプレビュー（小さく表示） */}
-            <div className="relative mx-auto max-w-[320px] rounded-xl border border-gold-dim/20 overflow-hidden bg-stone/10">
-              <video
-                ref={videoRef}
-                className="w-full"
-                style={{
-                  aspectRatio: "640/480",
-                  transform: "scaleX(-1)",
-                  display: isConnected ? "block" : "none",
-                }}
-                playsInline
-                muted
-              />
-              {!isConnected && (
-                <div
-                  className="flex items-center justify-center bg-stone/10"
-                  style={{ aspectRatio: "640/480" }}
-                >
-                  <p className="text-gold-dim/50 text-sm">
-                    {cameraStatus === "INITIALIZING"
-                      ? "カメラ・モデル初期化中..."
-                      : "カメラを接続してください"}
-                  </p>
-                </div>
               )}
             </div>
 
