@@ -1175,21 +1175,58 @@ export default function JoyConPlayPage() {
 
       {/* 魔法名表示 — 発動成功時に画面上部へ */}
       {showCommitFeedback && activeSpellInfo && (
-        <div className="fixed inset-x-0 top-24 z-30 flex flex-col items-center pointer-events-none">
-          <p className="text-[9px] tracking-[0.65em] uppercase text-gold-dim/50 mb-2">
-            Spell Cast
-          </p>
+        <div className="fixed inset-x-0 top-28 z-30 flex flex-col items-center pointer-events-none">
+          {/* テキスト背後のぼかし暗幕 */}
+          <div
+            className="absolute inset-x-0 inset-y-0 -z-10"
+            style={{
+              background:
+                "radial-gradient(ellipse 60% 100% at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 100%)",
+              filter: "blur(6px)",
+            }}
+          />
+
+          {/* SPELL CAST ラベル（左右に装飾ライン） */}
+          <div className="flex items-center gap-3 mb-2">
+            <div
+              className="h-px w-14"
+              style={{
+                background: `linear-gradient(to right, transparent, ${activeSpellInfo.color.replace("0.95", "0.6")})`,
+              }}
+            />
+            <p
+              className="text-[9px] tracking-[0.6em] uppercase"
+              style={{ color: activeSpellInfo.color.replace("0.95", "0.65") }}
+            >
+              Spell Cast
+            </p>
+            <div
+              className="h-px w-14"
+              style={{
+                background: `linear-gradient(to left, transparent, ${activeSpellInfo.color.replace("0.95", "0.6")})`,
+              }}
+            />
+          </div>
+
+          {/* 呪文名 */}
           <p
-            className="text-5xl font-bold tracking-[0.3em] uppercase"
+            className="text-6xl font-bold tracking-[0.28em] uppercase"
             style={{
               color: activeSpellInfo.color,
-              textShadow: `0 0 28px ${activeSpellInfo.color}, 0 0 56px ${activeSpellInfo.color.replace("0.95", "0.35")}`,
+              textShadow: [
+                `0 0 18px ${activeSpellInfo.color}`,
+                `0 0 40px ${activeSpellInfo.color.replace("0.95", "0.55")}`,
+                `0 0 80px ${activeSpellInfo.color.replace("0.95", "0.28")}`,
+                `0 2px 6px rgba(0,0,0,0.9)`,
+              ].join(", "),
             }}
           >
             {activeSpellInfo.name}
           </p>
+
+          {/* 下の装飾ライン */}
           <div
-            className="mt-3 h-px w-28"
+            className="mt-3 h-px w-36"
             style={{
               background: `linear-gradient(to right, transparent, ${activeSpellInfo.color}, transparent)`,
             }}
