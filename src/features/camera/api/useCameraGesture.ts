@@ -11,6 +11,16 @@ const MIN_TRAIL_POINTS = 20;
 /** ジェスチャー用トレイルの最大ポイント数 */
 const MAX_GESTURE_TRAIL = 500;
 
+/** フォーカス中のインタラクティブ要素ではSpaceをジェスチャーに使わない */
+const INTERACTIVE_SELECTOR =
+  "button, input, textarea, select, [role='button'], [contenteditable]";
+
+function isInteractiveElementFocused(): boolean {
+  const el = document.activeElement;
+  if (!el || el === document.body) return false;
+  return el.matches(INTERACTIVE_SELECTOR);
+}
+
 export type CameraGestureState = {
   /** 最新のジェスチャー判定結果 */
   lastGesture: GestureResult | null;
@@ -47,29 +57,35 @@ export function useCameraGesture(
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;
+      if (isInteractiveElementFocused()) return;
       e.preventDefault();
       isRecordingRef.current = true;
       gestureTrailRef.current = [];
       lastTimestampRef.current = 0;
+      setLastGesture(null);
       setIsDrawing(true);
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code !== "Space") return;
-      e.preventDefault();
       if (!isRecordingRef.current) return;
+      if (isInteractiveElementFocused()) return;
+      e.preventDefault();
       isRecordingRef.current = false;
       setIsDrawing(false);
 
       const trail = gestureTrailRef.current;
       if (trail.length < MIN_TRAIL_POINTS) {
         gestureTrailRef.current = [];
+        setLastGesture(null);
         return;
       }
 
       const result = recognizeGesture(trail);
       if (result.type !== "unknown") {
         setLastGesture(result);
+      } else {
+        setLastGesture(null);
       }
       gestureTrailRef.current = [];
     };

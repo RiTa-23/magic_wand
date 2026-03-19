@@ -665,7 +665,7 @@ export default function CameraPlayPage() {
   const statusText = (() => {
     if (speechStatus === "ERROR") return "エラーが発生しました";
     if (isListening) return "聴いています...";
-    if (isWaitingForGesture) return "呪文受付済 - 杖を振ってください";
+    if (isWaitingForGesture) return "呪文受付済 - スペースキー長押しで軌道入力";
     if (isWaitingForVoice) return "軌道受付済 - 呪文を唱えてください";
     if (isCommitted) return "魔法発動成功！";
     if (isRejected) return "信頼度不足 - もう一度試してください";
@@ -914,17 +914,19 @@ export default function CameraPlayPage() {
             </p>
           </div>
         )}
-        {/* 杖検出インジケーター */}
-        <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-gold-dim/35 bg-black/50 px-1.5 py-0.5 text-[9px] tracking-[0.1em] text-gold-dim/85">
-          <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${
-              isWandDetected
-                ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]"
-                : "bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]"
-            }`}
-          />
-          {isWandDetected ? "DETECTED" : "SEARCHING"}
-        </div>
+        {/* 杖検出インジケーター（接続中のみ表示） */}
+        {isConnected && (
+          <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-gold-dim/35 bg-black/50 px-1.5 py-0.5 text-[9px] tracking-[0.1em] text-gold-dim/85">
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                isWandDetected
+                  ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]"
+                  : "bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.9)]"
+              }`}
+            />
+            {isWandDetected ? "DETECTED" : "SEARCHING"}
+          </div>
+        )}
       </div>
 
       {/* Center magic circle */}

@@ -172,6 +172,7 @@ export function useSpeech(
             err?.error,
             err?.message,
           );
+          setStatus("IDLE");
         }
       },
       onEnd: () => {
