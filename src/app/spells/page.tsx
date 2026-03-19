@@ -20,10 +20,6 @@ export default function SpellsPage() {
           description:
             "光を灯す呪文。対応するデバイスに『点灯』の意図を伝えます。",
         },
-        nox: {
-          description:
-            "光を消す呪文。対応するデバイスに『消灯』の意図を伝えます。",
-        },
         aguamenti: {
           description:
             "水を呼ぶ呪文（このアプリでは風の発動に割り当てられています）。",

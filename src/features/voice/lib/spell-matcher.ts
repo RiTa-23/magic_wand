@@ -11,12 +11,6 @@ export const SPELL_DICTIONARY: SpellEntry[] = [
     action: "light_on",
   },
   {
-    id: "nox",
-    name: "ノックス",
-    keywords: ["ノックス", "のっくす", "ノクス", "nox"],
-    action: "light_off",
-  },
-  {
     id: "aguamenti",
     name: "アグアメンティ",
     keywords: ["アグアメンティ", "あぐあめんてぃ", "水よ", "aguamenti"],
