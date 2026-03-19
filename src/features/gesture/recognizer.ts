@@ -13,6 +13,7 @@ export type GestureResult =
   | { type: "Z"; confidence: number }
   | { type: "InvV"; confidence: number }
   | { type: "W"; confidence: number }
+  | { type: "Down"; confidence: number }
   | { type: "unknown" };
 
 /**
@@ -340,6 +341,10 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
     if (waveResult) return waveResult;
   }
 
+  // --- 縦一直線（下向き）判定（水💧） ---
+  const downResult = recognizeDownGesture(smoothedY, ySpan, xSpan);
+  if (downResult) return downResult;
+
   // --- Z字判定を実施（雷マーク⚡） ---
   if (xSpan >= 2) {
     const zResult = recognizeZGesture(smoothedX, smoothedY, xSpan, ySpan);
@@ -377,6 +382,30 @@ export function recognizeGesture(trail: TrailPoint[]): GestureResult {
   }
 
   return { type: "unknown" };
+}
+
+/**
+ * 縦一直線（下向き）判定（水💧）
+ * 横移動が少なく、始点より終点が明確に下にある直線的な動きを検出する
+ */
+function recognizeDownGesture(
+  smoothedY: number[],
+  ySpan: number,
+  xSpan: number,
+): { type: "Down"; confidence: number } | null {
+  // 縦方向の移動が横より十分大きいこと（斜め・横スワイプを除外）
+  if (ySpan < xSpan * 1.5) return null;
+
+  // 下向き: 終点が始点より下（rawY が大きい = 下方向）
+  const startY = smoothedY[0];
+  const endY = smoothedY[smoothedY.length - 1];
+  const netDown = endY - startY;
+
+  // 正味の下向き移動が ySpan の 60% 以上
+  const downRatio = netDown / ySpan;
+  if (downRatio < 0.6) return null;
+
+  return { type: "Down", confidence: clamp01(downRatio) };
 }
 
 /**
