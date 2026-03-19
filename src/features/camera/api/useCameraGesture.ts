@@ -21,6 +21,13 @@ function isInteractiveElementFocused(): boolean {
   return el.matches(INTERACTIVE_SELECTOR);
 }
 
+export type CameraGestureCallbacks = {
+  /** スペースキー押下時（録画開始時）に呼ばれる */
+  onRecordStart?: () => void;
+  /** スペースキー離し時（録画終了時）に呼ばれる */
+  onRecordEnd?: () => void;
+};
+
 export type CameraGestureState = {
   /** 最新のジェスチャー判定結果 */
   lastGesture: GestureResult | null;
@@ -35,9 +42,11 @@ export type CameraGestureState = {
  *
  * スペースキー長押しで軌跡を蓄積し、離したタイミングでジェスチャー判定を行う。
  * Joy-ConのRボタンと同じ明示的な開始/終了方式。
+ * onRecordStart/onRecordEndで音声認識の同時開始/停止を連動できる。
  */
 export function useCameraGesture(
   wandPoint: WandDetectionResult | null,
+  callbacks?: CameraGestureCallbacks,
 ): CameraGestureState {
   const [lastGesture, setLastGesture] = useState<GestureResult | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -45,6 +54,8 @@ export function useCameraGesture(
   const gestureTrailRef = useRef<TrailPoint[]>([]);
   const lastTimestampRef = useRef(0);
   const isRecordingRef = useRef(false);
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
 
   const resetGesture = useCallback(() => {
     gestureTrailRef.current = [];
@@ -64,6 +75,7 @@ export function useCameraGesture(
       lastTimestampRef.current = 0;
       setLastGesture(null);
       setIsDrawing(true);
+      callbacksRef.current?.onRecordStart?.();
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -73,6 +85,7 @@ export function useCameraGesture(
       e.preventDefault();
       isRecordingRef.current = false;
       setIsDrawing(false);
+      callbacksRef.current?.onRecordEnd?.();
 
       const trail = gestureTrailRef.current;
       if (trail.length < MIN_TRAIL_POINTS) {
