@@ -202,6 +202,10 @@ export function useSpeech(
 
   /**
    * 音声認識の停止
+   *
+   * speechRecognitionAPI.stop() 後、ブラウザは最後の onresult (isFinal) を
+   * 非同期で発火してから onend を発火する。リスナーを即座に削除すると
+   * 最後の認識結果を受け取れないため、リスナー削除を遅延させる。
    */
   const stop = useCallback(() => {
     isStartingRef.current = false;
@@ -209,12 +213,16 @@ export function useSpeech(
     hasDispatchedMatchRef.current = false;
     recentFinalTranscriptRef.current = "";
     recentFinalTimestampRef.current = 0;
-    setFinalSpellMatch(null);
-    if (removeListenerRef.current) {
-      removeListenerRef.current();
-      removeListenerRef.current = null;
-    }
     setStatus("IDLE");
+
+    // 最後の onresult を受け取るためリスナー削除を遅延
+    const removeListener = removeListenerRef.current;
+    removeListenerRef.current = null;
+    if (removeListener) {
+      setTimeout(() => {
+        removeListener();
+      }, 300);
+    }
   }, []);
 
   // コンポーネントのアンマウント時に停止

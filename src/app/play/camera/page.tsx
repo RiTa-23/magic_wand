@@ -161,8 +161,6 @@ export default function CameraPlayPage() {
     connect: connectCamera,
     disconnect: disconnectCamera,
   } = useWandDetector();
-  const { lastGesture, isDrawing, resetGesture } = useCameraGesture(wandPoint);
-
   // ── 音声認識 ──
   const [speechLatencyMode, setSpeechLatencyMode] =
     useState<SpeechLatencyMode>("safe");
@@ -186,6 +184,27 @@ export default function CameraPlayPage() {
           interimCommitThreshold: 1.0,
         },
   );
+
+  // ── スペースキーで音声認識を同時開始/停止 ──
+  const speechStartedBySpaceRef = useRef(false);
+  const speechStatusRef = useRef(speechStatus);
+  speechStatusRef.current = speechStatus;
+  const { lastGesture, isDrawing, resetGesture } = useCameraGesture(wandPoint, {
+    onRecordStart: () => {
+      if (isSupported && speechStatusRef.current === "IDLE") {
+        start();
+        speechStartedBySpaceRef.current = true;
+      }
+    },
+    onRecordEnd: () => {
+      if (speechStartedBySpaceRef.current) {
+        if (speechStatusRef.current === "LISTENING") {
+          stop();
+        }
+        speechStartedBySpaceRef.current = false;
+      }
+    },
+  });
 
   // ── IoT ──
   const {
