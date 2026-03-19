@@ -596,57 +596,62 @@ export default function WandTrackingPage() {
   const isConnected = status === "CONNECTED";
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
+    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)] p-6">
       <div className="max-w-4xl mx-auto">
         <Link
           href={CONNECTION_CHECK_ROUTE}
-          className="inline-flex items-center gap-2 text-gray-300 transition-colors hover:text-white"
+          className="inline-flex items-center gap-2 text-gold-dim transition-colors hover:text-gold-bright"
           aria-label="接続確認画面へ戻る"
         >
           <ChevronLeft className="h-5 w-5" />
-          <span className="text-xs uppercase tracking-widest">Back</span>
+          <span className="text-xs uppercase tracking-widest text-shadow-glow">
+            Back
+          </span>
         </Link>
-        <h1 className="text-2xl font-bold mb-4">🪄 杖トラッキングテスト</h1>
+        <h1 className="text-2xl font-bold mb-4 tracking-[0.22em] text-gold-bright">
+          🪄 杖トラッキングテスト
+        </h1>
 
         {/* 接続 + モード切替 */}
         <div className="flex items-center gap-4 mb-6 flex-wrap">
           {status === "DISCONNECTED" || status === "ERROR" ? (
             <button
               onClick={connect}
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              className="px-5 py-2 rounded-lg border border-gold/25 bg-gold/10 text-gold-bright text-sm font-medium tracking-[0.14em] transition-colors hover:bg-gold/15"
             >
               Joy-Con (R) を接続
             </button>
           ) : (
             <button
               onClick={disconnect}
-              className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              className="px-5 py-2 rounded-lg border border-gold-dim/20 bg-stone/40 text-foreground/85 text-sm font-medium tracking-[0.14em] transition-colors hover:border-gold/30 hover:bg-stone/50"
             >
               切断
             </button>
           )}
           <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              status === "CONNECTED"
-                ? "bg-green-900/50 text-green-400"
+            className={
+              "px-3 py-1 rounded-full text-xs font-semibold tracking-[0.14em] border bg-stone/40 " +
+              (status === "CONNECTED"
+                ? "border-gold/25 text-gold-bright"
                 : status === "CONNECTING"
-                  ? "bg-yellow-900/50 text-yellow-400"
+                  ? "border-gold-dim/25 text-gold-dim"
                   : status === "ERROR"
-                    ? "bg-red-900/50 text-red-400"
-                    : "bg-gray-800 text-gray-400"
-            }`}
+                    ? "border-destructive/30 text-destructive"
+                    : "border-gold/10 text-foreground/60")
+            }
           >
             {status}
           </span>
 
           {/* モード切替タブ */}
-          <div className="flex bg-gray-800 rounded-lg p-1 ml-auto">
+          <div className="flex bg-stone/40 border border-gold/10 rounded-lg p-1 ml-auto">
             <button
               onClick={() => handleModeChange("IR")}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 trackingMode === "IR"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-gold/15 text-gold-bright"
+                  : "text-foreground/60 hover:text-foreground"
               }`}
             >
               IR（赤外線）
@@ -655,8 +660,8 @@ export default function WandTrackingPage() {
               onClick={() => handleModeChange("IMU")}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 trackingMode === "IMU"
-                  ? "bg-purple-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-gold/15 text-gold-bright"
+                  : "text-foreground/60 hover:text-foreground"
               }`}
             >
               IMU（慣性）
@@ -664,7 +669,7 @@ export default function WandTrackingPage() {
           </div>
 
           {isSwitching && (
-            <span className="text-blue-400 text-sm animate-pulse">
+            <span className="text-gold-dim text-sm animate-pulse tracking-[0.14em]">
               IRカメラ初期化中...
             </span>
           )}
@@ -677,14 +682,14 @@ export default function WandTrackingPage() {
               ref={canvasRef}
               width={CANVAS_WIDTH}
               height={CANVAS_HEIGHT}
-              className="w-full rounded-xl border border-gray-800 bg-gray-900"
+              className="w-full rounded-xl border border-gold/15 bg-black/10"
               style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
             />
 
             {/* ジェスチャー判定結果 */}
             {gestureResult && gestureResult.type !== "unknown" && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 rounded-xl px-6 py-3 shadow-lg text-center z-20">
-                <div className="text-2xl font-bold text-purple-700">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-xl px-6 py-3 text-center z-20 bg-black/60 border border-gold/25 shadow-lg backdrop-blur-sm">
+                <div className="text-2xl font-bold text-gold-bright tracking-[0.06em]">
                   {gestureResult.type === "V" && "✨ V字を描きました！"}
                   {gestureResult.type === "M" && "✨ M字を描きました！"}
                   {gestureResult.type === "L" && "✨ L字を描きました！"}
@@ -693,15 +698,15 @@ export default function WandTrackingPage() {
                   {gestureResult.type === "W" &&
                     "🌊 横一直線の軌道を描きました！"}
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-sm text-foreground/60 mt-1 tracking-[0.08em]">
                   信頼度: {Math.round(gestureResult.confidence * 100)}%
                 </div>
               </div>
             )}
             {/* オーバーレイ */}
             {!isConnected && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
-                <p className="text-gray-500 text-sm">
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 z-10">
+                <p className="text-foreground/55 text-sm tracking-[0.12em]">
                   Joy-Con (R) を接続してください
                 </p>
               </div>
@@ -709,8 +714,8 @@ export default function WandTrackingPage() {
             {isConnected &&
               trackingMode === "IR" &&
               (!irFrame || irFrame.type !== "CLUSTERING") && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/80 z-10">
-                  <p className="text-gray-500 text-sm">
+                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 z-10">
+                  <p className="text-foreground/55 text-sm tracking-[0.12em]">
                     {isSwitching
                       ? "IRカメラ初期化中..."
                       : "クラスタリングデータ受信待ち..."}
@@ -720,20 +725,20 @@ export default function WandTrackingPage() {
             {isConnected &&
               trackingMode === "IMU" &&
               calibrationState === "calibrating" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gray-900/90 z-10 space-y-4">
-                  <p className="text-purple-400 font-bold text-lg animate-pulse">
+                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/60 z-10 space-y-4 backdrop-blur-sm border border-gold/10">
+                  <p className="text-gold-bright font-bold text-lg animate-pulse tracking-[0.14em]">
                     キャリブレーション中...
                   </p>
-                  <p className="text-gray-300 text-sm text-center">
-                    <span className="text-blue-400 font-bold">
+                  <p className="text-foreground/80 text-sm text-center tracking-[0.12em]">
+                    <span className="text-gold-bright font-bold">
                       SL/SRボタン（レール側）を下に向けて
                     </span>
                     <br />
                     平らな場所に静止させてください。
                   </p>
-                  <div className="w-48 h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="w-48 h-2 bg-stone/40 rounded-full overflow-hidden border border-gold/10">
                     <div
-                      className="h-full bg-purple-500 transition-all duration-100 ease-linear"
+                      className="h-full bg-gold/40 transition-all duration-100 ease-linear"
                       style={{ width: `${calibrationProgress * 100}%` }}
                     />
                   </div>
@@ -746,50 +751,58 @@ export default function WandTrackingPage() {
             {/* IR モードのサイド情報 */}
             {trackingMode === "IR" && (
               <>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-                  <h2 className="text-sm font-semibold text-gray-400 mb-3">
+                <div className="p-4 bg-black/10 border border-gold/15 rounded-xl">
+                  <h2 className="text-sm font-semibold text-gold-dim/80 tracking-[0.2em] mb-3">
                     杖先の座標
                   </h2>
                   {primaryCluster ? (
                     <div className="space-y-2 font-mono">
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="bg-gray-800 rounded p-2">
-                          <span className="text-gray-500 text-xs">X</span>
-                          <p className="text-blue-400 text-lg font-bold">
+                        <div className="bg-stone/30 border border-gold/10 rounded p-2">
+                          <span className="text-foreground/55 text-xs tracking-[0.18em]">
+                            X
+                          </span>
+                          <p className="text-gold-bright text-lg font-bold">
                             {primaryCluster.cx}
                           </p>
                         </div>
-                        <div className="bg-gray-800 rounded p-2">
-                          <span className="text-gray-500 text-xs">Y</span>
-                          <p className="text-blue-400 text-lg font-bold">
+                        <div className="bg-stone/30 border border-gold/10 rounded p-2">
+                          <span className="text-foreground/55 text-xs tracking-[0.18em]">
+                            Y
+                          </span>
+                          <p className="text-gold-bright text-lg font-bold">
                             {primaryCluster.cy}
                           </p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-gray-800/50 rounded p-2">
-                          <span className="text-gray-500">輝度</span>
-                          <p className="text-gray-300">
+                        <div className="bg-stone/20 border border-gold/10 rounded p-2">
+                          <span className="text-foreground/55 tracking-[0.14em]">
+                            輝度
+                          </span>
+                          <p className="text-foreground/80">
                             {primaryCluster.averageIntensity}
                           </p>
                         </div>
-                        <div className="bg-gray-800/50 rounded p-2">
-                          <span className="text-gray-500">面積</span>
-                          <p className="text-gray-300">
+                        <div className="bg-stone/20 border border-gold/10 rounded p-2">
+                          <span className="text-foreground/55 tracking-[0.14em]">
+                            面積
+                          </span>
+                          <p className="text-foreground/80">
                             {primaryCluster.pixelCount}
                           </p>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-600 text-sm italic">未検出</p>
+                    <p className="text-foreground/45 text-sm italic">未検出</p>
                   )}
                 </div>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-                  <h2 className="text-sm font-semibold text-gray-400 mb-2">
+                <div className="p-4 bg-black/10 border border-gold/15 rounded-xl">
+                  <h2 className="text-sm font-semibold text-gold-dim/80 tracking-[0.2em] mb-2">
                     検出光点数
                   </h2>
-                  <p className="text-3xl font-bold text-white font-mono">
+                  <p className="text-3xl font-bold text-foreground font-mono">
                     {irFrame && irFrame.type === "CLUSTERING"
                       ? irFrame.clusters.length
                       : "—"}
@@ -801,70 +814,74 @@ export default function WandTrackingPage() {
             {/* IMU モードのサイド情報 */}
             {trackingMode === "IMU" && joyconState && isConnected && (
               <>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-                  <h2 className="text-sm font-semibold text-gray-400 mb-3">
+                <div className="p-4 bg-black/10 border border-gold/15 rounded-xl">
+                  <h2 className="text-sm font-semibold text-gold-dim/80 tracking-[0.2em] mb-3">
                     カーソル位置
                   </h2>
                   <div className="grid grid-cols-2 gap-2 text-sm font-mono">
-                    <div className="bg-gray-800 rounded p-2">
-                      <span className="text-gray-500 text-xs">X</span>
-                      <p className="text-purple-400 text-lg font-bold">
+                    <div className="bg-stone/30 border border-gold/10 rounded p-2">
+                      <span className="text-foreground/55 text-xs tracking-[0.18em]">
+                        X
+                      </span>
+                      <p className="text-gold-bright text-lg font-bold">
                         {Math.round(imuPosRef.current.x)}
                       </p>
                     </div>
-                    <div className="bg-gray-800 rounded p-2">
-                      <span className="text-gray-500 text-xs">Y</span>
-                      <p className="text-purple-400 text-lg font-bold">
+                    <div className="bg-stone/30 border border-gold/10 rounded p-2">
+                      <span className="text-foreground/55 text-xs tracking-[0.18em]">
+                        Y
+                      </span>
+                      <p className="text-gold-bright text-lg font-bold">
                         {Math.round(imuPosRef.current.y)}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-                  <h2 className="text-sm font-semibold text-gray-400 mb-2">
+                <div className="p-4 bg-black/10 border border-gold/15 rounded-xl">
+                  <h2 className="text-sm font-semibold text-gold-dim/80 tracking-[0.2em] mb-2">
                     ジャイロ
                   </h2>
                   <div className="text-xs font-mono space-y-1">
                     <p>
                       X (pitch):{" "}
-                      <span className="text-purple-400">
+                      <span className="text-gold-bright">
                         {joyconState.imu.gyro.x}
                       </span>
                     </p>
                     <p>
                       Y (yaw):{" "}
-                      <span className="text-purple-400">
+                      <span className="text-gold-bright">
                         {joyconState.imu.gyro.y}
                       </span>
                     </p>
                     <p>
                       Z (roll):{" "}
-                      <span className="text-purple-400">
+                      <span className="text-gold-bright">
                         {joyconState.imu.gyro.z}
                       </span>
                     </p>
                   </div>
                 </div>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-xl">
-                  <h2 className="text-sm font-semibold text-gray-400 mb-2">
+                <div className="p-4 bg-black/10 border border-gold/15 rounded-xl">
+                  <h2 className="text-sm font-semibold text-gold-dim/80 tracking-[0.2em] mb-2">
                     加速度
                   </h2>
                   <div className="text-xs font-mono space-y-1">
                     <p>
                       X:{" "}
-                      <span className="text-purple-400">
+                      <span className="text-gold-bright">
                         {joyconState.imu.accel.x}
                       </span>
                     </p>
                     <p>
                       Y:{" "}
-                      <span className="text-purple-400">
+                      <span className="text-gold-bright">
                         {joyconState.imu.accel.y}
                       </span>
                     </p>
                     <p>
                       Z:{" "}
-                      <span className="text-purple-400">
+                      <span className="text-gold-bright">
                         {joyconState.imu.accel.z}
                       </span>
                     </p>
@@ -887,7 +904,7 @@ export default function WandTrackingPage() {
                   calibrationPrevAccelRef.current = null;
                 }
               }}
-              className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+              className="w-full px-4 py-2 rounded-lg border border-gold/15 bg-stone/30 hover:bg-stone/40 hover:border-gold/30 text-foreground/80 text-sm tracking-[0.16em] transition-colors"
             >
               {trackingMode === "IMU"
                 ? "軌跡クリア & 再キャリブレーション（+ボタン）"
