@@ -484,6 +484,8 @@ export default function JoyConPlayPage() {
       `${gateResult.commit.spellId.toUpperCase()} / ${gateResult.commit.gestureType}`,
     );
     setShowCommitFeedback(true);
+    const feedbackDuration =
+      gateResult.commit.spellId === "aguamenti" ? 1000 : 4000;
     const timerId = window.setTimeout(() => {
       setShowCommitFeedback(false);
       setActiveCircleSpell(null);
@@ -491,7 +493,7 @@ export default function JoyConPlayPage() {
       gate.current.clear();
       setGateResult(null);
       setPersistedSpellName(null);
-    }, 4000);
+    }, feedbackDuration);
     return () => window.clearTimeout(timerId);
   }, [gateResult]);
 
