@@ -155,3 +155,4 @@ devbox shell
 | `devbox run format:fix`   | Prettier でコードを自動整形（修正）する                               |
 | `devbox run test`         | Vitest でテストを実行する                                             |
 | `devbox run setup`        | パッケージの再インストール (`bun install`) などを手動で行う           |
+
